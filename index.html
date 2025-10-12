@@ -295,85 +295,82 @@
       background: linear-gradient(135deg, rgba(30,32,52,0.88), rgba(38,40,64,0.88));
     }
 
-    .hero-card {
-      width: 100%;
-      max-width: 1100px;
-      margin-bottom: 0;
-      text-align: center;
-      background: linear-gradient(135deg, rgba(255,255,255,0.88), rgba(228,235,255,0.92));
+    .section-fade {
+      animation: fadeUp 280ms ease-out both;
     }
-    [data-theme="dark"] .hero-card {
-      background: linear-gradient(135deg, rgba(24,26,44,0.92), rgba(36,38,64,0.9));
-    }
-    .hero-title {
-      font-size: clamp(32px, 4vw, 42px);
-      margin: 0 auto 6px;
-      font-weight: 600;
-    }
-    .hero-sub {
-      color: var(--text-muted);
-      margin: 0 auto clamp(16px, 2vw, 28px);
-      max-width: 640px;
-      font-size: clamp(18px, 2vw, 20px);
-    }
-    .hero,
-    .hero-card {
+    .hero-immersive {
       position: relative;
-    }
-    .hero {
-      width: min(100%, 1100px);
-      margin: 0 auto clamp(20px, 4vw, 36px);
-    }
-    .hero-video-wrap {
-      position: relative;
-      padding: clamp(16px, 3vw, 28px);
-      border-radius: 24px;
-      background: linear-gradient(135deg, rgba(120,132,255,0.35), rgba(187,132,255,0.28));
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55), 0 22px 48px rgba(60,70,120,0.25);
+      width: min(100%, 1120px);
+      margin: clamp(24px, 4vw, 48px) auto;
+      padding: clamp(56px, 7vw, 80px) clamp(28px, 6vw, 72px);
+      border-radius: 30px;
       overflow: hidden;
+      text-align: center;
+      color: var(--text-primary);
+      isolation: isolate;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.28), 0 36px 80px rgba(46,56,96,0.28);
+      backdrop-filter: blur(24px);
+      display: grid;
+      gap: 16px;
     }
-    [data-theme="dark"] .hero-video-wrap {
-      background: linear-gradient(135deg, rgba(82,96,210,0.28), rgba(164,120,255,0.22));
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14), 0 24px 48px rgba(5,7,18,0.65);
+    [data-theme="dark"] .hero-immersive {
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 40px 90px rgba(5,8,18,0.7);
     }
-    .hero-video-wrap::before {
+    .hero-immersive::before {
       content: "";
       position: absolute;
-      inset: -40%;
-      background:
-        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.35), transparent 55%),
-        radial-gradient(circle at 80% 35%, rgba(255,255,255,0.22), transparent 60%),
-        linear-gradient(120deg, rgba(87,102,255,0.32), rgba(187,132,255,0.25), rgba(120,210,255,0.28));
-      opacity: 0.75;
+      inset: -20%;
+      background: radial-gradient(circle at 20% 10%, rgba(120,132,255,0.45), transparent 55%),
+        radial-gradient(circle at 80% 30%, rgba(182,116,255,0.38), transparent 60%),
+        linear-gradient(140deg, rgba(70,140,255,0.32), rgba(140,110,255,0.28), rgba(90,220,255,0.32));
+      opacity: 0.8;
       animation: heroGlow 18s ease-in-out infinite;
-      pointer-events: none;
+      z-index: -2;
     }
-    .hero-video-aspect {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow: 0 18px 36px rgba(45,55,85,0.28);
-      background: rgba(12,14,26,0.4);
-    }
-    .hero-video-aspect::before {
+    .hero-immersive::after {
       content: "";
-      display: block;
-      padding-top: 56.25%;
-    }
-    .hero-video-aspect iframe {
       position: absolute;
       inset: 0;
-      width: 100%;
-      height: 100%;
-      border: 0;
-      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(12,16,40,0.14), rgba(12,16,40,0.32));
+      mix-blend-mode: screen;
+      z-index: -1;
+    }
+    .hero-video-container {
+      position: absolute;
+      inset: 0;
+      z-index: -3;
+      overflow: hidden;
+    }
+    .hero-video-container video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 120%;
+      min-height: 120%;
+      transform: translate(-50%, -50%);
+      object-fit: cover;
+      filter: saturate(1.15) brightness(1.08);
+    }
+    .hero-title {
+      font-size: clamp(36px, 6vw, 52px);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .hero-sub {
+      margin: 0 auto;
+      max-width: 640px;
+      font-size: clamp(18px, 2.4vw, 22px);
+      color: rgba(255,255,255,0.82);
+      text-shadow: 0 8px 32px rgba(10,12,20,0.35);
     }
     @keyframes heroGlow {
       0% { transform: translate3d(-8%, -6%, 0); }
       50% { transform: translate3d(8%, 6%, 0); }
       100% { transform: translate3d(-8%, -6%, 0); }
+    }
+    @keyframes fadeUp {
+      0% { opacity: 0; transform: translate3d(0, 24px, 0); }
+      100% { opacity: 1; transform: translate3d(0, 0, 0); }
     }
     .cta-grid {
       margin-top: 32px;
@@ -468,46 +465,20 @@
       transform: translateY(0);
       opacity: 0.95;
     }
-    .portal-footer {
-      margin-top: 24px;
-      padding: 20px 24px;
-      border-radius: var(--radius-lg);
-      background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(228,235,255,0.9));
-      box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
-      display: grid;
-      gap: 12px;
+    .legal-footer {
+      margin: clamp(36px, 6vw, 60px) auto 0;
+      padding: clamp(18px, 3vw, 24px) clamp(16px, 3vw, 28px);
+      width: min(100%, 880px);
+      text-align: center;
       font-size: 14px;
       color: var(--fg-muted-contrast);
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(224,232,255,0.74));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.38), 0 24px 54px rgba(46,56,96,0.18);
     }
-    [data-theme="dark"] .portal-footer {
-      background: linear-gradient(135deg, rgba(34,38,60,0.92), rgba(22,24,40,0.88));
-      color: var(--fg-muted-contrast);
-    }
-    .footer-links {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .footer-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--fg-contrast);
-      font-weight: 500;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.55);
-      transition: transform var(--transition), box-shadow var(--transition);
-    }
-    .footer-link svg { width: 16px; height: 16px; }
-    [data-theme="dark"] .footer-link {
-      background: rgba(40,44,70,0.78);
-      color: var(--fg-contrast);
-    }
-    .footer-link:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 18px rgba(45,55,85,0.18);
+    [data-theme="dark"] .legal-footer {
+      background: linear-gradient(135deg, rgba(30,34,56,0.88), rgba(20,22,38,0.9));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 0 26px 60px rgba(6,8,18,0.62);
     }
 
     form {
@@ -1092,7 +1063,7 @@
         transition-duration: 0.001ms !important;
         scroll-behavior: auto !important;
       }
-      .hero-video-wrap::before {
+      .hero-immersive::before {
         animation: none !important;
       }
     }
@@ -1272,9 +1243,9 @@
       navPublic: 'Public Survey',
       navResults: 'Results Dashboard',
       introTitle: "Why we're collecting data",
-      introBody: 'Tamam is the UAE\'s premium super-app for trusted Home, Health, Car, and Lifestyle services. We\'re collecting data to give investors a clear view of our traction and to steer the next wave of product enhancements. Your perspective directly shapes how we prioritize features, markets, and service quality.',
+      introBody: 'To better understand how vendors, customers, and the public perceive Tamam\'s commission and subscription models, and to improve fairness and affordability for all.',
       heroTitle: 'Meet Tamam.',
-      heroSub: 'Services on demand across Home, Health, Car, and Lifestyle.',
+      heroSub: 'A super-app connecting users to trusted Home, Car, Health, and Lifestyle services across the UAE.',
       getTamam: 'Get Tamam & Follow Us',
       ctaDownload: 'Download the Tamam app',
       ctaFollow: 'Follow Tamam online',
@@ -1468,7 +1439,7 @@
       durationLabel: 'Duration',
       timestampLabel: 'Submitted at',
       instagramAlt: 'Instagram icon',
-      privacyNotice: 'Privacy Notice: Your responses are used to improve Tamam and may be shared in aggregate with investors. We do not sell your personal information. Individual responses will not be publicly disclosed.',
+      legalNotice: 'All responses are confidential. Data collected through this portal will be used strictly for research and improvement purposes and will never be shared with third parties.',
       '0': '0',
       '1': '1',
       '2': '2',
@@ -1489,9 +1460,9 @@
       navPublic: 'استبيان الجمهور',
       navResults: 'لوحة النتائج',
       introTitle: 'لماذا نجمع البيانات',
-      introBody: 'تمام هو التطبيق الفائق الموثوق في الإمارات لحجز خدمات المنزل والصحة والسيارات ونمط الحياة. نجمع هذه البيانات لنقدم للمستثمرين رؤية أوضح عن نمونا ولنوجّه المرحلة التالية من تطوير المنتج. مشاركتكم تحدد أولويات الميزات والأسواق وجودة الخدمة.',
+      introBody: 'لفهم أفضل لكيفية رؤية الشركاء والعملاء والجمهور لعمولات تمام ورسوم الاشتراك، ولتحسين العدالة وتكلفة الخدمة للجميع.',
       heroTitle: 'تعرّف على تمام.',
-      heroSub: 'خدمات حسب الطلب عبر المنزل والصحة والسيارات ونمط الحياة.',
+      heroSub: 'تطبيق فائق يربط المستخدمين بخدمات موثوقة للمنزل والسيارة والصحة ونمط الحياة في جميع أنحاء الإمارات.',
       getTamam: 'حمّل تمام وتابعنا',
       ctaDownload: 'حمّل تطبيق تمام',
       ctaFollow: 'تابع تمام عبر القنوات الرقمية',
@@ -1685,7 +1656,7 @@
       durationLabel: 'المدة',
       timestampLabel: 'وقت الإرسال',
       instagramAlt: 'أيقونة إنستغرام',
-      privacyNotice: 'إشعار الخصوصية: نستخدم إجاباتك لتحسين تمام وقد نشاركها بشكل مجمّع مع المستثمرين. لا نبيع معلوماتك الشخصية. لن يتم الكشف عن الردود الفردية علناً.',
+      legalNotice: 'جميع الردود سرّية. سيتم استخدام البيانات التي تُجمع عبر هذه البوابة لأغراض البحث والتحسين فقط، ولن تتم مشاركتها مع أي أطراف ثالثة.',
       '0': '٠',
       '1': '١',
       '2': '٢',
@@ -2273,7 +2244,18 @@
 
     const hero = document.createElement('section');
     hero.id = 'hero';
-    hero.className = 'hero card hero-card';
+    hero.className = 'hero-immersive section-fade';
+    const videoWrap = document.createElement('div');
+    videoWrap.className = 'hero-video-container';
+    const heroVideo = document.createElement('video');
+    heroVideo.src = 'https://drive.google.com/uc?export=download&id=1HhoecxoyeZM1_y3xly0B1dipK7bqQJKP';
+    heroVideo.autoplay = true;
+    heroVideo.loop = true;
+    heroVideo.muted = true;
+    heroVideo.playsInline = true;
+    heroVideo.preload = 'auto';
+    heroVideo.setAttribute('aria-hidden', 'true');
+    videoWrap.appendChild(heroVideo);
     const heroTitle = document.createElement('h2');
     heroTitle.className = 'hero-title';
     heroTitle.dataset.i18n = 'heroTitle';
@@ -2282,25 +2264,12 @@
     heroSub.className = 'hero-sub';
     heroSub.dataset.i18n = 'heroSub';
     heroSub.textContent = t('heroSub');
-    const heroWrap = document.createElement('div');
-    heroWrap.className = 'hero-video-wrap';
-    const heroAspect = document.createElement('div');
-    heroAspect.className = 'hero-video-aspect';
-    const heroFrame = document.createElement('iframe');
-    heroFrame.src = 'https://drive.google.com/file/d/1HhoecxoyeZM1_y3xly0B1dipK7bqQJKP/preview';
-    heroFrame.loading = 'lazy';
-    heroFrame.allow = 'autoplay';
-    heroFrame.title = 'Tamam motion graphic';
-    heroFrame.setAttribute('frameborder', '0');
-    heroFrame.setAttribute('allowfullscreen', '');
-    heroAspect.appendChild(heroFrame);
-    heroWrap.appendChild(heroAspect);
+    hero.appendChild(videoWrap);
     hero.appendChild(heroTitle);
     hero.appendChild(heroSub);
-    hero.appendChild(heroWrap);
 
     const intro = document.createElement('div');
-    intro.className = 'intro card';
+    intro.className = 'intro card section-fade';
     const title = document.createElement('h2');
     title.className = 'section-title';
     title.dataset.i18n = 'introTitle';
@@ -2335,7 +2304,7 @@
     ];
 
     const ctaCard = document.createElement('div');
-    ctaCard.className = 'cta-grid';
+    ctaCard.className = 'cta-grid card section-fade';
     const ctaTitle = document.createElement('h3');
     ctaTitle.className = 'section-title';
     ctaTitle.dataset.i18n = 'getTamam';
@@ -2406,33 +2375,15 @@
     ctaContent.appendChild(followStack);
     ctaCard.appendChild(ctaContent);
 
-    const footer = document.createElement('footer');
-    footer.className = 'portal-footer';
-    const notice = document.createElement('p');
-    notice.dataset.i18n = 'privacyNotice';
-    notice.textContent = t('privacyNotice');
-    footer.appendChild(notice);
-    const footerLinks = document.createElement('div');
-    footerLinks.className = 'footer-links';
-    linkData.forEach(l => {
-      const a = document.createElement('a');
-      a.href = l.href;
-      a.target = '_blank';
-      a.rel = 'noopener';
-      a.className = 'footer-link';
-      a.appendChild(createIcon(l.icon));
-      const span = document.createElement('span');
-      span.dataset.i18n = l.key;
-      span.textContent = t(l.key);
-      a.appendChild(span);
-      footerLinks.appendChild(a);
-    });
-    footer.appendChild(footerLinks);
+    const legal = document.createElement('footer');
+    legal.className = 'legal-footer section-fade';
+    legal.dataset.i18n = 'legalNotice';
+    legal.textContent = t('legalNotice');
 
-    view.appendChild(hero);
     view.appendChild(intro);
+    view.appendChild(hero);
     view.appendChild(ctaCard);
-    view.appendChild(footer);
+    view.appendChild(legal);
 
     applyI18n(view);
     container.appendChild(view);
