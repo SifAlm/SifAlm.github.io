@@ -1,0 +1,2614 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tamam Research Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script async src="https://www.instagram.com/embed.js"></script>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg-gradient: linear-gradient(135deg, rgba(236,242,255,1), rgba(221,229,255,0.6));
+  --fg-color: #0f172a;
+  --subtle: rgba(15,23,42,0.6);
+  --card-bg: rgba(255,255,255,0.72);
+  --card-border: rgba(255,255,255,0.35);
+  --accent: #5a5df0;
+  --accent-soft: rgba(90,93,240,0.15);
+  --shadow: 0 24px 60px rgba(15,23,42,0.12);
+  --ring: 0 0 0 3px rgba(90,93,240,0.3);
+}
+[data-theme="dark"] {
+  --bg-gradient: linear-gradient(140deg, rgba(18,26,53,1), rgba(46,30,70,0.8));
+  --fg-color: #f8fafc;
+  --subtle: rgba(241,245,249,0.7);
+  --card-bg: rgba(15,23,42,0.68);
+  --card-border: rgba(255,255,255,0.08);
+  --accent: #8e9bff;
+  --accent-soft: rgba(142,155,255,0.12);
+  --shadow: 0 24px 60px rgba(0,0,0,0.35);
+  --ring: 0 0 0 3px rgba(142,155,255,0.3);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg-gradient);
+  color: var(--fg-color);
+  min-height: 100vh;
+  transition: background 0.6s ease, color 0.3s ease;
+}
+body, html {
+  scroll-behavior: smooth;
+}
+a {
+  color: inherit;
+}
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+.glass-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+  border-radius: 20px;
+}
+header.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px clamp(16px, 4vw, 48px);
+  background: color-mix(in srgb, transparent 60%, var(--card-bg));
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+header.top-bar .brand {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.logo-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #5a5df0, #9d8cff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 20px;
+}
+@media (max-width: 600px) {
+  .logo-circle { width: 32px; height: 32px; font-size: 16px; }
+}
+header.top-bar nav {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+header.top-bar nav a {
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 500;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+header.top-bar nav a.active {
+  background: var(--accent);
+  color: #fff;
+}
+header.top-bar nav a:hover {
+  transform: translateY(-2px);
+}
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+.icon-btn:hover {
+  transform: translateY(-1px);
+}
+.language-toggle {
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 600;
+}
+main#app {
+  padding: 32px clamp(16px, 4vw, 64px) 120px;
+}
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+.hero-card {
+  padding: 32px;
+  display: grid;
+  gap: 16px;
+}
+.hero-card p {
+  margin: 0;
+  line-height: 1.6;
+}
+.carousel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+.carousel::-webkit-scrollbar {
+  height: 6px;
+}
+.carousel::-webkit-scrollbar-thumb {
+  background: var(--accent-soft);
+  border-radius: 999px;
+}
+.ig-card {
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  background: rgba(15,23,42,0.08);
+}
+.ig-embed, .ig-fallback {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+}
+.ig-embed blockquote {
+  margin: 0 !important;
+  width: 100% !important;
+}
+.ig-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  gap: 16px;
+  background: rgba(255,255,255,0.6);
+}
+[data-theme="dark"] .ig-fallback {
+  background: rgba(15,23,42,0.6);
+}
+.ig-fallback svg {
+  width: 48px;
+  height: 48px;
+  opacity: 0.7;
+}
+.ig-fallback button {
+  border-radius: 999px;
+  padding: 10px 18px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.social-card {
+  padding: 28px;
+  display: grid;
+  gap: 24px;
+}
+.social-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.4);
+  border: 1px solid rgba(255,255,255,0.5);
+  text-decoration: none;
+  font-weight: 600;
+  justify-content: center;
+}
+[data-theme="dark"] .social-link {
+  background: rgba(15,23,42,0.5);
+  border-color: rgba(255,255,255,0.12);
+}
+.play-badges {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.play-badges img {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+}
+form.survey-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.section-card {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.form-field label {
+  font-weight: 600;
+}
+.form-field input, .form-field select, .form-field textarea {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.2);
+  background: rgba(255,255,255,0.65);
+}
+[data-theme="dark"] .form-field input,
+[data-theme="dark"] .form-field select,
+[data-theme="dark"] .form-field textarea {
+  background: rgba(15,23,42,0.6);
+  border-color: rgba(255,255,255,0.12);
+}
+.form-field input:focus-visible,
+.form-field select:focus-visible,
+.form-field textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+.option-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.option-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(15,23,42,0.15);
+}
+[data-theme="dark"] .option-chip {
+  background: rgba(15,23,42,0.55);
+  border-color: rgba(255,255,255,0.1);
+}
+.option-chip input {
+  accent-color: var(--accent);
+}
+.progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.progress-bar {
+  height: 10px;
+  background: rgba(15,23,42,0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  width: 0;
+  transition: width 0.3s ease;
+}
+.helper-banner {
+  position: sticky;
+  top: 96px;
+  padding: 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(90,93,240,0.12), rgba(157,140,255,0.18));
+  border: 1px solid rgba(90,93,240,0.25);
+  box-shadow: 0 12px 30px rgba(90,93,240,0.25);
+  display: none;
+  z-index: 5;
+}
+.helper-banner.active {
+  display: block;
+}
+.commission-list {
+  background: rgba(90,93,240,0.12);
+  border: 1px solid rgba(90,93,240,0.35);
+  border-radius: 16px;
+  padding: 18px;
+  line-height: 1.6;
+}
+.commission-list ul {
+  margin: 8px 0 0 16px;
+  padding: 0;
+}
+.submit-btn {
+  align-self: flex-start;
+  border: none;
+  border-radius: 16px;
+  padding: 14px 28px;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 18px 36px rgba(90,93,240,0.35);
+}
+.submit-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 2000;
+}
+.toast {
+  padding: 14px 20px;
+  border-radius: 16px;
+  background: rgba(15,23,42,0.85);
+  color: white;
+  font-weight: 500;
+  animation: fadeIn 0.25s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+[data-theme="dark"] .toast {
+  background: rgba(255,255,255,0.9);
+  color: #0f172a;
+}
+.invalid-hint {
+  color: #e11d48;
+  font-size: 0.875rem;
+}
+.invalid-field input,
+.invalid-field select,
+.invalid-field textarea {
+  border-color: #e11d48 !important;
+}
+[data-dir="rtl"] {
+  direction: rtl;
+}
+[data-dir="rtl"] input[type="email"],
+[data-dir="rtl"] input[type="tel"],
+[data-dir="rtl"] input[type="number"],
+[data-dir="rtl"] .ltr-only {
+  direction: ltr;
+}
+.thanks-card {
+  padding: 40px;
+  text-align: center;
+}
+.tabs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tabs button {
+  border: none;
+  border-radius: 16px;
+  padding: 10px 18px;
+  background: rgba(255,255,255,0.45);
+  cursor: pointer;
+  font-weight: 600;
+}
+[data-theme="dark"] .tabs button {
+  background: rgba(15,23,42,0.5);
+}
+.tabs button.active {
+  background: var(--accent);
+  color: #fff;
+}
+.stats-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.stat-card {
+  padding: 20px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.5);
+  border: 1px solid rgba(15,23,42,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+[data-theme="dark"] .stat-card {
+  background: rgba(15,23,42,0.55);
+  border-color: rgba(255,255,255,0.1);
+}
+.chart-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.open-text-section {
+  display: grid;
+  gap: 12px;
+}
+.text-item {
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(15,23,42,0.12);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+[data-theme="dark"] .text-item {
+  background: rgba(15,23,42,0.55);
+  border-color: rgba(255,255,255,0.1);
+}
+.copy-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 6px 12px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 18px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+th, td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(15,23,42,0.1);
+  text-align: left;
+}
+[data-theme="dark"] th,
+[data-theme="dark"] td {
+  border-color: rgba(255,255,255,0.08);
+}
+.table-controls {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.search-input {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,0.2);
+}
+.sort-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.5);
+  cursor: pointer;
+}
+[data-theme="dark"] .sort-btn {
+  background: rgba(15,23,42,0.5);
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+.modal {
+  background: var(--card-bg);
+  border-radius: 24px;
+  padding: 28px;
+  max-width: min(640px, 90vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.modal h3 { margin: 0; }
+.close-btn {
+  align-self: flex-end;
+  border: none;
+  background: transparent;
+  color: var(--fg-color);
+  font-size: 20px;
+  cursor: pointer;
+}
+.results-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.action-btn {
+  border: none;
+  border-radius: 14px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(255,255,255,0.65);
+}
+[data-theme="dark"] .action-btn {
+  background: rgba(15,23,42,0.55);
+}
+.empty-state {
+  padding: 32px;
+  text-align: center;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.5);
+}
+[data-theme="dark"] .empty-state {
+  background: rgba(15,23,42,0.45);
+}
+</style>
+</head>
+<body>
+<header class="top-bar">
+  <div class="brand">
+    <div class="logo-circle">T</div>
+    <div>
+      <div class="brand-title" data-i18n="headerTitle">Tamam Research Portal</div>
+    </div>
+  </div>
+  <nav>
+    <a href="#/surveys" data-route-link data-i18n="navHome">Overview</a>
+    <a href="#/surveys/vendors" data-route-link data-i18n="navVendors">Vendors</a>
+    <a href="#/surveys/customers" data-route-link data-i18n="navCustomers">Customers</a>
+    <a href="#/surveys/public" data-route-link data-i18n="navPublic">Public</a>
+    <a href="#/surveys/results" data-route-link data-i18n="navResults">Results</a>
+  </nav>
+  <div class="controls">
+    <button class="icon-btn" id="themeToggle" aria-label="Toggle theme">🌞</button>
+    <button class="icon-btn language-toggle" id="langToggle"><span data-i18n="langToggle">AR</span></button>
+  </div>
+</header>
+<main id="app"></main>
+<div class="toast-container" aria-live="polite" aria-atomic="true"></div>
+<form name="tamam-vendor" data-netlify="true" netlify-honeypot="bot-field" hidden><input name="bot-field" /><textarea name="data"></textarea></form>
+<form name="tamam-customer" data-netlify="true" netlify-honeypot="bot-field" hidden><input name="bot-field" /><textarea name="data"></textarea></form>
+<form name="tamam-public" data-netlify="true" netlify-honeypot="bot-field" hidden><input name="bot-field" /><textarea name="data"></textarea></form>
+<script>
+const DEBUG = true;
+window.TAMAM_BACKEND = window.TAMAM_BACKEND || 'none';
+const IG_URLS = [
+  "https://www.instagram.com/reel/DLjucH-ydKX/?igsh=dTV5ZHM5Y2NocHRw",
+  "https://www.instagram.com/reel/DLNhwL9yw8o/?igsh=MWgxc285ZGo1bTA3Mw==",
+  "https://www.instagram.com/reel/DKT-dtDSIb4/?igsh=dzV0NjRnanQ5N2tu",
+  "https://www.instagram.com/reel/DMQHNltSns9/?igsh=ODRrZ3VjeHo5amVl",
+  "https://www.instagram.com/reel/DMaLyjXy2bH/?igsh=NHh4cXFvYjB2aGVw"
+];
+const PASSWORDS = {
+  vendors: "00994",
+  customers: "11636",
+  results: "@Tamam@3469-@"
+};
+const STORAGE_KEYS = {
+  db: "tamam_research_db",
+  drafts: {
+    vendor: "draft_vendor",
+    customer: "draft_customer",
+    public: "draft_public"
+  },
+  completed: {
+    vendor: "completed_vendor",
+    customer: "completed_customer",
+    public: "completed_public"
+  },
+  theme: "tmm_theme"
+};
+const ROUTES = {};
+const ChartsRegistry = new Map();
+let currentRoute = null;
+let currentLanguage = localStorage.getItem("tmm_lang") || "en";
+let currentTheme = localStorage.getItem(STORAGE_KEYS.theme) || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+let routerInitialized = false;
+const i18n = {
+  en: {
+    headerTitle: "Tamam Research Portal",
+    navHome: "Overview",
+    navVendors: "Vendors",
+    navCustomers: "Customers",
+    navPublic: "Public",
+    navResults: "Results",
+    langToggle: "AR",
+    introTitle: "Premium services, powered by real insights",
+    introBody: "Tamam is the UAE's trusted super-app for vetted Home, Health, Car, and Lifestyle services. This portal gathers live intelligence to guide our investors and shape next-generation product decisions.",
+    reelsTitle: "Explore Our Socials",
+    socialsTitle: "Get Tamam & Connect",
+    appStore: "App Store",
+    playStore: "Google Play",
+    website: "Website",
+    instagram: "Instagram",
+    linktree: "Linktree",
+    playOnInstagram: "Play on Instagram",
+    passwordPrompt: "Enter password",
+    toastInvalidPassword: "Invalid password.",
+    toastDraftRestored: "Draft restored.",
+    toastDraftSaved: "Draft saved.",
+    toastSubmitted: "Submitted.",
+    toastDuplicate: "You've already submitted this survey on this device.",
+    toastImportSuccess: "Data imported.",
+    toastReset: "Storage cleared.",
+    toastCopied: "Copied.",
+    toastExported: "Export generated.",
+    toastError: "Something went wrong.",
+    thanksTitle: "Thank you!",
+    thanksBody: "Your input directly informs how Tamam grows with integrity and speed.",
+    thanksBack: "Back to overview",
+    progressLabel: (answered, total) => `Progress: ${answered}/${total}`,
+    submit: "Submit",
+    commissionIntro: "Tamam commissions (per category):",
+    commissionHome: "Home: 15–20% per order + AED 75/month",
+    commissionCar: "Car: 15–20% per order + AED 75/month",
+    commissionHealth: "Health: 25–30% per order + AED 75/month",
+    commissionLifestyle: "Lifestyle/Wellness: 20–25% per order + AED 75/month",
+    commissionHelper: "Consider the commission model above when answering the next questions.",
+    validationRequired: "This field is required.",
+    multiSelectOtherPlaceholder: "Please specify",
+    vendorLead: "Company information",
+    vendorCompany: "Company Name",
+    vendorEmail: "Email (optional)",
+    vendorPhone: "Phone (optional)",
+    vendorCategory: "Category",
+    vendorAOV: "Average Order Value (AED)",
+    vendorProfit: "Average Profit Margin (%)",
+    vendorOrdersAll: "Typical Monthly Orders",
+    vendorOrdersProfitable: "At what Tamam volume is the model profitable?",
+    vendorMinStay: "Minimum Tamam orders per month to stay subscribed",
+    vendorAccept510: "Revenue range AED 5,000–10,000",
+    vendorAccept1020: "Revenue range AED 10,000–20,000",
+    vendorAccept20Plus: "Revenue range AED 20,000+",
+    vendorValueExpect: "What would you expect from Tamam to justify these fees?",
+    vendorLeaveReason: "Biggest reason you’d leave (even with orders)?",
+    vendorRecommend: "Would you recommend Tamam to other businesses?",
+    vendorNotes: "Anything else we should consider? (optional)",
+    optHome: "Home",
+    optHealth: "Health",
+    optCar: "Car",
+    optLifestyle: "Lifestyle/Wellness",
+    optLifestyleShort: "Lifestyle",
+    optTamam: "Tamam",
+    optOther: "Other",
+    optOrders0_10: "0–10",
+    optOrders10_20: "10–20",
+    optOrders20_40: "20–40",
+    optOrders40_80: "40–80",
+    optOrders80p: "80+",
+    opt5_10: "5–10",
+    opt10_20: "10–20",
+    opt20_40: "20–40",
+    opt40p: "40+",
+    opt1_5: "1–5",
+    opt20p: "20+",
+    optAcceptable: "Acceptable",
+    optNeutral: "Neutral",
+    optNotAcceptable: "Not acceptable",
+    optGuaranteedVolume: "Guaranteed volume",
+    optMarketing: "Better marketing & visibility",
+    optPremiumCustomers: "Premium customers",
+    optTools: "Business tools (analytics, scheduling, payments)",
+    optFasterPayouts: "Faster payouts",
+    optHighCommission: "High commission",
+    optLowVolume: "Low customer volume",
+    optPoorSupport: "Poor vendor support",
+    optBetterOffers: "Better competitor offers",
+    optYes: "Yes",
+    optNo: "No",
+    optMaybe: "Maybe",
+    customerLead: "Customer details",
+    customerName: "Name",
+    customerEmail: "Email (optional)",
+    customerPhone: "Phone (optional)",
+    customerFreq: "How often do you use Tamam?",
+    customerCategories: "Which service categories have you used most?",
+    customerEase: "How easy was your last booking?",
+    customerNps: "How likely are you to recommend Tamam?",
+    customerTimeSave: "Compared to calling vendors, Tamam saves you time:",
+    customerMoneySave: "Compared to alternatives, Tamam saves you money:",
+    customerWants: "Which additional services would you like Tamam to offer? (optional)",
+    customerMore: "What would make you use Tamam more often?",
+    optWeekly: "Weekly",
+    optMonthly: "Monthly",
+    optRarely: "Rarely",
+    optMuchMore: "Much more",
+    optSlightlyMore: "Slightly more",
+    optSame: "Same",
+    optLess: "Less",
+    optLowerCost: "Lower cost",
+    optMoreVariety: "More variety",
+    optFasterBooking: "Faster booking",
+    optBetterSupport: "Better support",
+    optLoyalty: "Loyalty rewards/discounts",
+    publicLead: "Public insight",
+    publicName: "Name",
+    publicContact: "Email or Phone (optional)",
+    publicBookedBefore: "Have you booked services online before?",
+    publicPlatforms: "Which platforms?",
+    publicBarrier: "If not, why not?",
+    publicTopFactor: "When booking, what factors matter most?",
+    publicFirstCategory: "If trying Tamam, which category first?",
+    publicPremium: "Would you pay AED 5–10 for convenience?",
+    publicWhyTamam: "What would make you choose Tamam?",
+    optUrban: "Urban Company",
+    optCafu: "cafu",
+    optJustlife: "justlife",
+    optTooExpensive: "Too expensive",
+    optDontTrust: "Don’t trust apps",
+    optPreferCalling: "Prefer calling vendors directly",
+    optDidntKnow: "Didn’t know",
+    optPrice: "Price",
+    optSpeed: "Speed",
+    optQuality: "Quality",
+    optTrust: "Trust & safety",
+    optEaseUse: "Ease of use",
+    resultsTitle: "Insights Dashboard",
+    tabVendor: "Vendors",
+    tabCustomer: "Customers",
+    tabPublic: "Public",
+    kpiCount: "Responses",
+    kpiAvgOrders: "Avg. monthly orders",
+    kpiAvgNps: "Avg. NPS",
+    kpiAvgEase: "Avg. ease",
+    kpiPositive: "Positive acceptance",
+    openTextHeader: "Open responses",
+    otherHeader: "Other write-ins",
+    tableSearchPlaceholder: "Search name, email, phone, category",
+    sortDate: "Sort by latest",
+    sortName: "Sort by name",
+    noResponses: "No submissions yet.",
+    detailTitle: kind => kind === 'vendor' ? 'Vendor submission' : kind === 'customer' ? 'Customer submission' : 'Public submission',
+    close: "Close",
+    refresh: "Refresh data",
+    exportExcel: "Export Excel",
+    exportJson: "Export JSON",
+    importJson: "Import JSON",
+    resetAll: "Backup & Reset",
+    secondsLabel: "Seconds on form",
+    timestampLabel: "Submitted at",
+    otherNone: "No entries yet.",
+    copy: "Copy",
+    vendorBannerTitle: "Commission model",
+    vendorBannerBody: category => {
+      const map = {
+        home: "Home: 15–20% per order + AED 75/month",
+        car: "Car: 15–20% per order + AED 75/month",
+        health: "Health: 25–30% per order + AED 75/month",
+        lifestyle: "Lifestyle/Wellness: 20–25% per order + AED 75/month"
+      };
+      return map[category] || "";
+    },
+    vendorBannerHelper: "Keep this in mind when answering the next questions.",
+    passwordTitle: kind => kind === 'vendors' ? 'Vendor survey password' : kind === 'customers' ? 'Customer survey password' : 'Results password'
+  },
+  ar: {
+    headerTitle: "بوابة بحوث تمام",
+    navHome: "نظرة عامة",
+    navVendors: "الموردون",
+    navCustomers: "العملاء",
+    navPublic: "الجمهور",
+    navResults: "النتائج",
+    langToggle: "EN",
+    introTitle: "خدمات مميزة مدعومة برؤى دقيقة",
+    introBody: "تمام هو التطبيق الفائق الموثوق في الإمارات للخدمات المنزلية والصحية وخدمات السيارات ونمط الحياة. تجمع هذه البوابة ذكاءً لحظيًا لدعم المستثمرين وتوجيه قرارات المنتج المقبلة.",
+    reelsTitle: "استكشف قنواتنا الاجتماعية",
+    socialsTitle: "حمّل تمام وتواصل معنا",
+    appStore: "متجر التطبيقات",
+    playStore: "جوجل بلاي",
+    website: "الموقع الإلكتروني",
+    instagram: "إنستغرام",
+    linktree: "لينك تري",
+    playOnInstagram: "المشاهدة على إنستغرام",
+    passwordPrompt: "أدخل كلمة المرور",
+    toastInvalidPassword: "كلمة المرور غير صحيحة.",
+    toastDraftRestored: "تم استعادة المسودة.",
+    toastDraftSaved: "تم حفظ المسودة.",
+    toastSubmitted: "تم الإرسال.",
+    toastDuplicate: "لقد أرسلت هذا الاستبيان سابقًا على هذا الجهاز.",
+    toastImportSuccess: "تم استيراد البيانات.",
+    toastReset: "تم مسح التخزين.",
+    toastCopied: "تم النسخ.",
+    toastExported: "تم إنشاء التصدير.",
+    toastError: "حدث خطأ ما.",
+    thanksTitle: "شكرًا لك!",
+    thanksBody: "مساهمتك توجه نمو تمام بنزاهة وسرعة.",
+    thanksBack: "العودة إلى النظرة العامة",
+    progressLabel: (answered, total) => `التقدم: ${answered} / ${total}`,
+    submit: "إرسال",
+    commissionIntro: "عمولات تمام حسب الفئة:",
+    commissionHome: "المنزل: 15–20% لكل طلب + 75 درهم/شهر",
+    commissionCar: "السيارة: 15–20% لكل طلب + 75 درهم/شهر",
+    commissionHealth: "الصحة: 25–30% لكل طلب + 75 درهم/شهر",
+    commissionLifestyle: "أسلوب الحياة/العافية: 20–25% لكل طلب + 75 درهم/شهر",
+    commissionHelper: "ضع نموذج العمولات أعلاه في الاعتبار عند الإجابة على الأسئلة التالية.",
+    validationRequired: "هذا الحقل مطلوب.",
+    multiSelectOtherPlaceholder: "يرجى التحديد",
+    vendorLead: "بيانات الشركة",
+    vendorCompany: "اسم الشركة",
+    vendorEmail: "البريد الإلكتروني (اختياري)",
+    vendorPhone: "رقم الهاتف (اختياري)",
+    vendorCategory: "الفئة",
+    vendorAOV: "متوسط قيمة الطلب (درهم)",
+    vendorProfit: "متوسط هامش الربح (%)",
+    vendorOrdersAll: "عدد الطلبات الشهري المعتاد",
+    vendorOrdersProfitable: "عند أي حجم طلب من تمام يصبح النموذج مربحًا؟",
+    vendorMinStay: "الحد الأدنى لطلبات تمام شهريًا للاستمرار",
+    vendorAccept510: "نطاق الإيراد 5,000–10,000 درهم",
+    vendorAccept1020: "نطاق الإيراد 10,000–20,000 درهم",
+    vendorAccept20Plus: "نطاق الإيراد 20,000+ درهم",
+    vendorValueExpect: "ما الذي تتوقعه من تمام لتبرير هذه الرسوم؟",
+    vendorLeaveReason: "أكبر سبب للمغادرة حتى مع وجود طلبات؟",
+    vendorRecommend: "هل توصي تمام لشركات أخرى؟",
+    vendorNotes: "أي ملاحظات إضافية؟ (اختياري)",
+    optHome: "المنزل",
+    optHealth: "الصحة",
+    optCar: "السيارة",
+    optLifestyle: "أسلوب الحياة/العافية",
+    optLifestyleShort: "أسلوب الحياة",
+    optTamam: "تمام",
+    optOther: "أخرى",
+    optOrders0_10: "0–10",
+    optOrders10_20: "10–20",
+    optOrders20_40: "20–40",
+    optOrders40_80: "40–80",
+    optOrders80p: "80+",
+    opt5_10: "5–10",
+    opt10_20: "10–20",
+    opt20_40: "20–40",
+    opt40p: "40+",
+    opt1_5: "1–5",
+    opt20p: "20+",
+    optAcceptable: "مقبول",
+    optNeutral: "محايد",
+    optNotAcceptable: "غير مقبول",
+    optGuaranteedVolume: "حجم طلبات مضمون",
+    optMarketing: "تسويق ورؤية أفضل",
+    optPremiumCustomers: "عملاء مميزون",
+    optTools: "أدوات أعمال (تحليلات، جدولة، مدفوعات)",
+    optFasterPayouts: "مدفوعات أسرع",
+    optHighCommission: "عمولة مرتفعة",
+    optLowVolume: "انخفاض عدد العملاء",
+    optPoorSupport: "دعم ضعيف للموردين",
+    optBetterOffers: "عروض أفضل من المنافسين",
+    optYes: "نعم",
+    optNo: "لا",
+    optMaybe: "ربما",
+    customerLead: "بيانات العميل",
+    customerName: "الاسم",
+    customerEmail: "البريد الإلكتروني (اختياري)",
+    customerPhone: "رقم الهاتف (اختياري)",
+    customerFreq: "كم مرة تستخدم تمام؟",
+    customerCategories: "ما الفئات التي استخدمتها أكثر؟",
+    customerEase: "ما مدى سهولة آخر حجز؟",
+    customerNps: "ما احتمال توصية تمام؟",
+    customerTimeSave: "مقارنة بالاتصال بالموردين، تمام يوفر لك الوقت:",
+    customerMoneySave: "مقارنة بالبدائل، تمام يوفر لك المال:",
+    customerWants: "ما الخدمات الإضافية التي ترغب أن يقدمها تمام؟ (اختياري)",
+    customerMore: "ما الذي يجعلك تستخدم تمام أكثر؟",
+    optWeekly: "أسبوعيًا",
+    optMonthly: "شهريًا",
+    optRarely: "نادراً",
+    optMuchMore: "أكثر بكثير",
+    optSlightlyMore: "أكثر قليلًا",
+    optSame: "مماثل",
+    optLess: "أقل",
+    optLowerCost: "تكلفة أقل",
+    optMoreVariety: "تنوع أكبر",
+    optFasterBooking: "حجز أسرع",
+    optBetterSupport: "دعم أفضل",
+    optLoyalty: "مكافآت/خصومات ولاء",
+    publicLead: "رأي الجمهور",
+    publicName: "الاسم",
+    publicContact: "البريد الإلكتروني أو الهاتف (اختياري)",
+    publicBookedBefore: "هل حجزت خدمات عبر الإنترنت من قبل؟",
+    publicPlatforms: "ما هي المنصات؟",
+    publicBarrier: "إذا لا، لماذا؟",
+    publicTopFactor: "ما أهم العوامل عند الحجز؟",
+    publicFirstCategory: "أي فئة ستجربها أولاً في تمام؟",
+    publicPremium: "هل تدفع 5–10 دراهم مقابل الراحة؟",
+    publicWhyTamam: "ما الذي يجعلك تختار تمام؟",
+    optUrban: "أوربان كومباني",
+    optCafu: "كفو",
+    optJustlife: "جست لايف",
+    optTooExpensive: "مكلف جدًا",
+    optDontTrust: "لا أثق في التطبيقات",
+    optPreferCalling: "أفضل الاتصال بالموردين مباشرة",
+    optDidntKnow: "لم أكن أعلم",
+    optPrice: "السعر",
+    optSpeed: "السرعة",
+    optQuality: "الجودة",
+    optTrust: "الثقة والسلامة",
+    optEaseUse: "سهولة الاستخدام",
+    resultsTitle: "لوحة الرؤى",
+    tabVendor: "الموردون",
+    tabCustomer: "العملاء",
+    tabPublic: "الجمهور",
+    kpiCount: "عدد الردود",
+    kpiAvgOrders: "متوسط الطلبات الشهرية",
+    kpiAvgNps: "متوسط NPS",
+    kpiAvgEase: "متوسط السهولة",
+    kpiPositive: "قبول إيجابي",
+    openTextHeader: "ردود مفتوحة",
+    otherHeader: "إجابات (أخرى)",
+    tableSearchPlaceholder: "بحث بالاسم أو البريد أو الهاتف أو الفئة",
+    sortDate: "ترتيب حسب الأحدث",
+    sortName: "ترتيب حسب الاسم",
+    noResponses: "لا يوجد ردود بعد.",
+    detailTitle: kind => kind === 'vendor' ? 'رد مورد' : kind === 'customer' ? 'رد عميل' : 'رد الجمهور',
+    close: "إغلاق",
+    refresh: "تحديث البيانات",
+    exportExcel: "تصدير إكسل",
+    exportJson: "تصدير JSON",
+    importJson: "استيراد JSON",
+    resetAll: "نسخ احتياطي وإعادة تعيين",
+    secondsLabel: "الثواني على النموذج",
+    timestampLabel: "وقت الإرسال",
+    otherNone: "لا توجد مدخلات.",
+    copy: "نسخ",
+    vendorBannerTitle: "نموذج العمولة",
+    vendorBannerBody: category => {
+      const map = {
+        home: "المنزل: 15–20% لكل طلب + 75 درهم/شهر",
+        car: "السيارة: 15–20% لكل طلب + 75 درهم/شهر",
+        health: "الصحة: 25–30% لكل طلب + 75 درهم/شهر",
+        lifestyle: "أسلوب الحياة/العافية: 20–25% لكل طلب + 75 درهم/شهر"
+      };
+      return map[category] || "";
+    },
+    vendorBannerHelper: "تذكر ذلك أثناء الإجابة على الأسئلة التالية.",
+    passwordTitle: kind => kind === 'vendors' ? 'كلمة مرور استبيان الموردين' : kind === 'customers' ? 'كلمة مرور استبيان العملاء' : 'كلمة مرور النتائج'
+  }
+};
+function t(key, ...args) {
+  const dictionary = i18n[currentLanguage];
+  const value = dictionary[key];
+  if (typeof value === 'function') {
+    return value(...args);
+  }
+  return value ?? key;
+}
+
+let currentRoute = null;
+let currentLanguage = localStorage.getItem('tmm_lang') || 'en';
+let currentTheme = localStorage.getItem(STORAGE_KEYS.theme) || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+let routerInitialized = false;
+const ChartsRegistry = new Map();
+
+function applyLanguage() {
+  document.documentElement.lang = currentLanguage === 'en' ? 'en' : 'ar';
+  const dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.setAttribute('data-dir', dir);
+  document.body.setAttribute('data-dir', dir);
+  document.documentElement.dir = dir;
+  document.body.dir = dir;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (!key) return;
+    const val = t(key);
+    if (val !== undefined) {
+      el.textContent = val;
+    }
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    const val = t(key);
+    if (val !== undefined) {
+      el.setAttribute('placeholder', val);
+    }
+  });
+  document.getElementById('langToggle').querySelector('span').textContent = t('langToggle');
+  rebuildCharts();
+  if (currentRoute && currentRoute.remount) {
+    currentRoute.remount();
+  } else if (currentRoute && currentRoute.mount) {
+    currentRoute.mount(true);
+  }
+}
+
+function setTheme(theme) {
+  currentTheme = theme;
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem(STORAGE_KEYS.theme, theme);
+  document.getElementById('themeToggle').textContent = theme === 'dark' ? '🌙' : '🌞';
+}
+
+function toggleTheme() {
+  setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+}
+
+function toggleLanguage() {
+  currentLanguage = currentLanguage === 'en' ? 'ar' : 'en';
+  localStorage.setItem('tmm_lang', currentLanguage);
+  applyLanguage();
+  if (currentRoute && currentRoute.refresh) currentRoute.refresh();
+}
+
+function toast(message) {
+  const container = document.querySelector('.toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(10px)';
+    setTimeout(() => el.remove(), 320);
+  }, 3200);
+}
+
+function getDB() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.db);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    console.error(err);
+  }
+  return { vendor: [], customer: [], public: [] };
+}
+
+function saveDB(db) {
+  localStorage.setItem(STORAGE_KEYS.db, JSON.stringify(db));
+}
+
+function initDB() {
+  const db = getDB();
+  saveDB(db);
+}
+
+const ROUTES = {};
+
+function ensureRoute(route) {
+  if (!ROUTES[route]) throw new Error('Route not found');
+}
+
+function navigate(hash, force = false) {
+  if (!hash.startsWith('#/')) hash = '#/surveys';
+  const parts = hash.replace('#/', '').split('/');
+  const key = parts.join('/');
+  ensureRoute(key);
+  const route = ROUTES[key];
+  if (route.guard && !route.guard()) {
+    if (DEBUG) console.log('Guard blocked route', key);
+    location.hash = '#/surveys';
+    return;
+  }
+  if (!force && currentRoute === route) {
+    route.mount(true);
+    return;
+  }
+  if (currentRoute && currentRoute.unmount) {
+    if (DEBUG) console.log('Unmount', currentRoute.key);
+    currentRoute.unmount();
+  }
+  currentRoute = route;
+  if (DEBUG) console.log('Mount', route.key);
+  route.mount();
+  document.querySelectorAll('[data-route-link]').forEach(link => {
+    const isActive = link.getAttribute('href') === hash;
+    link.classList.toggle('active', isActive);
+  });
+}
+
+function initRouter() {
+  if (routerInitialized) return;
+  window.addEventListener('hashchange', () => navigate(location.hash));
+  routerInitialized = true;
+  navigate(location.hash || '#/surveys', true);
+}
+
+function requirePassword(kind) {
+  const input = window.prompt(t('passwordPrompt'));
+  if (input === null) return false;
+  const valid = input === PASSWORDS[kind];
+  if (!valid) {
+    toast(t('toastInvalidPassword'));
+  }
+  if (DEBUG) console.log('Password', valid ? 'accepted' : 'declined', 'for', kind);
+  return valid;
+}
+
+function createInstagramCarousel() {
+  const container = document.createElement('div');
+  container.className = 'carousel';
+  IG_URLS.forEach(url => {
+    const card = document.createElement('div');
+    card.className = 'ig-card glass-card';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'ig-embed';
+    wrapper.innerHTML = `<blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14" style="background:#FFF; border:0; margin:0; padding:0; border-radius:16px;"></blockquote>`;
+    const fallback = document.createElement('div');
+    fallback.className = 'ig-fallback';
+    fallback.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M16.5 7.5h.01"/><circle cx="12" cy="12" r="3.5"/></svg>
+      <button type="button">${t('playOnInstagram')}</button>
+    `;
+    fallback.querySelector('button').addEventListener('click', () => window.open(url, '_blank'));
+    card.appendChild(wrapper);
+    card.appendChild(fallback);
+    container.appendChild(card);
+  });
+  return container;
+}
+
+function processInstagramEmbeds(root) {
+  if (typeof window.instgrm?.Embeds?.process === 'function') {
+    if (DEBUG) console.log('Processing Instagram embeds');
+    window.instgrm.Embeds.process(root);
+  }
+  setTimeout(() => {
+    root.querySelectorAll('.ig-card').forEach(card => {
+      const fallback = card.querySelector('.ig-fallback');
+      const iframe = card.querySelector('iframe');
+      if (iframe) {
+        fallback.style.display = 'none';
+      }
+    });
+  }, 1800);
+}
+
+function mountHome() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  const page = document.createElement('div');
+  page.className = 'page';
+
+  const hero = document.createElement('section');
+  hero.className = 'hero-card glass-card';
+  hero.innerHTML = `<h1>${t('introTitle')}</h1><p>${t('introBody')}</p>`;
+  page.appendChild(hero);
+
+  const reels = document.createElement('section');
+  reels.className = 'section-card glass-card';
+  reels.innerHTML = `<h2>${t('reelsTitle')}</h2>`;
+  const carousel = createInstagramCarousel();
+  reels.appendChild(carousel);
+  page.appendChild(reels);
+
+  const socials = document.createElement('section');
+  socials.className = 'social-card glass-card';
+  socials.innerHTML = `
+    <h2>${t('socialsTitle')}</h2>
+    <div class="play-badges">
+      <a href="https://apps.apple.com/ae/app/tamam-services-on-demand/id6740270481" target="_blank" rel="noopener" class="social-link">
+        <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="${t('appStore')}">
+      </a>
+      <a href="https://play.google.com/store/apps/details?id=com.tamam.customer&pcampaignid=web_share" target="_blank" rel="noopener" class="social-link">
+        <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="${t('playStore')}">
+      </a>
+    </div>
+    <div class="social-grid">
+      <a class="social-link" href="https://gettamam.com" target="_blank" rel="noopener">${t('website')}</a>
+      <a class="social-link" href="https://www.instagram.com/tamam.uae" target="_blank" rel="noopener">${t('instagram')}</a>
+      <a class="social-link" href="https://linktr.ee/TamamApp" target="_blank" rel="noopener">${t('linktree')}</a>
+    </div>
+  `;
+  page.appendChild(socials);
+  app.appendChild(page);
+  processInstagramEmbeds(carousel);
+}
+
+ROUTES['surveys'] = { key: 'surveys', mount: mountHome, unmount: () => {} };
+function createProgressBar() {
+  const wrap = document.createElement('div');
+  wrap.className = 'progress-wrap';
+  wrap.innerHTML = `<span data-progress-label>${t('progressLabel')(0, 0)}</span><div class="progress-bar"><span></span></div>`;
+  return wrap;
+}
+
+function dependencySatisfied(form, depends) {
+  if (!depends) return true;
+  const target = form.querySelector(`[name="${depends.key}"]`);
+  if (!target) return true;
+  if (target.type === 'radio') {
+    const selected = form.querySelector(`input[name="${depends.key}"]:checked`);
+    return selected?.value === depends.value;
+  }
+  if (target.type === 'select-one') {
+    return target.value === depends.value;
+  }
+  if (target.type === 'checkbox') {
+    return target.checked === depends.value;
+  }
+  const values = Array.from(form.querySelectorAll(`input[name="${depends.key}"]:checked`)).map(el => el.value);
+  return values.includes(depends.value);
+}
+
+function isQuestionVisible(form, item) {
+  if (item.dependsOn && !dependencySatisfied(form, item.dependsOn)) return false;
+  if (!item.otherFor) return true;
+  const parent = item.otherFor;
+  const parentField = form.querySelector(`[name="${parent}"]`);
+  if (!parentField) return false;
+  if (parentField.type === 'select-one') {
+    return parentField.value === 'other';
+  }
+  if (parentField.type === 'radio') {
+    const selected = form.querySelector(`input[name="${parent}"]:checked`);
+    return selected?.value === 'other';
+  }
+  if (parentField.type === 'checkbox') {
+    return parentField.checked;
+  }
+  const multi = form.querySelectorAll(`input[name="${parent}"]:checked`);
+  return Array.from(multi).some(el => el.value === 'other');
+}
+
+function isAnswered(form, item) {
+  if (!item.required) return true;
+  const field = form.querySelector(`[name="${item.key}"]`);
+  if (!field) return false;
+  if (item.type === 'checkbox-group') {
+    const selected = Array.from(form.querySelectorAll(`input[name="${item.key}"]:checked`));
+    return selected.length > 0;
+  }
+  if (field.type === 'radio') {
+    return !!form.querySelector(`input[name="${item.key}"]:checked`);
+  }
+  if (field.type === 'checkbox') {
+    return field.checked;
+  }
+  return field.value.trim() !== '';
+}
+
+function updateProgress(form, config, node) {
+  const visibleRequired = config.filter(item => item.required && isQuestionVisible(form, item));
+  const answered = visibleRequired.filter(item => isAnswered(form, item)).length;
+  const pct = visibleRequired.length === 0 ? 0 : Math.round((answered / visibleRequired.length) * 100);
+  node.querySelector('.progress-bar span').style.width = `${pct}%`;
+  node.querySelector('[data-progress-label]').textContent = t('progressLabel')(answered, visibleRequired.length);
+}
+
+function showValidation(element, message) {
+  const container = element.closest('.form-field') || element.parentElement;
+  if (!container) return;
+  let hint = container.querySelector('.invalid-hint');
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.className = 'invalid-hint';
+    container.appendChild(hint);
+  }
+  hint.textContent = message;
+  container.classList.add('invalid-field');
+}
+
+function clearValidation(form) {
+  form.querySelectorAll('.invalid-hint').forEach(el => el.remove());
+  form.querySelectorAll('.invalid-field').forEach(el => el.classList.remove('invalid-field'));
+}
+
+function collectFormData(form, config) {
+  const data = {};
+  config.forEach(item => {
+    const field = form.querySelector(`[name="${item.key}"]`);
+    if (!field) return;
+    if (item.type === 'checkbox-group') {
+      const selected = Array.from(form.querySelectorAll(`input[name="${item.key}"]:checked`)).map(input => input.value);
+      data[item.key] = selected;
+    } else if (field.type === 'radio') {
+      const selected = form.querySelector(`input[name="${item.key}"]:checked`);
+      data[item.key] = selected ? selected.value : '';
+    } else if (field.type === 'checkbox') {
+      data[item.key] = field.checked;
+    } else {
+      data[item.key] = field.value.trim();
+    }
+  });
+  return data;
+}
+
+function restoreFormData(form, config, values) {
+  config.forEach(item => {
+    const field = form.querySelector(`[name="${item.key}"]`);
+    if (!field || values[item.key] === undefined) return;
+    const value = values[item.key];
+    if (item.type === 'checkbox-group' && Array.isArray(value)) {
+      Array.from(form.querySelectorAll(`input[name="${item.key}"]`)).forEach(input => {
+        input.checked = value.includes(input.value);
+      });
+    } else if (field.type === 'radio') {
+      const option = form.querySelector(`input[name="${item.key}"][value="${value}"]`);
+      if (option) option.checked = true;
+    } else if (field.type === 'checkbox') {
+      field.checked = !!value;
+    } else {
+      field.value = value;
+    }
+  });
+}
+
+function attachOtherHandlers(form, config, extendedConfig, progressEl) {
+  config.filter(item => item.otherKey).forEach(item => {
+    const otherField = form.querySelector(`[name="${item.otherKey}"]`);
+    const container = otherField?.closest('[data-other-container]');
+    const update = () => {
+      const visible = isOtherSelected(form, item);
+      if (container) container.style.display = visible ? 'flex' : 'none';
+      if (!visible) {
+        otherField.value = '';
+      }
+      if (progressEl) {
+        updateProgress(form, extendedConfig, progressEl);
+      }
+    };
+    const inputs = form.querySelectorAll(`input[name="${item.key}"]`);
+    inputs.forEach(input => input.addEventListener('change', update, { passive: true }));
+    const select = form.querySelector(`select[name="${item.key}"]`);
+    if (select) select.addEventListener('change', update);
+    update();
+  });
+}
+
+function isOtherSelected(form, item) {
+  if (item.type === 'checkbox-group') {
+    return Array.from(form.querySelectorAll(`input[name="${item.key}"]:checked`)).some(el => el.value === 'other');
+  }
+  if (item.type === 'radio') {
+    const selected = form.querySelector(`input[name="${item.key}"]:checked`);
+    return selected?.value === 'other';
+  }
+  const select = form.querySelector(`select[name="${item.key}"]`);
+  return select?.value === 'other';
+}
+
+function optionLabel(opt) {
+  if (typeof opt.label === 'string') {
+    return t(opt.label);
+  }
+  if (typeof opt.label === 'object') {
+    return opt.label[currentLanguage] ?? opt.label.en ?? opt.label.ar ?? '';
+  }
+  return String(opt.label ?? '');
+}
+
+function buildField(item) {
+  const field = document.createElement('div');
+  field.className = 'form-field';
+  field.dataset.fieldKey = item.key;
+  if (item.otherFor) {
+    field.dataset.otherContainer = '1';
+  }
+  const labelKey = item.label;
+  const labelText = item.otherFor ? t('multiSelectOtherPlaceholder') : t(labelKey);
+  const requiredMark = item.required ? ' *' : '';
+  if (!item.otherFor) {
+    const label = document.createElement('label');
+    label.setAttribute('for', item.key);
+    label.textContent = `${labelText}${requiredMark}`;
+    field.appendChild(label);
+  } else {
+    const label = document.createElement('label');
+    label.textContent = `${labelText}${requiredMark}`;
+    field.appendChild(label);
+  }
+  if (item.type === 'text' || item.type === 'number' || item.type === 'email' || item.type === 'tel') {
+    const input = document.createElement('input');
+    input.type = item.type === 'text' ? 'text' : item.type;
+    input.name = item.key;
+    input.id = item.key;
+    if (item.type !== 'text') input.classList.add('ltr-only');
+    if (item.min !== undefined) input.min = item.min;
+    if (item.step !== undefined) input.step = item.step;
+    field.appendChild(input);
+  } else if (item.type === 'textarea') {
+    const textarea = document.createElement('textarea');
+    textarea.name = item.key;
+    textarea.id = item.key;
+    textarea.rows = item.rows || 4;
+    field.appendChild(textarea);
+  } else if (item.type === 'select') {
+    const select = document.createElement('select');
+    select.name = item.key;
+    select.id = item.key;
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.hidden = true;
+    placeholder.textContent = '--';
+    select.appendChild(placeholder);
+    item.options.forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt.value;
+      option.textContent = optionLabel(opt);
+      select.appendChild(option);
+    });
+    field.appendChild(select);
+  } else if (item.type === 'radio') {
+    const group = document.createElement('div');
+    group.className = 'option-group';
+    item.options.forEach(opt => {
+      const label = document.createElement('label');
+      label.className = 'option-chip';
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = item.key;
+      input.value = opt.value;
+      label.appendChild(input);
+      label.append(` ${optionLabel(opt)}`);
+      group.appendChild(label);
+    });
+    field.appendChild(group);
+  } else if (item.type === 'checkbox-group') {
+    const group = document.createElement('div');
+    group.className = 'option-group';
+    group.dataset.multi = 'true';
+    item.options.forEach(opt => {
+      const label = document.createElement('label');
+      label.className = 'option-chip';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.name = item.key;
+      input.value = opt.value;
+      label.appendChild(input);
+      label.append(` ${optionLabel(opt)}`);
+      group.appendChild(label);
+    });
+    field.appendChild(group);
+  }
+  if (item.otherKey) {
+    const otherField = document.createElement('div');
+    otherField.className = 'form-field';
+    otherField.dataset.otherContainer = '1';
+    otherField.style.display = 'none';
+    const label = document.createElement('label');
+    label.textContent = `${t('multiSelectOtherPlaceholder')} *`;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.name = item.otherKey;
+    otherField.appendChild(label);
+    otherField.appendChild(input);
+    field.appendChild(otherField);
+  }
+  return field;
+}
+
+const vendorConfig = [
+  { key: 'company', label: 'vendorCompany', type: 'text', required: true },
+  { key: 'email', label: 'vendorEmail', type: 'email', required: false },
+  { key: 'phone', label: 'vendorPhone', type: 'tel', required: false },
+  { key: 'category', label: 'vendorCategory', type: 'select', required: true, options: [
+    { value: 'home', label: 'optHome' },
+    { value: 'health', label: 'optHealth' },
+    { value: 'car', label: 'optCar' },
+    { value: 'lifestyle', label: 'optLifestyle' }
+  ] },
+  { key: 'aov', label: 'vendorAOV', type: 'number', required: true },
+  { key: 'avg_profit', label: 'vendorProfit', type: 'number', required: true },
+  { key: 'orders_all', label: 'vendorOrdersAll', type: 'select', required: true, options: [
+    { value: '0-10', label: 'optOrders0_10' },
+    { value: '10-20', label: 'optOrders10_20' },
+    { value: '20-40', label: 'optOrders20_40' },
+    { value: '40-80', label: 'optOrders40_80' },
+    { value: '80+', label: 'optOrders80p' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'orders_all_other' },
+  { key: 'orders_profitable', label: 'vendorOrdersProfitable', type: 'select', required: true, options: [
+    { value: '5-10', label: 'opt5_10' },
+    { value: '10-20', label: 'opt10_20' },
+    { value: '20-40', label: 'opt20_40' },
+    { value: '40+', label: 'opt40p' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'orders_profitable_other' },
+  { key: 'min_orders_to_stay', label: 'vendorMinStay', type: 'select', required: true, options: [
+    { value: '1-5', label: 'opt1_5' },
+    { value: '5-10', label: 'opt5_10' },
+    { value: '10-20', label: 'opt10_20' },
+    { value: '20+', label: 'opt20p' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'min_orders_to_stay_other' },
+  { key: 'accept_5_10k', label: 'vendorAccept510', type: 'radio', required: true, options: [
+    { value: 'acceptable', label: 'optAcceptable' },
+    { value: 'neutral', label: 'optNeutral' },
+    { value: 'not-acceptable', label: 'optNotAcceptable' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'accept_5_10k_other' },
+  { key: 'accept_10_20k', label: 'vendorAccept1020', type: 'radio', required: true, options: [
+    { value: 'acceptable', label: 'optAcceptable' },
+    { value: 'neutral', label: 'optNeutral' },
+    { value: 'not-acceptable', label: 'optNotAcceptable' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'accept_10_20k_other' },
+  { key: 'accept_20k_plus', label: 'vendorAccept20Plus', type: 'radio', required: true, options: [
+    { value: 'acceptable', label: 'optAcceptable' },
+    { value: 'neutral', label: 'optNeutral' },
+    { value: 'not-acceptable', label: 'optNotAcceptable' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'accept_20k_plus_other' },
+  { key: 'value_expect', label: 'vendorValueExpect', type: 'checkbox-group', required: true, options: [
+    { value: 'volume', label: 'optGuaranteedVolume' },
+    { value: 'marketing', label: 'optMarketing' },
+    { value: 'premium', label: 'optPremiumCustomers' },
+    { value: 'tools', label: 'optTools' },
+    { value: 'payouts', label: 'optFasterPayouts' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'value_expect_other' },
+  { key: 'leave_reason', label: 'vendorLeaveReason', type: 'radio', required: true, options: [
+    { value: 'commission', label: 'optHighCommission' },
+    { value: 'volume', label: 'optLowVolume' },
+    { value: 'support', label: 'optPoorSupport' },
+    { value: 'competitor', label: 'optBetterOffers' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'leave_reason_other' },
+  { key: 'recommend', label: 'vendorRecommend', type: 'radio', required: true, options: [
+    { value: 'yes', label: 'optYes' },
+    { value: 'no', label: 'optNo' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'recommend_other' },
+  { key: 'notes', label: 'vendorNotes', type: 'textarea', required: false }
+];
+
+const customerConfig = [
+  { key: 'name', label: 'customerName', type: 'text', required: true },
+  { key: 'email', label: 'customerEmail', type: 'email', required: false },
+  { key: 'phone', label: 'customerPhone', type: 'tel', required: false },
+  { key: 'freq', label: 'customerFreq', type: 'radio', required: true, options: [
+    { value: 'weekly', label: 'optWeekly' },
+    { value: 'monthly', label: 'optMonthly' },
+    { value: 'rarely', label: 'optRarely' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'freq_other' },
+  { key: 'cats', label: 'customerCategories', type: 'checkbox-group', required: true, options: [
+    { value: 'home', label: 'optHome' },
+    { value: 'health', label: 'optHealth' },
+    { value: 'car', label: 'optCar' },
+    { value: 'lifestyle', label: 'optLifestyleShort' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'cats_other' },
+  { key: 'ease', label: 'customerEase', type: 'select', required: true, options: [
+    { value: '1', label: { en: '1', ar: '1' } },
+    { value: '2', label: { en: '2', ar: '2' } },
+    { value: '3', label: { en: '3', ar: '3' } },
+    { value: '4', label: { en: '4', ar: '4' } },
+    { value: '5', label: { en: '5', ar: '5' } }
+  ] },
+  { key: 'nps', label: 'customerNps', type: 'select', required: true, options: Array.from({ length: 11 }, (_, i) => ({ value: String(i), label: { en: String(i), ar: String(i) } })) },
+  { key: 'time_save', label: 'customerTimeSave', type: 'radio', required: true, options: [
+    { value: 'much-more', label: 'optMuchMore' },
+    { value: 'slightly-more', label: 'optSlightlyMore' },
+    { value: 'same', label: 'optSame' },
+    { value: 'less', label: 'optLess' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'time_save_other' },
+  { key: 'money_save', label: 'customerMoneySave', type: 'radio', required: true, options: [
+    { value: 'much-more', label: 'optMuchMore' },
+    { value: 'slightly-more', label: 'optSlightlyMore' },
+    { value: 'same', label: 'optSame' },
+    { value: 'less', label: 'optLess' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'money_save_other' },
+  { key: 'wants_services', label: 'customerWants', type: 'textarea', required: false },
+  { key: 'more', label: 'customerMore', type: 'checkbox-group', required: true, options: [
+    { value: 'lower-cost', label: 'optLowerCost' },
+    { value: 'variety', label: 'optMoreVariety' },
+    { value: 'faster', label: 'optFasterBooking' },
+    { value: 'support', label: 'optBetterSupport' },
+    { value: 'loyalty', label: 'optLoyalty' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'more_other' }
+];
+
+const publicConfig = [
+  { key: 'name', label: 'publicName', type: 'text', required: true },
+  { key: 'email', label: 'publicContact', type: 'text', required: false },
+  { key: 'booked_before', label: 'publicBookedBefore', type: 'radio', required: true, options: [
+    { value: 'yes', label: 'optYes' },
+    { value: 'no', label: 'optNo' }
+  ] },
+  { key: 'platforms', label: 'publicPlatforms', type: 'checkbox-group', required: true, options: [
+    { value: 'tamam', label: 'optTamam' },
+    { value: 'urban-company', label: 'optUrban' },
+    { value: 'cafu', label: 'optCafu' },
+    { value: 'justlife', label: 'optJustlife' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'platforms_other', dependsOn: { key: 'booked_before', value: 'yes' } },
+  { key: 'barrier', label: 'publicBarrier', type: 'radio', required: true, options: [
+    { value: 'expensive', label: 'optTooExpensive' },
+    { value: 'trust', label: 'optDontTrust' },
+    { value: 'call', label: 'optPreferCalling' },
+    { value: 'unknown', label: 'optDidntKnow' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'barrier_other', dependsOn: { key: 'booked_before', value: 'no' } },
+  { key: 'top_factor', label: 'publicTopFactor', type: 'checkbox-group', required: true, options: [
+    { value: 'price', label: 'optPrice' },
+    { value: 'speed', label: 'optSpeed' },
+    { value: 'quality', label: 'optQuality' },
+    { value: 'trust', label: 'optTrust' },
+    { value: 'ease', label: 'optEaseUse' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'top_factor_other' },
+  { key: 'first_cat', label: 'publicFirstCategory', type: 'radio', required: true, options: [
+    { value: 'home', label: 'optHome' },
+    { value: 'health', label: 'optHealth' },
+    { value: 'car', label: 'optCar' },
+    { value: 'lifestyle', label: 'optLifestyle' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'first_cat_other' },
+  { key: 'premium', label: 'publicPremium', type: 'radio', required: true, options: [
+    { value: 'yes', label: 'optYes' },
+    { value: 'no', label: 'optNo' },
+    { value: 'maybe', label: 'optMaybe' },
+    { value: 'other', label: 'optOther' }
+  ], otherKey: 'premium_other' },
+  { key: 'why_tamam', label: 'publicWhyTamam', type: 'textarea', required: true }
+];
+function expandConfig(config) {
+  const extended = [];
+  config.forEach(item => {
+    extended.push(item);
+    if (item.otherKey) {
+      extended.push({ key: item.otherKey, label: 'multiSelectOtherPlaceholder', type: 'text', required: true, otherFor: item.key });
+    }
+  });
+  return extended;
+}
+function clearFieldValue(form, item) {
+  const field = form.querySelector(`[name="${item.key}"]`);
+  if (!field) return;
+  if (item.type === 'checkbox-group') {
+    form.querySelectorAll(`input[name="${item.key}"]`).forEach(input => input.checked = false);
+  } else if (field.type === 'radio') {
+    const selected = form.querySelector(`input[name="${item.key}"]:checked`);
+    if (selected) selected.checked = false;
+  } else {
+    field.value = '';
+  }
+}
+
+function createSurveyRoute(key, kind, config, options = {}) {
+  const extendedConfig = expandConfig(config);
+  const routeKey = `surveys/${key}`;
+  const state = { lastValues: null, timerStart: null, elapsedOffset: 0, form: null };
+  const route = {
+    key: routeKey,
+    guard: options.password ? () => requirePassword(options.password) : null,
+    mount(preserve = false) {
+      const completed = localStorage.getItem(STORAGE_KEYS.completed[kind]) === 'true';
+      const app = document.getElementById('app');
+      if (preserve && state.form) {
+        state.lastValues = collectFormData(state.form, extendedConfig);
+      }
+      app.innerHTML = '';
+      if (!preserve) state.elapsedOffset = 0;
+      if (preserve && state.timerStart) {
+        state.elapsedOffset += performance.now() - state.timerStart;
+      }
+      const page = document.createElement('div');
+      page.className = 'page';
+
+      const card = document.createElement('section');
+      card.className = 'section-card glass-card';
+      const heading = document.createElement('h1');
+      heading.textContent = t(options.headingKey || 'headerTitle');
+      card.appendChild(heading);
+
+      if (completed) {
+        const message = document.createElement('div');
+        message.className = 'empty-state';
+        message.textContent = t('toastDuplicate');
+        card.appendChild(message);
+        page.appendChild(card);
+        app.appendChild(page);
+        toast(t('toastDuplicate'));
+        return;
+      }
+
+      const description = document.createElement('p');
+      description.textContent = options.description ? t(options.description) : '';
+      if (description.textContent) card.appendChild(description);
+
+      const form = document.createElement('form');
+      form.className = 'survey-form';
+      const progress = createProgressBar();
+      form.appendChild(progress);
+
+      if (kind === 'vendor') {
+        const commissionList = document.createElement('div');
+        commissionList.className = 'commission-list';
+        commissionList.innerHTML = `<strong>${t('commissionIntro')}</strong><ul><li>${t('commissionHome')}</li><li>${t('commissionCar')}</li><li>${t('commissionHealth')}</li><li>${t('commissionLifestyle')}</li></ul>`;
+        form.appendChild(commissionList);
+        const commissionBlock = document.createElement('div');
+        commissionBlock.className = 'helper-banner';
+        commissionBlock.innerHTML = `<strong>${t('vendorBannerTitle')}</strong><div data-commission-text></div><small>${t('vendorBannerHelper')}</small>`;
+        form.appendChild(commissionBlock);
+      }
+
+      config.forEach(item => {
+        const field = buildField(item);
+        field.dataset.fieldKey = item.key;
+        form.appendChild(field);
+      });
+
+      if (kind === 'vendor') {
+        const helperText = document.createElement('div');
+        helperText.style.fontWeight = '600';
+        helperText.style.marginTop = '8px';
+        helperText.textContent = t('commissionHelper');
+        const refField = form.querySelector('[data-field-key="accept_5_10k"]');
+        if (refField) refField.before(helperText);
+      }
+
+      const submit = document.createElement('button');
+      submit.type = 'submit';
+      submit.className = 'submit-btn';
+      submit.textContent = t('submit');
+      form.appendChild(submit);
+
+      card.appendChild(form);
+      page.appendChild(card);
+      app.appendChild(page);
+
+      attachOtherHandlers(form, config, extendedConfig, progress);
+
+      function handleDependencies() {
+        config.forEach(item => {
+          if (!item.dependsOn) return;
+          const container = form.querySelector(`[data-field-key="${item.key}"]`);
+          if (!container) return;
+          const visible = dependencySatisfied(form, item.dependsOn);
+          container.style.display = visible ? 'flex' : 'none';
+          if (!visible) {
+            clearFieldValue(form, item);
+          }
+        });
+      }
+
+      handleDependencies();
+
+      const dependencySources = new Set(config.filter(item => item.dependsOn).map(item => item.dependsOn.key));
+      dependencySources.forEach(depKey => {
+        form.querySelectorAll(`[name="${depKey}"]`).forEach(input => {
+          input.addEventListener('change', () => {
+            handleDependencies();
+            updateProgress(form, extendedConfig, progress);
+          });
+        });
+      });
+
+      const draftRaw = !preserve ? localStorage.getItem(STORAGE_KEYS.drafts[kind]) : null;
+      if (preserve && state.lastValues) {
+        restoreFormData(form, extendedConfig, state.lastValues);
+      } else if (draftRaw) {
+        try {
+          const draft = JSON.parse(draftRaw);
+          restoreFormData(form, extendedConfig, draft);
+          toast(t('toastDraftRestored'));
+          if (DEBUG) console.log('Draft restored for', kind);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      handleDependencies();
+      updateProgress(form, extendedConfig, progress);
+      state.timerStart = performance.now();
+      state.form = form;
+
+      function autosave() {
+        const data = collectFormData(form, extendedConfig);
+        state.lastValues = data;
+        localStorage.setItem(STORAGE_KEYS.drafts[kind], JSON.stringify(data));
+        updateProgress(form, extendedConfig, progress);
+      }
+
+      form.addEventListener('input', autosave);
+      form.addEventListener('change', autosave);
+
+      if (kind === 'vendor') {
+        const commissionBlock = form.querySelector('.helper-banner');
+        const categorySelect = form.querySelector('[name="category"]');
+        const textNode = commissionBlock?.querySelector('[data-commission-text]');
+        const updateBanner = () => {
+          const value = categorySelect.value;
+          if (value) {
+            textNode.textContent = t('vendorBannerBody')(value);
+            commissionBlock.classList.add('active');
+          } else {
+            textNode.textContent = '';
+            commissionBlock.classList.remove('active');
+          }
+        };
+        categorySelect.addEventListener('change', () => {
+          updateBanner();
+          updateProgress(form, extendedConfig, progress);
+        });
+        updateBanner();
+      }
+
+      form.addEventListener('submit', evt => {
+        evt.preventDefault();
+        clearValidation(form);
+        const invalid = [];
+        extendedConfig.forEach(item => {
+          if (!item.required) return;
+          if (!isQuestionVisible(form, item)) return;
+          const field = form.querySelector(`[name="${item.key}"]`);
+          if (!field) return;
+          if (item.type === 'checkbox-group') {
+            const selected = Array.from(form.querySelectorAll(`input[name="${item.key}"]:checked`));
+            if (selected.length === 0) {
+              invalid.push(field);
+              showValidation(field.closest('.form-field'), t('validationRequired'));
+            }
+          } else if (field.type === 'radio') {
+            const selected = form.querySelector(`input[name="${item.key}"]:checked`);
+            if (!selected) {
+              invalid.push(field);
+              showValidation(field.closest('.form-field'), t('validationRequired'));
+            }
+          } else {
+            if (field.value.trim() === '') {
+              invalid.push(field);
+              showValidation(field, t('validationRequired'));
+            }
+          }
+        });
+        if (invalid.length > 0) {
+          const first = invalid[0];
+          if (first) first.focus();
+          return;
+        }
+        const seconds = Math.round(((performance.now() - state.timerStart) + state.elapsedOffset) / 1000);
+        const payload = collectFormData(form, extendedConfig);
+        payload.ts = new Date().toISOString();
+        payload.seconds = seconds;
+        const db = getDB();
+        db[kind].push(payload);
+        saveDB(db);
+        if (window.TAMAM_BACKEND === 'netlifyForms') {
+          postToNetlify(kind, payload);
+        }
+        localStorage.removeItem(STORAGE_KEYS.drafts[kind]);
+        localStorage.setItem(STORAGE_KEYS.completed[kind], 'true');
+        state.elapsedOffset = 0;
+        state.timerStart = null;
+        document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind } }));
+        toast(t('toastSubmitted'));
+        if (DEBUG) console.log('Submission stored for', kind, payload);
+        location.hash = '#/surveys/thanks';
+      });
+    },
+    unmount() {
+      if (state.form) {
+        state.lastValues = collectFormData(state.form, extendedConfig);
+      }
+      if (state.timerStart) {
+        state.elapsedOffset += performance.now() - state.timerStart;
+      }
+      state.form = null;
+      state.timerStart = null;
+    },
+    refresh() {
+      this.mount(true);
+    }
+  };
+  return route;
+}
+ROUTES['surveys/vendors'] = createSurveyRoute('vendors', 'vendor', vendorConfig, { password: 'vendors', headingKey: 'navVendors' });
+ROUTES['surveys/customers'] = createSurveyRoute('customers', 'customer', customerConfig, { password: 'customers', headingKey: 'navCustomers' });
+ROUTES['surveys/public'] = createSurveyRoute('public', 'public', publicConfig, { headingKey: 'navPublic' });
+ROUTES['surveys/thanks'] = {
+  key: 'surveys/thanks',
+  mount() {
+    const app = document.getElementById('app');
+    app.innerHTML = '';
+    const page = document.createElement('div');
+    page.className = 'page';
+    const card = document.createElement('section');
+    card.className = 'thanks-card glass-card';
+    card.innerHTML = `<h1>${t('thanksTitle')}</h1><p>${t('thanksBody')}</p><p><a href="#/surveys" class="social-link">${t('thanksBack')}</a></p>`;
+    page.appendChild(card);
+    app.appendChild(page);
+  },
+  unmount() {}
+};
+const resultsSettings = {
+  vendor: {
+    titleKey: 'tabVendor',
+    config: vendorConfig,
+    columns: [
+      { key: 'company', label: 'vendorCompany' },
+      { key: 'email', label: 'vendorEmail' },
+      { key: 'phone', label: 'vendorPhone' },
+      { key: 'category', label: 'vendorCategory' },
+      { key: 'aov', label: 'vendorAOV' },
+      { key: 'avg_profit', label: 'vendorProfit' },
+      { key: 'orders_all', label: 'vendorOrdersAll' },
+      { key: 'orders_all_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'orders_profitable', label: 'vendorOrdersProfitable' },
+      { key: 'orders_profitable_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'min_orders_to_stay', label: 'vendorMinStay' },
+      { key: 'min_orders_to_stay_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'accept_5_10k', label: 'vendorAccept510' },
+      { key: 'accept_5_10k_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'accept_10_20k', label: 'vendorAccept1020' },
+      { key: 'accept_10_20k_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'accept_20k_plus', label: 'vendorAccept20Plus' },
+      { key: 'accept_20k_plus_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'value_expect', label: 'vendorValueExpect' },
+      { key: 'value_expect_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'leave_reason', label: 'vendorLeaveReason' },
+      { key: 'leave_reason_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'recommend', label: 'vendorRecommend' },
+      { key: 'recommend_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'notes', label: 'vendorNotes' },
+      { key: 'seconds', label: 'secondsLabel' },
+      { key: 'ts', label: 'timestampLabel' }
+    ],
+    openText: ['notes'],
+    otherFields: ['orders_all_other','orders_profitable_other','min_orders_to_stay_other','accept_5_10k_other','accept_10_20k_other','accept_20k_plus_other','value_expect_other','leave_reason_other','recommend_other']
+  },
+  customer: {
+    titleKey: 'tabCustomer',
+    config: customerConfig,
+    columns: [
+      { key: 'name', label: 'customerName' },
+      { key: 'email', label: 'customerEmail' },
+      { key: 'phone', label: 'customerPhone' },
+      { key: 'freq', label: 'customerFreq' },
+      { key: 'freq_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'cats', label: 'customerCategories' },
+      { key: 'cats_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'ease', label: 'customerEase' },
+      { key: 'nps', label: 'customerNps' },
+      { key: 'time_save', label: 'customerTimeSave' },
+      { key: 'time_save_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'money_save', label: 'customerMoneySave' },
+      { key: 'money_save_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'wants_services', label: 'customerWants' },
+      { key: 'more', label: 'customerMore' },
+      { key: 'more_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'seconds', label: 'secondsLabel' },
+      { key: 'ts', label: 'timestampLabel' }
+    ],
+    openText: ['wants_services'],
+    otherFields: ['freq_other','cats_other','time_save_other','money_save_other','more_other']
+  },
+  public: {
+    titleKey: 'tabPublic',
+    config: publicConfig,
+    columns: [
+      { key: 'name', label: 'publicName' },
+      { key: 'email', label: 'publicContact' },
+      { key: 'booked_before', label: 'publicBookedBefore' },
+      { key: 'platforms', label: 'publicPlatforms' },
+      { key: 'platforms_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'barrier', label: 'publicBarrier' },
+      { key: 'barrier_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'top_factor', label: 'publicTopFactor' },
+      { key: 'top_factor_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'first_cat', label: 'publicFirstCategory' },
+      { key: 'first_cat_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'premium', label: 'publicPremium' },
+      { key: 'premium_other', label: 'multiSelectOtherPlaceholder' },
+      { key: 'why_tamam', label: 'publicWhyTamam' },
+      { key: 'seconds', label: 'secondsLabel' },
+      { key: 'ts', label: 'timestampLabel' }
+    ],
+    openText: ['why_tamam'],
+    otherFields: ['platforms_other','barrier_other','top_factor_other','first_cat_other','premium_other']
+  }
+};
+
+function formatValue(value) {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean).join(', ');
+  }
+  if (value === undefined || value === null) return '';
+  return String(value);
+}
+
+function fieldLabel(kind, key) {
+  if (key === 'seconds') return t('secondsLabel');
+  if (key === 'ts') return t('timestampLabel');
+  const settings = resultsSettings[kind];
+  if (!settings) return t(key) || key;
+  const direct = settings.config.find(item => item.key === key);
+  if (direct) return t(direct.label);
+  const other = settings.config.find(item => item.otherKey === key);
+  if (other) return `${t(other.label)} - ${t('optOther')}`;
+  if (key === 'company') return t('vendorCompany');
+  if (key === 'name') return t('customerName');
+  if (key === 'email') return t('customerEmail');
+  if (key === 'phone') return t('customerPhone');
+  return t(key) || key;
+}
+
+function formatOption(kind, key, value) {
+  if (!value) return '';
+  const settings = resultsSettings[kind];
+  const configItem = settings.config.find(item => item.key === key);
+  if (!configItem) return value;
+  const option = (configItem.options || []).find(opt => opt.value === value);
+  if (!option) return value;
+  return optionLabel(option);
+}
+
+function formatArrayOptions(kind, key, values) {
+  if (!Array.isArray(values)) return formatOption(kind, key, values);
+  const settings = resultsSettings[kind];
+  const configItem = settings.config.find(item => item.key === key);
+  if (!configItem) return values.join(', ');
+  return values.map(val => {
+    const opt = (configItem.options || []).find(o => o.value === val);
+    if (!opt) return val;
+    return optionLabel(opt);
+  }).join(', ');
+}
+
+function computeVendorKPIs(entries) {
+  const count = entries.length;
+  const orderMap = { '0-10': 5, '10-20': 15, '20-40': 30, '40-80': 60, '80+': 90 };
+  const avgOrders = count ? (entries.map(e => orderMap[e.orders_all] || 0).reduce((a,b)=>a+b,0) / count).toFixed(1) : '0';
+  const avgProfit = count ? (entries.map(e => parseFloat(e.avg_profit || 0)).reduce((a,b)=>a+b,0) / count).toFixed(1) : '0';
+  const acceptance = count ? Math.round((entries.filter(e => e.accept_10_20k === 'acceptable').length / count) * 100) : 0;
+  return [
+    { label: t('kpiCount'), value: count },
+    { label: t('kpiAvgOrders'), value: avgOrders },
+    { label: t('vendorProfit'), value: `${avgProfit}%` },
+    { label: t('kpiPositive'), value: `${acceptance}%` }
+  ];
+}
+
+function computeCustomerKPIs(entries) {
+  const count = entries.length;
+  const avgEase = count ? (entries.map(e => parseInt(e.ease || 0, 10)).reduce((a,b)=>a+b,0) / count).toFixed(1) : '0';
+  const avgNps = count ? (entries.map(e => parseInt(e.nps || 0, 10)).reduce((a,b)=>a+b,0) / count).toFixed(1) : '0';
+  const promoters = count ? Math.round((entries.filter(e => ['much-more','slightly-more'].includes(e.time_save)).length / count) * 100) : 0;
+  return [
+    { label: t('kpiCount'), value: count },
+    { label: t('kpiAvgEase'), value: avgEase },
+    { label: t('kpiAvgNps'), value: avgNps },
+    { label: t('kpiPositive'), value: `${promoters}%` }
+  ];
+}
+
+function computePublicKPIs(entries) {
+  const count = entries.length;
+  const booked = count ? Math.round((entries.filter(e => e.booked_before === 'yes').length / count) * 100) : 0;
+  const willing = count ? Math.round((entries.filter(e => ['yes','maybe'].includes(e.premium)).length / count) * 100) : 0;
+  return [
+    { label: t('kpiCount'), value: count },
+    { label: t('publicBookedBefore'), value: `${booked}%` },
+    { label: t('publicPremium'), value: `${willing}%` }
+  ];
+}
+
+function buildKPIGrid(container, items) {
+  container.innerHTML = '';
+  container.className = 'stats-grid';
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.innerHTML = `<span>${item.label}</span><strong style="font-size:1.4rem;">${item.value}</strong>`;
+    container.appendChild(card);
+  });
+}
+
+function chartId(kind, key) {
+  return `${kind}-${key}-chart`;
+}
+
+function renderCharts(container, kind, entries) {
+  container.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'chart-grid';
+  const config = resultsSettings[kind].config;
+  config.forEach(item => {
+    if (!item.options) return;
+    const dataMap = new Map();
+    const isMulti = item.type === 'checkbox-group';
+    entries.forEach(entry => {
+      const value = entry[item.key];
+      if (!value) return;
+      if (isMulti && Array.isArray(value)) {
+        value.forEach(val => {
+          const opt = (item.options || []).find(o => o.value === val);
+          const label = optionLabel(opt || { label: val });
+          dataMap.set(label, (dataMap.get(label) || 0) + 1);
+        });
+      } else {
+        const opt = (item.options || []).find(o => o.value === value);
+        const label = optionLabel(opt || { label: value });
+        dataMap.set(label, (dataMap.get(label) || 0) + 1);
+      }
+    });
+    if (dataMap.size === 0) return;
+    const canvas = document.createElement('canvas');
+    const section = document.createElement('div');
+    section.className = 'glass-card';
+    section.style.padding = '20px';
+    section.innerHTML = `<h3 style="margin-top:0;">${t(item.label)}</h3>`;
+    section.appendChild(canvas);
+    grid.appendChild(section);
+    const labels = Array.from(dataMap.keys());
+    const values = Array.from(dataMap.values());
+    const chart = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: t(item.label),
+          data: values,
+          backgroundColor: '#5a5df0'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: { ticks: { callback: function(value, idx) { return labels[idx]; }, autoSkip: false } },
+          y: { beginAtZero: true, precision: 0 }
+        }
+      }
+    });
+    ChartsRegistry.set(chartId(kind, item.key), chart);
+  });
+  container.appendChild(grid);
+}
+
+function buildTextLists(container, entries, kind) {
+  container.innerHTML = '';
+  const settings = resultsSettings[kind];
+  const otherLabel = key => {
+    const parent = settings.config.find(item => item.otherKey === key);
+    if (parent) return `${t(parent.label)} - ${t('optOther')}`;
+    return key;
+  };
+  const openSection = document.createElement('div');
+  openSection.className = 'open-text-section';
+  openSection.innerHTML = `<h3>${t('openTextHeader')}</h3>`;
+  let hasOpen = false;
+  settings.openText.forEach(key => {
+    entries.forEach(entry => {
+      const value = entry[key];
+      if (value) {
+        hasOpen = true;
+        openSection.appendChild(createTextItem(value));
+      }
+    });
+  });
+  if (!hasOpen) {
+    const empty = document.createElement('div');
+    empty.className = 'text-item';
+    empty.textContent = t('otherNone');
+    openSection.appendChild(empty);
+  }
+  container.appendChild(openSection);
+
+  const otherSection = document.createElement('div');
+  otherSection.className = 'open-text-section';
+  otherSection.innerHTML = `<h3>${t('otherHeader')}</h3>`;
+  let hasOther = false;
+  settings.otherFields.forEach(key => {
+    entries.forEach(entry => {
+      const value = entry[key];
+      if (value) {
+        hasOther = true;
+        otherSection.appendChild(createTextItem(`${otherLabel(key)}: ${value}`));
+      }
+    });
+  });
+  if (!hasOther) {
+    const empty = document.createElement('div');
+    empty.className = 'text-item';
+    empty.textContent = t('otherNone');
+    otherSection.appendChild(empty);
+  }
+  container.appendChild(otherSection);
+}
+
+function createTextItem(text) {
+  const item = document.createElement('div');
+  item.className = 'text-item';
+  const span = document.createElement('span');
+  span.textContent = text;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'copy-btn';
+  btn.textContent = t('copy');
+  btn.addEventListener('click', () => {
+    navigator.clipboard?.writeText(text).then(() => toast(t('toastCopied')));
+  });
+  item.appendChild(span);
+  item.appendChild(btn);
+  return item;
+}
+
+function buildTable(container, entries, kind) {
+  container.innerHTML = '';
+  const settings = resultsSettings[kind];
+  const controls = document.createElement('div');
+  controls.className = 'table-controls';
+  const search = document.createElement('input');
+  search.className = 'search-input';
+  search.setAttribute('placeholder', t('tableSearchPlaceholder'));
+  controls.appendChild(search);
+  const sortDate = document.createElement('button');
+  sortDate.className = 'sort-btn';
+  sortDate.textContent = t('sortDate');
+  controls.appendChild(sortDate);
+  const sortName = document.createElement('button');
+  sortName.className = 'sort-btn';
+  sortName.textContent = t('sortName');
+  controls.appendChild(sortName);
+  container.appendChild(controls);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap glass-card';
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+  settings.columns.forEach(col => {
+    const th = document.createElement('th');
+    th.textContent = t(col.label);
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  container.appendChild(wrap);
+
+  let currentData = [...entries];
+
+  function renderRows() {
+    tbody.innerHTML = '';
+    if (currentData.length === 0) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = settings.columns.length;
+      cell.textContent = t('noResponses');
+      row.appendChild(cell);
+      tbody.appendChild(row);
+      return;
+    }
+    currentData.forEach(entry => {
+      const row = document.createElement('tr');
+      settings.columns.forEach(col => {
+        const td = document.createElement('td');
+        const value = entry[col.key];
+        if (Array.isArray(value)) {
+          td.textContent = formatArrayOptions(kind, col.key, value);
+        } else if (col.key === 'ts') {
+          td.textContent = value ? new Date(value).toLocaleString() : '';
+        } else if (['orders_all','orders_profitable','min_orders_to_stay','accept_5_10k','accept_10_20k','accept_20k_plus','leave_reason','recommend','freq','time_save','money_save','more','category','booked_before','barrier','top_factor','first_cat','premium','platforms'].includes(col.key)) {
+          td.textContent = formatArrayOptions(kind, col.key, Array.isArray(value) ? value : [value]).replace(/, /g, currentLanguage === 'ar' ? '، ' : ', ');
+        } else {
+          td.textContent = formatValue(value);
+        }
+        row.appendChild(td);
+      });
+      row.addEventListener('click', () => openDetailModal(kind, entry));
+      tbody.appendChild(row);
+    });
+  }
+
+  function applySearch() {
+    const query = search.value.toLowerCase();
+    if (!query) {
+      currentData = [...entries];
+    } else {
+      currentData = entries.filter(entry => {
+        return ['company','name','email','phone','category'].some(key => (entry[key] || '').toString().toLowerCase().includes(query));
+      });
+    }
+    renderRows();
+  }
+
+  search.addEventListener('input', applySearch);
+  sortDate.addEventListener('click', () => {
+    currentData.sort((a,b) => new Date(b.ts || 0) - new Date(a.ts || 0));
+    renderRows();
+  });
+  sortName.addEventListener('click', () => {
+    currentData.sort((a,b) => ((a.company || a.name || '')).localeCompare(b.company || b.name || ''));
+    renderRows();
+  });
+  renderRows();
+}
+
+function openDetailModal(kind, entry) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  const inner = document.createElement('div');
+  inner.className = 'modal';
+  inner.innerHTML = `<button class="close-btn" aria-label="Close">×</button><h3>${t('detailTitle')(kind)}</h3>`;
+  const list = document.createElement('div');
+  list.className = 'open-text-section';
+  Object.entries(entry).forEach(([key, value]) => {
+    const item = document.createElement('div');
+    item.className = 'text-item';
+    const label = document.createElement('strong');
+    label.textContent = fieldLabel(kind, key);
+    const span = document.createElement('span');
+    if (Array.isArray(value)) {
+      span.textContent = formatArrayOptions(kind, key, value);
+    } else if (key === 'ts') {
+      span.textContent = value ? new Date(value).toLocaleString() : '';
+    } else if (['orders_all','orders_profitable','min_orders_to_stay','accept_5_10k','accept_10_20k','accept_20k_plus','leave_reason','recommend','freq','time_save','money_save','more','category','booked_before','barrier','top_factor','first_cat','premium','platforms'].includes(key)) {
+      span.textContent = formatArrayOptions(kind, key, [value]);
+    } else {
+      span.textContent = value ?? '';
+    }
+    item.appendChild(label);
+    item.appendChild(span);
+    list.appendChild(item);
+  });
+  inner.appendChild(list);
+  modal.appendChild(inner);
+  document.body.appendChild(modal);
+  modal.querySelector('.close-btn').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', e => {
+    if (e.target === modal) modal.remove();
+  });
+}
+
+function renderResults(kind, container) {
+  clearCharts();
+  const db = getDB();
+  const entries = db[kind] || [];
+  container.innerHTML = '';
+  const heading = document.createElement('h2');
+  heading.textContent = t(resultsSettings[kind].titleKey);
+  container.appendChild(heading);
+  if (entries.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = t('noResponses');
+    container.appendChild(empty);
+    return;
+  }
+  const kpiContainer = document.createElement('div');
+  container.appendChild(kpiContainer);
+  if (kind === 'vendor') buildKPIGrid(kpiContainer, computeVendorKPIs(entries));
+  if (kind === 'customer') buildKPIGrid(kpiContainer, computeCustomerKPIs(entries));
+  if (kind === 'public') buildKPIGrid(kpiContainer, computePublicKPIs(entries));
+
+  const chartContainer = document.createElement('div');
+  container.appendChild(chartContainer);
+  renderCharts(chartContainer, kind, entries);
+
+  const textContainer = document.createElement('div');
+  container.appendChild(textContainer);
+  buildTextLists(textContainer, entries, kind);
+
+  const tableContainer = document.createElement('div');
+  container.appendChild(tableContainer);
+  buildTable(tableContainer, entries, kind);
+}
+
+function exportJSON() {
+  const db = getDB();
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'tamam-research.json';
+  link.click();
+  URL.revokeObjectURL(url);
+  toast(t('toastExported'));
+}
+
+function exportExcel() {
+  const db = getDB();
+  const wb = XLSX.utils.book_new();
+  ['vendor','customer','public'].forEach(kind => {
+    const data = db[kind] || [];
+    const rows = data.map(entry => {
+      const row = { ...entry };
+      Object.keys(row).forEach(key => {
+        if (Array.isArray(row[key])) row[key] = row[key].join(', ');
+      });
+      return row;
+    });
+    const sheet = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, sheet, kind.charAt(0).toUpperCase() + kind.slice(1));
+  });
+  const now = new Date();
+  const stamp = now.toISOString().replace(/[-:T]/g, '').slice(0, 12);
+  XLSX.writeFile(wb, `tamam-research-export-${stamp}.xlsx`);
+  toast(t('toastExported'));
+}
+
+function importJSONFile(file, onComplete) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const imported = JSON.parse(reader.result);
+      const db = getDB();
+      ['vendor','customer','public'].forEach(kind => {
+        if (Array.isArray(imported[kind])) {
+          db[kind] = db[kind].concat(imported[kind]);
+        }
+      });
+      saveDB(db);
+      document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'all' } }));
+      toast(t('toastImportSuccess'));
+      if (onComplete) onComplete();
+    } catch (err) {
+      console.error(err);
+      toast(t('toastError'));
+    }
+  };
+  reader.readAsText(file);
+}
+
+function backupAndReset() {
+  exportJSON();
+  exportExcel();
+  localStorage.removeItem(STORAGE_KEYS.db);
+  Object.values(STORAGE_KEYS.drafts).forEach(key => localStorage.removeItem(key));
+  Object.values(STORAGE_KEYS.completed).forEach(key => localStorage.removeItem(key));
+  initDB();
+  toast(t('toastReset'));
+  document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'all' } }));
+}
+
+function postToNetlify(kind, payload) {
+  const formName = `tamam-${kind}`;
+  const body = new URLSearchParams();
+  body.append('form-name', formName);
+  body.append('data', JSON.stringify(payload));
+  fetch('/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString()
+  }).catch(err => {
+    if (DEBUG) console.warn('Netlify post failed', err);
+  });
+}
+
+ROUTES['surveys/results'] = {
+  key: 'surveys/results',
+  guard: () => requirePassword('results'),
+  mount() {
+    const app = document.getElementById('app');
+    app.innerHTML = '';
+    const page = document.createElement('div');
+    page.className = 'page';
+    const header = document.createElement('section');
+    header.className = 'section-card glass-card';
+    header.innerHTML = `<h1>${t('resultsTitle')}</h1>`;
+    const actions = document.createElement('div');
+    actions.className = 'results-actions';
+    const refreshBtn = document.createElement('button');
+    refreshBtn.className = 'action-btn';
+    refreshBtn.textContent = t('refresh');
+    actions.appendChild(refreshBtn);
+    const exportExcelBtn = document.createElement('button');
+    exportExcelBtn.className = 'action-btn';
+    exportExcelBtn.textContent = t('exportExcel');
+    actions.appendChild(exportExcelBtn);
+    const exportJsonBtn = document.createElement('button');
+    exportJsonBtn.className = 'action-btn';
+    exportJsonBtn.textContent = t('exportJson');
+    actions.appendChild(exportJsonBtn);
+    const importBtn = document.createElement('button');
+    importBtn.className = 'action-btn';
+    importBtn.textContent = t('importJson');
+    actions.appendChild(importBtn);
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'action-btn';
+    resetBtn.textContent = t('resetAll');
+    actions.appendChild(resetBtn);
+    header.appendChild(actions);
+    page.appendChild(header);
+
+    const tabs = document.createElement('div');
+    tabs.className = 'tabs';
+    const content = document.createElement('section');
+    content.className = 'section-card glass-card';
+    const tabContent = document.createElement('div');
+    content.appendChild(tabContent);
+
+    const kinds = ['vendor','customer','public'];
+    let activeKind = 'vendor';
+    function renderTabs() {
+      tabs.innerHTML = '';
+      kinds.forEach(kind => {
+        const btn = document.createElement('button');
+        btn.textContent = t(resultsSettings[kind].titleKey);
+        btn.classList.toggle('active', kind === activeKind);
+        btn.addEventListener('click', () => {
+          activeKind = kind;
+          renderTabs();
+          renderResults(kind, tabContent);
+        });
+        tabs.appendChild(btn);
+      });
+    }
+    renderTabs();
+    renderResults(activeKind, tabContent);
+
+    refreshBtn.addEventListener('click', () => {
+      renderResults(activeKind, tabContent);
+    });
+    exportExcelBtn.addEventListener('click', exportExcel);
+    exportJsonBtn.addEventListener('click', exportJSON);
+    importBtn.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json,application/json';
+      input.addEventListener('change', () => {
+        if (input.files?.length) {
+          importJSONFile(input.files[0], () => renderResults(activeKind, tabContent));
+        }
+      }, { once: true });
+      input.click();
+    });
+    resetBtn.addEventListener('click', () => {
+      backupAndReset();
+      renderResults(activeKind, tabContent);
+    });
+
+    page.appendChild(tabs);
+    page.appendChild(content);
+    app.appendChild(page);
+  },
+  unmount() {
+    clearCharts();
+  },
+  refresh() {
+    this.mount();
+  }
+};
+initDB();
+setTheme(currentTheme);
+applyLanguage();
+initRouter();
+
+document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+document.getElementById('langToggle').addEventListener('click', toggleLanguage);
+
+document.addEventListener('tamam:dataUpdated', () => {
+  if (currentRoute && currentRoute.key === 'surveys/results') {
+    currentRoute.mount();
+  }
+});
+
+</script>
+</body>
+</html>
