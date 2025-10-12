@@ -351,6 +351,16 @@
       object-fit: cover;
       filter: saturate(1.15) brightness(1.08);
     }
+    .hero-overlay {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      min-height: clamp(240px, 38vw, 360px);
+      text-align: center;
+    }
     .hero-title {
       font-size: clamp(36px, 6vw, 52px);
       font-weight: 600;
@@ -358,10 +368,40 @@
     }
     .hero-sub {
       margin: 0 auto;
-      max-width: 640px;
+      max-width: min(640px, 90%);
       font-size: clamp(18px, 2.4vw, 22px);
-      color: rgba(255,255,255,0.82);
-      text-shadow: 0 8px 32px rgba(10,12,20,0.35);
+      color: var(--fg-muted-contrast);
+      text-shadow: 0 10px 30px rgba(8,10,24,0.35);
+      line-height: 1.6;
+    }
+    .hero-audio {
+      border: 1px solid rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.28);
+      color: var(--fg-contrast);
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-weight: 500;
+      transition: transform 200ms ease, background 200ms ease, opacity 220ms ease;
+      box-shadow: 0 18px 38px rgba(36,46,88,0.28);
+    }
+    [data-theme="dark"] .hero-audio {
+      background: rgba(18,20,34,0.55);
+      border-color: rgba(255,255,255,0.18);
+      box-shadow: 0 20px 46px rgba(4,6,18,0.55);
+    }
+    .hero-audio:not([hidden]) {
+      opacity: 0.94;
+    }
+    .hero-audio:hover {
+      transform: translateY(-2px) scale(1.02);
+      background: rgba(255,255,255,0.42);
+    }
+    .hero-audio:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+    .hero-audio:active {
+      transform: translateY(1px) scale(0.98);
     }
     @keyframes heroGlow {
       0% { transform: translate3d(-8%, -6%, 0); }
@@ -1196,6 +1236,12 @@
   const DEBUG = false;
   const logDebug = (...args) => { if (DEBUG) console.log('[Tamam]', ...args); };
 
+  const DEFAULT_BACKEND = (window.TAMAM_BACKEND || 'netlify').toLowerCase();
+  const DEFAULT_HOSTINGER = {
+    submit: window.TAMAM_HOSTINGER_ENDPOINT || '',
+    exportUrl: window.TAMAM_HOSTINGER_EXPORT || ''
+  };
+
   const NAV_ITEMS = [
     { hash: '#/surveys', key: 'navHome' },
     { hash: '#/surveys/vendors', key: 'navVendors' },
@@ -1218,20 +1264,36 @@
   function loadRemoteConfig() {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.remoteConfig);
-      if (!raw) return { siteId: '', token: '' };
-      const parsed = JSON.parse(raw);
+      const parsed = raw ? JSON.parse(raw) : {};
+      const backend = (parsed.backend || DEFAULT_BACKEND || 'netlify').toLowerCase();
       return {
-        siteId: parsed.siteId || '',
-        token: parsed.token || ''
+        backend,
+        netlify: {
+          siteId: parsed?.netlify?.siteId || parsed?.siteId || '',
+          token: parsed?.netlify?.token || parsed?.token || ''
+        },
+        hostinger: {
+          submit: parsed?.hostinger?.submit || DEFAULT_HOSTINGER.submit || '',
+          exportUrl: parsed?.hostinger?.exportUrl || DEFAULT_HOSTINGER.exportUrl || ''
+        }
       };
     } catch (e) {
       logDebug('Remote config parse failed', e);
-      return { siteId: '', token: '' };
+      return {
+        backend: DEFAULT_BACKEND,
+        netlify: { siteId: '', token: '' },
+        hostinger: { ...DEFAULT_HOSTINGER }
+      };
     }
   }
 
   function saveRemoteConfig(config) {
-    localStorage.setItem(STORAGE_KEYS.remoteConfig, JSON.stringify(config));
+    const payload = {
+      backend: config.backend,
+      netlify: { ...config.netlify },
+      hostinger: { ...config.hostinger }
+    };
+    localStorage.setItem(STORAGE_KEYS.remoteConfig, JSON.stringify(payload));
   }
 
   const I18N = {
@@ -1246,6 +1308,10 @@
       introBody: 'To better understand how vendors, customers, and the public perceive Tamam\'s commission and subscription models, and to improve fairness and affordability for all.',
       heroTitle: 'Meet Tamam.',
       heroSub: 'A super-app connecting users to trusted Home, Car, Health, and Lifestyle services across the UAE.',
+      heroAudioButton: 'Enable sound',
+      heroAudioHint: 'Video is playing muted. Tap to enable sound.',
+      heroAudioPlaying: 'Sound on. Enjoy the full experience.',
+      heroAudioUnavailable: 'Unable to enable sound automatically.',
       getTamam: 'Get Tamam & Follow Us',
       ctaDownload: 'Download the Tamam app',
       ctaFollow: 'Follow Tamam online',
@@ -1383,23 +1449,33 @@
       confirmReset: 'Export a backup and clear this device?',
       refreshData: 'Refresh data',
       connectNetlify: 'Connect Netlify',
-      netlifyConfigTitle: 'Remote data sync',
+      remoteConfigTitle: 'Remote data sync',
+      backendMode: 'Select backend',
+      backendNetlify: 'Netlify Forms',
+      backendHostinger: 'Hostinger endpoint',
       netlifySiteId: 'Netlify Site ID',
       netlifyToken: 'Netlify access token',
       netlifyConfigNote: 'Stored locally on this device. Required to pull live submissions from Netlify Forms.',
+      hostingerSubmitEndpoint: 'Hostinger submit endpoint (POST)',
+      hostingerExportEndpoint: 'Hostinger export endpoint (GET JSON)',
+      hostingerConfigNote: 'Provide HTTPS endpoints that accept/return Tamam survey payloads.',
       saveConfig: 'Save',
       cancel: 'Cancel',
       remoteConfigSaved: 'Sync preferences saved.',
       remoteConfigMissing: 'Add your Netlify Site ID and token first.',
+      hostingerConfigMissing: 'Add your Hostinger submit and export endpoints first.',
       syncingRemote: 'Syncing remote data…',
       syncComplete: 'Remote responses synced.',
       syncFailed: 'Unable to sync remote data.',
       remoteStatusSyncing: 'Syncing remote data…',
       remoteStatusIdle: 'Connect Netlify to view live results.',
+      hostingerStatusIdle: 'Add Hostinger endpoints to view live results.',
       remoteStatusPending: '{count} submission(s) waiting to sync.',
       remoteStatusSynced: 'Remote sync: {time}',
       remoteStatusReady: 'Remote sync ready.',
       remoteConnectPrompt: 'Connect Netlify to view live results.',
+      hostingerConnectPrompt: 'Add Hostinger endpoints to sync results.',
+      openHostingerConfig: 'Configure Hostinger',
       resultsSummary: 'Performance snapshot',
       resultsCharts: 'Trends & distributions',
       chartsEmpty: 'Charts will appear once submissions arrive.',
@@ -1463,6 +1539,10 @@
       introBody: 'لفهم أفضل لكيفية رؤية الشركاء والعملاء والجمهور لعمولات تمام ورسوم الاشتراك، ولتحسين العدالة وتكلفة الخدمة للجميع.',
       heroTitle: 'تعرّف على تمام.',
       heroSub: 'تطبيق فائق يربط المستخدمين بخدمات موثوقة للمنزل والسيارة والصحة ونمط الحياة في جميع أنحاء الإمارات.',
+      heroAudioButton: 'تشغيل الصوت',
+      heroAudioHint: 'يتم تشغيل الفيديو دون صوت. اضغط لتفعيل الصوت.',
+      heroAudioPlaying: 'تم تشغيل الصوت. استمتع بالتجربة.',
+      heroAudioUnavailable: 'تعذر تشغيل الصوت تلقائياً.',
       getTamam: 'حمّل تمام وتابعنا',
       ctaDownload: 'حمّل تطبيق تمام',
       ctaFollow: 'تابع تمام عبر القنوات الرقمية',
@@ -1600,23 +1680,33 @@
       confirmReset: 'هل تريد حفظ نسخة احتياطية ثم مسح بيانات هذا الجهاز؟',
       refreshData: 'تحديث البيانات',
       connectNetlify: 'ربط Netlify',
-      netlifyConfigTitle: 'مزامنة البيانات عن بُعد',
+      remoteConfigTitle: 'مزامنة البيانات عن بُعد',
+      backendMode: 'اختر الجهة الخلفية',
+      backendNetlify: 'نماذج Netlify',
+      backendHostinger: 'نقطة Hostinger',
       netlifySiteId: 'معرّف موقع Netlify',
       netlifyToken: 'رمز الوصول لـ Netlify',
       netlifyConfigNote: 'يُخزن هذا الرمز محليًا على هذا الجهاز فقط. يلزم لجلب الردود المباشرة من نماذج Netlify.',
+      hostingerSubmitEndpoint: 'رابط الإرسال في Hostinger (POST)',
+      hostingerExportEndpoint: 'رابط التصدير في Hostinger (JSON)',
+      hostingerConfigNote: 'يرجى توفير روابط HTTPS تستقبل وتعيد بيانات استبيانات تمام.',
       saveConfig: 'حفظ',
       cancel: 'إلغاء',
       remoteConfigSaved: 'تم حفظ إعدادات المزامنة.',
       remoteConfigMissing: 'أضف معرّف الموقع والرمز أولاً.',
+      hostingerConfigMissing: 'أضف روابط الإرسال والتصدير لـ Hostinger أولاً.',
       syncingRemote: 'جاري مزامنة البيانات البعيدة…',
       syncComplete: 'تمت مزامنة الردود البعيدة.',
       syncFailed: 'تعذر مزامنة البيانات البعيدة.',
       remoteStatusSyncing: 'جاري مزامنة البيانات البعيدة…',
       remoteStatusIdle: 'اربط نتليفاي للاطلاع على النتائج المباشرة.',
+      hostingerStatusIdle: 'أضف روابط Hostinger للاطلاع على النتائج المباشرة.',
       remoteStatusPending: 'هناك {count} ردود تنتظر المزامنة.',
       remoteStatusSynced: 'آخر مزامنة: {time}',
       remoteStatusReady: 'المزامنة جاهزة.',
       remoteConnectPrompt: 'اربط نتليفاي للاطلاع على النتائج المباشرة.',
+      hostingerConnectPrompt: 'أضف روابط Hostinger لمزامنة النتائج.',
+      openHostingerConfig: 'إعداد Hostinger',
       resultsSummary: 'لمحة عن الأداء',
       resultsCharts: 'الاتجاهات والتوزيعات',
       chartsEmpty: 'ستظهر الرسوم البيانية عند وصول الردود.',
@@ -1733,6 +1823,8 @@
     }
   }
 
+  const remoteConfig = loadRemoteConfig();
+
   const state = {
     lang: localStorage.getItem(STORAGE_KEYS.lang) || 'en',
     theme: localStorage.getItem(STORAGE_KEYS.theme) || 'light',
@@ -1749,7 +1841,9 @@
     passwordUnlocked: {},
     results: { tab: 'vendor' },
     remote: {
-      netlify: loadRemoteConfig(),
+      backend: remoteConfig.backend,
+      netlify: remoteConfig.netlify,
+      hostinger: remoteConfig.hostinger,
       records: { vendor: [], customer: [], public: [] },
       lastSync: null,
       syncing: false,
@@ -1958,7 +2052,7 @@
       state.remote.outboxPending = getOutbox().length;
       updateRemoteStatus();
       showToast(t('submittedSynced'));
-      if (window.TAMAM_BACKEND === 'netlify' && state.remote.netlify.siteId && state.remote.netlify.token) {
+      if (activeBackend() === 'netlify' && state.remote.netlify.siteId && state.remote.netlify.token) {
         syncNetlify(false);
       }
     }).catch(error => {
@@ -1983,7 +2077,7 @@
       kind,
       record: normalized,
       lang: lang || state.lang,
-      backend: backendOverride || window.TAMAM_BACKEND || 'netlify',
+      backend: (backendOverride || activeBackend() || 'netlify'),
       created: new Date().toISOString(),
       retries: 0
     };
@@ -2022,7 +2116,7 @@
   }
 
   async function postToHostinger(kind, record, lang) {
-    const endpoint = window.TAMAM_HOSTINGER_ENDPOINT || '';
+    const endpoint = state.remote.hostinger.submit || DEFAULT_HOSTINGER.submit;
     if (!endpoint) throw new Error('Hostinger endpoint missing');
     const payload = {
       kind,
@@ -2046,8 +2140,12 @@
     }
   }
 
+  function activeBackend() {
+    return (state.remote.backend || DEFAULT_BACKEND || 'netlify').toLowerCase();
+  }
+
   function sendToBackend(kind, record, lang, backendOverride) {
-    const backend = (backendOverride || window.TAMAM_BACKEND || 'netlify').toLowerCase();
+    const backend = (backendOverride || activeBackend()).toLowerCase();
     if (backend === 'hostinger') {
       return postToHostinger(kind, record, lang);
     }
@@ -2242,32 +2340,6 @@
     const view = document.createElement('section');
     view.className = 'view active home-view';
 
-    const hero = document.createElement('section');
-    hero.id = 'hero';
-    hero.className = 'hero-immersive section-fade';
-    const videoWrap = document.createElement('div');
-    videoWrap.className = 'hero-video-container';
-    const heroVideo = document.createElement('video');
-    heroVideo.src = 'https://drive.google.com/uc?export=download&id=1HhoecxoyeZM1_y3xly0B1dipK7bqQJKP';
-    heroVideo.autoplay = true;
-    heroVideo.loop = true;
-    heroVideo.muted = true;
-    heroVideo.playsInline = true;
-    heroVideo.preload = 'auto';
-    heroVideo.setAttribute('aria-hidden', 'true');
-    videoWrap.appendChild(heroVideo);
-    const heroTitle = document.createElement('h2');
-    heroTitle.className = 'hero-title';
-    heroTitle.dataset.i18n = 'heroTitle';
-    heroTitle.textContent = t('heroTitle');
-    const heroSub = document.createElement('p');
-    heroSub.className = 'hero-sub';
-    heroSub.dataset.i18n = 'heroSub';
-    heroSub.textContent = t('heroSub');
-    hero.appendChild(videoWrap);
-    hero.appendChild(heroTitle);
-    hero.appendChild(heroSub);
-
     const intro = document.createElement('div');
     intro.className = 'intro card section-fade';
     const title = document.createElement('h2');
@@ -2280,6 +2352,68 @@
     body.textContent = t('introBody');
     intro.appendChild(title);
     intro.appendChild(body);
+
+    const hero = document.createElement('section');
+    hero.id = 'hero';
+    hero.className = 'hero-immersive section-fade';
+    const videoWrap = document.createElement('div');
+    videoWrap.className = 'hero-video-container';
+    const heroVideo = document.createElement('video');
+    heroVideo.src = 'https://drive.google.com/uc?export=download&id=1HhoecxoyeZM1_y3xly0B1dipK7bqQJKP';
+    heroVideo.autoplay = true;
+    heroVideo.loop = true;
+    heroVideo.playsInline = true;
+    heroVideo.preload = 'auto';
+    heroVideo.muted = false;
+    heroVideo.controls = false;
+    heroVideo.setAttribute('playsinline', '');
+    heroVideo.setAttribute('aria-hidden', 'true');
+    videoWrap.appendChild(heroVideo);
+    const heroOverlay = document.createElement('div');
+    heroOverlay.className = 'hero-overlay';
+    const heroTitle = document.createElement('h2');
+    heroTitle.className = 'hero-title';
+    heroTitle.dataset.i18n = 'heroTitle';
+    heroTitle.textContent = t('heroTitle');
+    const heroSub = document.createElement('p');
+    heroSub.className = 'hero-sub';
+    heroSub.dataset.i18n = 'heroSub';
+    heroSub.textContent = t('heroSub');
+    const audioBtn = document.createElement('button');
+    audioBtn.type = 'button';
+    audioBtn.className = 'hero-audio';
+    audioBtn.dataset.i18n = 'heroAudioButton';
+    audioBtn.textContent = t('heroAudioButton');
+    audioBtn.hidden = true;
+    audioBtn.addEventListener('click', () => {
+      heroVideo.muted = false;
+      heroVideo.volume = 1;
+      heroVideo.play().then(() => {
+        audioBtn.hidden = true;
+        showToast(t('heroAudioPlaying'));
+      }).catch(() => {
+        showToast(t('heroAudioUnavailable'));
+      });
+    });
+    heroOverlay.appendChild(heroTitle);
+    heroOverlay.appendChild(heroSub);
+    heroOverlay.appendChild(audioBtn);
+    hero.appendChild(videoWrap);
+    hero.appendChild(heroOverlay);
+
+    const tryPlay = () => {
+      heroVideo.play().catch(() => {
+        heroVideo.muted = true;
+        heroVideo.play().then(() => {
+          audioBtn.hidden = false;
+          showToast(t('heroAudioHint'));
+        }).catch(() => {
+          audioBtn.hidden = false;
+          showToast(t('heroAudioUnavailable'));
+        });
+      });
+    };
+    heroVideo.addEventListener('canplay', () => requestAnimationFrame(tryPlay), { once: true });
 
     const iconPaths = {
       website: 'M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm0 17.25a7.48 7.48 0 0 1-3-.633 21.18 21.18 0 0 0 3.75-4.391 21.18 21.18 0 0 0 3.75 4.39A7.48 7.48 0 0 1 12 19.5zm4.615-1.262a22.648 22.648 0 0 1-3.865-4.58 22.648 22.648 0 0 1-3.865 4.58 7.5 7.5 0 1 1 7.73-12.119 22.64 22.64 0 0 1-7.64-.365 22.64 22.64 0 0 1 7.64.365A7.5 7.5 0 0 1 16.615 18.238z',
@@ -2835,7 +2969,7 @@
   function updateRemoteStatus() {
     const statusEl = state.remote.statusEl;
     if (!statusEl) return;
-    const backend = (window.TAMAM_BACKEND || 'netlify').toLowerCase();
+    const backend = activeBackend();
     const { siteId, token } = state.remote.netlify;
     const pending = state.remote.outboxPending || getOutbox().length;
     let stateKey = 'idle';
@@ -2852,6 +2986,9 @@
     } else if (backend === 'netlify' && (!siteId || !token)) {
       stateKey = 'idle';
       message = t('remoteStatusIdle');
+    } else if (backend === 'hostinger' && (!state.remote.hostinger.submit || !state.remote.hostinger.exportUrl)) {
+      stateKey = 'idle';
+      message = t('hostingerStatusIdle');
     } else if (state.remote.lastSync) {
       stateKey = 'synced';
       message = t('remoteStatusSynced', { time: formatDate(state.remote.lastSync) });
@@ -2873,8 +3010,9 @@
   function refreshRemoteBanner() {
     const host = state.remote.bannerHost;
     if (!host) return;
-    const backend = (window.TAMAM_BACKEND || 'netlify').toLowerCase();
+    const backend = activeBackend();
     const needsNetlifyConfig = backend === 'netlify' && (!state.remote.netlify.siteId || !state.remote.netlify.token);
+    const needsHostConfig = backend === 'hostinger' && (!state.remote.hostinger.submit || !state.remote.hostinger.exportUrl);
     if (needsNetlifyConfig) {
       if (!state.remote.bannerEl) {
         const banner = document.createElement('div');
@@ -2885,6 +3023,25 @@
         const btn = document.createElement('button');
         btn.dataset.i18n = 'connectNetlify';
         btn.textContent = t('connectNetlify');
+        btn.addEventListener('click', openNetlifyConfig);
+        banner.appendChild(label);
+        banner.appendChild(btn);
+        host.appendChild(banner);
+        applyI18n(banner);
+        state.remote.bannerEl = banner;
+      } else {
+        applyI18n(state.remote.bannerEl);
+      }
+    } else if (needsHostConfig) {
+      if (!state.remote.bannerEl) {
+        const banner = document.createElement('div');
+        banner.className = 'remote-banner';
+        const label = document.createElement('span');
+        label.dataset.i18n = 'hostingerConnectPrompt';
+        label.textContent = t('hostingerConnectPrompt');
+        const btn = document.createElement('button');
+        btn.dataset.i18n = 'openHostingerConfig';
+        btn.textContent = t('openHostingerConfig');
         btn.addEventListener('click', openNetlifyConfig);
         banner.appendChild(label);
         banner.appendChild(btn);
@@ -2905,9 +3062,32 @@
     wrapper.className = 'remote-config';
     const title = document.createElement('h3');
     title.className = 'section-title';
-    title.dataset.i18n = 'netlifyConfigTitle';
-    title.textContent = t('netlifyConfigTitle');
+    title.dataset.i18n = 'remoteConfigTitle';
+    title.textContent = t('remoteConfigTitle');
     wrapper.appendChild(title);
+
+    const backendGroup = document.createElement('div');
+    backendGroup.className = 'field-group';
+    const backendLabel = document.createElement('label');
+    backendLabel.className = 'field-label';
+    backendLabel.dataset.i18n = 'backendMode';
+    backendLabel.textContent = t('backendMode');
+    const backendSelect = document.createElement('select');
+    backendSelect.className = 'field-input';
+    const backendOptions = [
+      { value: 'netlify', key: 'backendNetlify' },
+      { value: 'hostinger', key: 'backendHostinger' }
+    ];
+    backendOptions.forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt.value;
+      option.textContent = t(opt.key);
+      option.dataset.i18n = opt.key;
+      backendSelect.appendChild(option);
+    });
+    backendSelect.value = state.remote.backend || DEFAULT_BACKEND || 'netlify';
+    backendGroup.appendChild(backendLabel);
+    backendGroup.appendChild(backendSelect);
 
     const siteGroup = document.createElement('div');
     siteGroup.className = 'field-group';
@@ -2933,10 +3113,39 @@
     tokenGroup.appendChild(tokenLabel);
     tokenGroup.appendChild(tokenInput);
 
-    const note = document.createElement('p');
-    note.className = 'field-description';
-    note.dataset.i18n = 'netlifyConfigNote';
-    note.textContent = t('netlifyConfigNote');
+    const netlifyNote = document.createElement('p');
+    netlifyNote.className = 'field-description';
+    netlifyNote.dataset.i18n = 'netlifyConfigNote';
+    netlifyNote.textContent = t('netlifyConfigNote');
+
+    const hostSubmitGroup = document.createElement('div');
+    hostSubmitGroup.className = 'field-group';
+    const hostSubmitLabel = document.createElement('label');
+    hostSubmitLabel.className = 'field-label';
+    hostSubmitLabel.dataset.i18n = 'hostingerSubmitEndpoint';
+    hostSubmitLabel.textContent = t('hostingerSubmitEndpoint');
+    const hostSubmitInput = createInput('hostinger-submit', 'text');
+    hostSubmitInput.dir = 'ltr';
+    hostSubmitInput.value = state.remote.hostinger.submit || '';
+    hostSubmitGroup.appendChild(hostSubmitLabel);
+    hostSubmitGroup.appendChild(hostSubmitInput);
+
+    const hostExportGroup = document.createElement('div');
+    hostExportGroup.className = 'field-group';
+    const hostExportLabel = document.createElement('label');
+    hostExportLabel.className = 'field-label';
+    hostExportLabel.dataset.i18n = 'hostingerExportEndpoint';
+    hostExportLabel.textContent = t('hostingerExportEndpoint');
+    const hostExportInput = createInput('hostinger-export', 'text');
+    hostExportInput.dir = 'ltr';
+    hostExportInput.value = state.remote.hostinger.exportUrl || '';
+    hostExportGroup.appendChild(hostExportLabel);
+    hostExportGroup.appendChild(hostExportInput);
+
+    const hostingerNote = document.createElement('p');
+    hostingerNote.className = 'field-description';
+    hostingerNote.dataset.i18n = 'hostingerConfigNote';
+    hostingerNote.textContent = t('hostingerConfigNote');
 
     const actions = document.createElement('div');
     actions.className = 'modal-actions';
@@ -2952,34 +3161,62 @@
     saveBtn.dataset.i18n = 'saveConfig';
     saveBtn.textContent = t('saveConfig');
     saveBtn.addEventListener('click', () => {
+      const backend = backendSelect.value;
+      state.remote.backend = backend;
       state.remote.netlify = {
         siteId: siteInput.value.trim(),
         token: tokenInput.value.trim()
       };
-      saveRemoteConfig(state.remote.netlify);
-      if (!state.remote.netlify.siteId || !state.remote.netlify.token) {
-        state.remote.records = { vendor: [], customer: [], public: [] };
-        state.remote.lastSync = null;
-        state.remote.syncError = null;
-        if (state.remote.syncInterval) {
-          clearInterval(state.remote.syncInterval);
-          state.remote.syncInterval = null;
-        }
-        document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'remote' } }));
+      state.remote.hostinger = {
+        submit: hostSubmitInput.value.trim(),
+        exportUrl: hostExportInput.value.trim()
+      };
+      saveRemoteConfig({
+        backend,
+        netlify: state.remote.netlify,
+        hostinger: state.remote.hostinger
+      });
+      state.remote.records = { vendor: [], customer: [], public: [] };
+      state.remote.lastSync = null;
+      state.remote.syncError = null;
+      if (state.remote.syncInterval) {
+        clearInterval(state.remote.syncInterval);
+        state.remote.syncInterval = null;
       }
+      document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'remote' } }));
       updateRemoteStatus();
       closeModal();
       showToast(t('remoteConfigSaved'));
-      if (state.remote.netlify.siteId && state.remote.netlify.token) {
+      if (backend === 'hostinger' && state.remote.hostinger.submit && state.remote.hostinger.exportUrl) {
+        syncNetlify(true);
+      } else if (backend === 'netlify' && state.remote.netlify.siteId && state.remote.netlify.token) {
         syncNetlify(true);
       }
     });
     actions.appendChild(cancelBtn);
     actions.appendChild(saveBtn);
 
-    wrapper.appendChild(siteGroup);
-    wrapper.appendChild(tokenGroup);
-    wrapper.appendChild(note);
+    const netlifyWrap = document.createElement('div');
+    netlifyWrap.appendChild(siteGroup);
+    netlifyWrap.appendChild(tokenGroup);
+    netlifyWrap.appendChild(netlifyNote);
+
+    const hostingerWrap = document.createElement('div');
+    hostingerWrap.appendChild(hostSubmitGroup);
+    hostingerWrap.appendChild(hostExportGroup);
+    hostingerWrap.appendChild(hostingerNote);
+
+    const toggleBackendSections = () => {
+      const mode = backendSelect.value;
+      netlifyWrap.style.display = mode === 'netlify' ? '' : 'none';
+      hostingerWrap.style.display = mode === 'hostinger' ? '' : 'none';
+    };
+    backendSelect.addEventListener('change', toggleBackendSections);
+    toggleBackendSections();
+
+    wrapper.appendChild(backendGroup);
+    wrapper.appendChild(netlifyWrap);
+    wrapper.appendChild(hostingerWrap);
     wrapper.appendChild(actions);
     applyI18n(wrapper);
     openModal(wrapper);
@@ -2996,10 +3233,14 @@
   async function syncNetlify(manual = false) {
     if (state.remote.syncing) return;
     await flushOutbox(false);
-    const backend = (window.TAMAM_BACKEND || 'netlify').toLowerCase();
+    const backend = activeBackend();
     const { siteId, token } = state.remote.netlify;
     if (backend === 'netlify' && (!siteId || !token)) {
       if (manual) showToast(t('remoteConfigMissing'));
+      return;
+    }
+    if (backend === 'hostinger' && (!state.remote.hostinger.submit || !state.remote.hostinger.exportUrl)) {
+      if (manual) showToast(t('hostingerConfigMissing'));
       return;
     }
     state.remote.syncing = true;
@@ -3010,7 +3251,7 @@
       let customerRecords = [];
       let publicRecords = [];
       if (backend === 'hostinger') {
-        const exportUrl = window.TAMAM_HOSTINGER_EXPORT || '';
+        const exportUrl = state.remote.hostinger.exportUrl || DEFAULT_HOSTINGER.exportUrl;
         if (!exportUrl) throw new Error('Hostinger export missing');
         const remote = await fetchJSON(exportUrl);
         vendorRecords = (remote?.vendor || []).map(entry => normalizeHostinger('vendor', entry)).filter(Boolean);
