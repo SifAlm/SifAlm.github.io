@@ -1,0 +1,3184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tamam Research Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f7fb;
+      --bg-gradient: linear-gradient(180deg, rgba(228,235,255,0.9), rgba(241,247,255,0.9));
+      --surface: rgba(255,255,255,0.72);
+      --surface-dark: rgba(24,24,32,0.72);
+      --border: rgba(255,255,255,0.4);
+      --text: #10121a;
+      --text-muted: rgba(16,18,26,0.65);
+      --primary: #5766ff;
+      --primary-soft: rgba(87,102,255,0.14);
+      --shadow: 0 18px 45px rgba(45,55,85,0.16);
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --focus: 0 0 0 3px rgba(87,102,255,0.35);
+      --transition: 180ms ease;
+      --scrollbar: rgba(87,102,255,0.35);
+    }
+    [data-theme="dark"] {
+      --bg: #0f111b;
+      --bg-gradient: linear-gradient(180deg, rgba(18,20,34,0.94), rgba(17,19,32,0.88));
+      --surface: rgba(32,36,55,0.65);
+      --surface-dark: rgba(18,20,34,0.85);
+      --border: rgba(255,255,255,0.08);
+      --text: #f7f8fc;
+      --text-muted: rgba(247,248,252,0.7);
+      --primary: #8a9bff;
+      --primary-soft: rgba(138,155,255,0.16);
+      --shadow: 0 18px 45px rgba(6,7,12,0.6);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-gradient), var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 320ms ease, color 320ms ease;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(119,130,255,0.28), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(179,120,255,0.22), transparent 45%);
+      pointer-events: none;
+      z-index: -1;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+    img { max-width: 100%; display: block; }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      transition: direction var(--transition);
+    }
+    .app-header {
+      padding: 24px clamp(16px, 5vw, 48px) 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .brand-logo {
+      width: clamp(32px, 6vw, 40px);
+      height: clamp(32px, 6vw, 40px);
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6d7bff, #b388ff);
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: 0.4px;
+      box-shadow: 0 12px 24px rgba(98,110,255,0.28);
+    }
+    .brand-title {
+      font-size: clamp(24px, 3vw, 32px);
+      font-weight: 600;
+    }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .icon-button {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: var(--surface);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 0 0 1px var(--border), 0 6px 16px rgba(45,55,85,0.12);
+      transition: background var(--transition), transform var(--transition);
+    }
+    .icon-button:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+    .icon-button:hover {
+      transform: translateY(-1px);
+    }
+    .lang-toggle {
+      min-width: 72px;
+      padding: 10px 14px;
+      border-radius: 22px;
+      border: none;
+      background: var(--surface);
+      box-shadow: inset 0 0 0 1px var(--border), 0 6px 16px rgba(45,55,85,0.12);
+      font-weight: 500;
+    }
+    .lang-toggle:focus-visible { outline: none; box-shadow: var(--focus); }
+
+    nav {
+      padding: 0 clamp(16px, 5vw, 48px) 16px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .nav-link {
+      padding: 10px 16px;
+      background: var(--surface);
+      border-radius: 999px;
+      box-shadow: inset 0 0 0 1px var(--border), 0 8px 16px rgba(45,55,85,0.12);
+      font-weight: 500;
+      transition: background var(--transition), color var(--transition);
+    }
+    .nav-link[aria-current="true"] {
+      background: var(--primary);
+      color: white;
+    }
+
+    main {
+      flex: 1;
+      padding: 0 clamp(16px, 5vw, 48px) 80px;
+    }
+    .view {
+      display: none;
+      animation: fadeIn 240ms ease;
+    }
+    .view.active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      border-radius: var(--radius-lg);
+      padding: clamp(20px, 3vw, 32px);
+      box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+    }
+    .card-muted {
+      background: var(--surface-dark);
+    }
+    .section-title {
+      font-size: clamp(24px, 3vw, 32px);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .section-subtitle {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .intro {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 32px;
+      max-width: 960px;
+    }
+
+    .social-carousel {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .social-card {
+      flex: 0 0 280px;
+      scroll-snap-align: start;
+      border-radius: var(--radius-md);
+      position: relative;
+      aspect-ratio: 9 / 16;
+      background: var(--surface-dark);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .social-card iframe,
+    .social-card blockquote {
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+    }
+    .social-fallback {
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 24px;
+      color: var(--text);
+      gap: 12px;
+    }
+    .social-fallback svg { width: 32px; height: 32px; }
+
+    .cta-grid {
+      margin-top: 32px;
+      display: grid;
+      gap: 16px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: clamp(20px, 3vw, 32px);
+      box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+    }
+    .cta-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+    .store-badge {
+      height: 44px;
+      width: auto;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+    .cta-links {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .cta-link {
+      padding: 10px 18px;
+      background: var(--primary-soft);
+      border-radius: 999px;
+      font-weight: 500;
+      color: var(--primary);
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    form {
+      display: grid;
+      gap: 24px;
+    }
+    .field-group {
+      display: grid;
+      gap: 8px;
+    }
+    .field-label {
+      font-weight: 500;
+    }
+    .field-description { color: var(--text-muted); font-size: 0.95rem; }
+    .field-input, select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(120,130,200,0.25);
+      background: rgba(255,255,255,0.65);
+      color: inherit;
+      transition: border var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+    [data-theme="dark"] .field-input,
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea {
+      background: rgba(24,26,40,0.9);
+      border: 1px solid rgba(140,150,255,0.3);
+    }
+    .field-input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+      border-color: var(--primary);
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    .options {
+      display: grid;
+      gap: 10px;
+    }
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.5);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      border: 1px solid rgba(120,130,200,0.22);
+      transition: border var(--transition), background var(--transition);
+    }
+    [data-theme="dark"] .option-item {
+      background: rgba(24,26,40,0.7);
+      border-color: rgba(140,150,255,0.3);
+    }
+    .progress-bar {
+      height: 10px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-inner {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #6d7bff, #a78bfa);
+      transition: width 200ms ease;
+    }
+    .sticky-banner {
+      position: sticky;
+      top: 16px;
+      z-index: 5;
+      background: linear-gradient(120deg, rgba(106,125,255,0.85), rgba(171,123,255,0.75));
+      color: white;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 16px 32px rgba(70,70,120,0.28);
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    .btn {
+      padding: 12px 20px;
+      border-radius: 999px;
+      border: none;
+      font-weight: 600;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #6d7bff, #b388ff);
+      color: white;
+      box-shadow: 0 12px 24px rgba(109,123,255,0.35);
+    }
+    .btn-primary:focus-visible { outline: none; box-shadow: var(--focus); }
+    .btn-primary:hover { transform: translateY(-1px); }
+
+    .toast-container {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      left: auto;
+      display: grid;
+      gap: 8px;
+      z-index: 1000;
+    }
+    [dir="rtl"] .toast-container {
+      right: auto;
+      left: 16px;
+    }
+    .toast {
+      background: rgba(25,28,45,0.88);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(12,14,25,0.45);
+      animation: slideIn 220ms ease;
+    }
+    @keyframes slideIn {
+      from { opacity:0; transform: translateY(-10px); }
+      to { opacity:1; transform: translateY(0); }
+    }
+
+    .thanks {
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+      display: grid;
+      gap: 12px;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: none;
+      font-weight: 500;
+    }
+    .tab-btn.active { background: var(--primary); color: white; }
+
+    .dashboard-grid {
+      display: grid;
+      gap: 24px;
+    }
+    .kpi-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+    .kpi-card {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.55);
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+    [data-theme="dark"] .kpi-card {
+      background: rgba(24,26,40,0.75);
+    }
+    .charts-grid {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+    .open-text {
+      display: grid;
+      gap: 12px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 0.9rem;
+    }
+    .copy-btn {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(255,255,255,0.6);
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(120,130,200,0.2);
+    }
+    th {
+      text-align: left;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    [dir="rtl"] th, [dir="rtl"] td {
+      text-align: right;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+      background: rgba(255,255,255,0.55);
+      border-radius: var(--radius-md);
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+
+    .search-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,18,28,0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal {
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      max-width: min(640px, 94vw);
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 48px rgba(12,15,35,0.4);
+    }
+    .modal-close {
+      position: sticky;
+      top: 0;
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+      background: inherit;
+    }
+    .modal-close button {
+      border: none;
+      background: rgba(255,255,255,0.4);
+      border-radius: 999px;
+      padding: 8px 12px;
+    }
+
+    .password-gate {
+      display: grid;
+      gap: 16px;
+      max-width: 400px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .export-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .debug-panel {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      display: grid;
+      gap: 8px;
+      z-index: 200;
+    }
+    [dir="rtl"] .debug-panel {
+      right: auto;
+      left: 16px;
+    }
+    .debug-panel button {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(0,0,0,0.55);
+      color: white;
+      font-size: 12px;
+    }
+
+    ::-webkit-scrollbar {
+      height: 10px;
+      width: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--scrollbar);
+      border-radius: 999px;
+    }
+
+    @media (max-width: 720px) {
+      .app-header { padding: 20px 16px 12px; }
+      nav { padding: 0 16px 16px; }
+      main { padding: 0 16px 64px; }
+      .intro { gap: 12px; }
+      .cta-buttons { flex-direction: column; align-items: stretch; }
+      .cta-links { justify-content: center; }
+      .control-group { gap: 8px; }
+      .icon-button { width: 40px; height: 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <header class="app-header">
+      <div class="brand-group">
+        <img src="https://gettamam.com/wp-content/uploads/2024/07/Tamam-Logo-Icon.svg" alt="Tamam" class="brand-logo" />
+        <div class="brand-title" data-i18n="headerTitle">Tamam Research Portal</div>
+      </div>
+      <div class="control-group">
+        <button class="icon-button" id="theme-toggle" aria-label="Toggle theme">🌞</button>
+        <button class="lang-toggle" id="lang-toggle" aria-label="Switch language">AR</button>
+      </div>
+    </header>
+    <nav id="nav"></nav>
+    <main id="app"></main>
+  </div>
+
+  <div class="toast-container" id="toast-container" role="status" aria-live="polite"></div>
+  <div class="modal-backdrop" id="modal-backdrop" aria-modal="true" role="dialog" hidden>
+    <div class="modal" role="document">
+      <div class="modal-close"><button id="modal-close">Close</button></div>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <div class="debug-panel" id="debug-panel"></div>
+
+  <script async src="https://www.instagram.com/embed.js"></script>
+  <script>
+  window.TAMAM_BACKEND = 'none';
+  const DEBUG = true;
+  const logDebug = (...args) => { if (DEBUG) console.log('[Tamam]', ...args); };
+
+  const NAV_ITEMS = [
+    { hash: '#/surveys', key: 'navHome' },
+    { hash: '#/surveys/vendors', key: 'navVendors' },
+    { hash: '#/surveys/customers', key: 'navCustomers' },
+    { hash: '#/surveys/public', key: 'navPublic' },
+    { hash: '#/surveys/results', key: 'navResults' }
+  ];
+
+  const I18N = {
+    en: {
+      headerTitle: 'Tamam Research Portal',
+      navHome: 'Overview',
+      navVendors: 'Vendor Survey',
+      navCustomers: 'Customer Survey',
+      navPublic: 'Public Survey',
+      navResults: 'Results Dashboard',
+      introTitle: 'Why we are listening',
+      introBody: 'Tamam is the UAE\'s super-app for trusted Home, Health, Car, and Lifestyle services. We\'re gathering structured feedback to help investors understand our traction and to shape upcoming product decisions. Your insights guide how we prioritize features, markets, and growth.',
+      exploreSocials: 'Explore Our Socials',
+      socialsFallback: 'Play on Instagram',
+      getTamam: 'Get Tamam & Follow Us',
+      website: 'Website',
+      instagram: 'Instagram',
+      linktree: 'Linktree',
+      passwordPrompt: 'Enter access code',
+      submitPassword: 'Continue',
+      invalidPassword: 'Invalid password.',
+      submit: 'Submit survey',
+      savedDraft: 'Draft saved.',
+      restoredDraft: 'Draft restored.',
+      alreadySubmitted: 'You already submitted this survey on this device.',
+      submitted: 'Submitted',
+      timerLabel: 'Time spent',
+      progressLabel: 'Progress',
+      required: 'Required',
+      optional: 'Optional',
+      otherPlaceholder: 'Please specify',
+      loading: 'Loading…',
+      thanksTitle: 'Thank you for your insight',
+      thanksBody: 'We appreciate your time—your responses will shape how Tamam evolves for our community.',
+      backHome: 'Back to overview',
+      surveyVendorTitle: 'Vendor Partnership Survey',
+      surveyCustomerTitle: 'Customer Experience Survey',
+      surveyPublicTitle: 'Public Sentiment Survey',
+      vendorBanner: 'Commission structure for your category: {range} commission per order + AED 75/month subscription.',
+      vendorHelper: 'Consider the above commission + AED 75/month when answering fee questions.',
+      companyName: 'Company Name',
+      businessEmail: 'Business Email',
+      phoneNumber: 'Phone Number',
+      primaryCategory: 'Primary Service Category',
+      home: 'Home',
+      health: 'Health',
+      car: 'Car',
+      lifestyle: 'Lifestyle / Wellness',
+      averageOrderValue: 'Average Order Value (AED)',
+      averageProfitMargin: 'Average Profit Margin (%)',
+      typicalMonthlyOrders: 'Typical Monthly Orders (across all channels)',
+      range0_10: '0–10',
+      range10_20: '10–20',
+      range20_40: '20–40',
+      range40_80: '40–80',
+      range80p: '80+',
+      other: 'Other',
+      vendorProfitableVolume: 'At what monthly order volume from Tamam would the above model be profitable for you?',
+      orders5_10: '5–10 orders',
+      orders10_20: '10–20 orders',
+      orders20_40: '20–40 orders',
+      orders40p: '40+ orders',
+      vendorMinStay: 'Minimum number of Tamam orders per month to justify staying subscribed',
+      orders1_5: '1–5 orders',
+      vendorScenario1: 'If Tamam generates AED 5,000–10,000 per month for your business, is the model acceptable?',
+      vendorScenario2: 'If Tamam generates AED 10,000–20,000 per month for your business, is the model acceptable?',
+      vendorScenario3: 'If Tamam generates AED 20,000+ per month for your business, is the model acceptable?',
+      acceptable: 'Acceptable',
+      neutral: 'Neutral',
+      notAcceptable: 'Not acceptable',
+      vendorExpect: 'What would you expect from Tamam to justify these fees?',
+      expectVolume: 'Guaranteed customer volume',
+      expectMarketing: 'Better marketing & visibility',
+      expectPremium: 'Access to premium customers',
+      expectTools: 'Business tools (analytics, scheduling, payments)',
+      expectPayout: 'Faster payouts',
+      leaveReason: 'What is the biggest reason you would leave the platform even if you have orders?',
+      leaveCommission: 'High commission',
+      leaveVolume: 'Low customer volume',
+      leaveSupport: 'Poor vendor support',
+      leaveCompetitor: 'Better competitor offers',
+      recommend: 'Would you recommend Tamam to other businesses?',
+      yes: 'Yes',
+      no: 'No',
+      anythingElse: 'Anything else we should consider?',
+      customerName: 'Your Name',
+      usageFrequency: 'How often do you use Tamam?',
+      weekly: 'Weekly',
+      monthly: 'Monthly',
+      rarely: 'Rarely',
+      usedCategories: 'Which service categories have you used most?',
+      lifestyle: 'Lifestyle',
+      easeBooking: 'How easy was your last booking?',
+      veryDifficult: '1 (Very difficult)',
+      score2: '2',
+      score3: '3',
+      score4: '4',
+      veryEasy: '5 (Very easy)',
+      recommendScore: 'How likely are you to recommend Tamam to a friend or colleague?',
+      timeSave: 'Compared to calling vendors, Tamam saves you time:',
+      muchMore: 'Much more',
+      slightlyMore: 'Slightly more',
+      same: 'Same',
+      less: 'Less',
+      moneySave: 'Compared to alternatives, Tamam saves you money:',
+      futureServices: 'Which additional services would you like Tamam to offer?',
+      useMore: 'What would make you use Tamam more frequently?',
+      lowerCost: 'Lower cost',
+      moreVariety: 'More variety',
+      fasterBooking: 'Faster booking',
+      betterSupport: 'Better customer support',
+      loyalty: 'Loyalty rewards/discounts',
+      publicBookedBefore: 'Have you booked services online before (home, car, health, lifestyle)?',
+      yesBooked: 'Yes',
+      noBooked: 'No',
+      usedPlatforms: 'If Yes, which platforms have you used?',
+      platformTamam: 'Tamam',
+      platformUrban: 'Urban Company',
+      platformCafu: 'cafu',
+      platformJustlife: 'justlife',
+      barrierNo: 'If No, why haven\'t you used apps for services?',
+      barrierExpensive: 'Too expensive',
+      barrierTrust: 'Don\'t trust apps',
+      barrierCall: 'Prefer calling vendors directly',
+      barrierUnknown: 'Didn\'t know about them',
+      preferenceFactor: 'When booking services, what factors matter most to you?',
+      factorPrice: 'Price',
+      factorSpeed: 'Speed of service',
+      factorQuality: 'Quality of vendor',
+      factorTrust: 'Trust & safety',
+      factorEase: 'Ease of use',
+      firstCategory: 'If you were to try Tamam, which category would you try first?',
+      willingnessFee: 'Would you pay a small fee (AED 5–10) for the convenience of booking via Tamam?',
+      maybe: 'Maybe',
+      whyTamam: 'What would make you choose Tamam over other options?',
+      passwordVendorTitle: 'Vendor access',
+      passwordCustomerTitle: 'Customer access',
+      passwordResultsTitle: 'Dashboard access',
+      timerSeconds: '{seconds}s',
+      progressValue: '{done}/{total} answered',
+      exportExcel: 'Export Excel',
+      exportJSON: 'Export JSON',
+      importJSON: 'Import JSON',
+      backupReset: 'Backup & Reset',
+      refreshData: 'Refresh Data',
+      selectFile: 'Select JSON file…',
+      kpiTotal: 'Total responses',
+      kpiAvgAOV: 'Avg order value',
+      kpiAvgProfit: 'Avg profit %',
+      kpiAvgSeconds: 'Avg seconds',
+      kpiAvgNps: 'Avg NPS score',
+      kpiAvgEase: 'Avg ease rating',
+      kpiWilling: '% willing to pay fee',
+      kpiNps: 'NPS distribution',
+      kpiBookedBefore: '% booked services online',
+      tabVendors: 'Vendors',
+      tabCustomers: 'Customers',
+      tabPublic: 'Public',
+      openResponses: 'Open responses & Other',
+      tableTitle: 'All submissions',
+      searchPlaceholder: 'Search by name, email, phone, category…',
+      sortDate: 'Sort by date',
+      sortName: 'Sort by name',
+      copy: 'Copy',
+      copied: 'Copied',
+      close: 'Close',
+      restoreConfirm: 'Draft restored.',
+      timeSpent: 'Time spent',
+      resultsEmpty: 'No submissions yet.',
+      clearData: 'Clear Local Data',
+      dumpData: 'Dump DB',
+      importSuccess: 'Data imported.',
+      resetDone: 'Database cleared.',
+      exportReady: 'Download started.',
+      invalidFile: 'Invalid file.',
+      passwordPromptVendor: 'Enter the vendor survey password to continue.',
+      passwordPromptCustomer: 'Enter the customer survey password to continue.',
+      passwordPromptResults: 'Enter the dashboard password to continue.',
+      durationLabel: 'Duration',
+      timestampLabel: 'Submitted at',
+      instagramAlt: 'Instagram icon',
+      '0': '0',
+      '1': '1',
+      '2': '2',
+      '3': '3',
+      '4': '4',
+      '5': '5',
+      '6': '6',
+      '7': '7',
+      '8': '8',
+      '9': '9',
+      '10': '10'
+    },
+    ar: {
+      headerTitle: 'بوابة بحوث تمام',
+      navHome: 'نظرة عامة',
+      navVendors: 'استبيان الشركاء',
+      navCustomers: 'استبيان العملاء',
+      navPublic: 'استبيان الجمهور',
+      navResults: 'لوحة النتائج',
+      introTitle: 'لماذا نستمع إليكم',
+      introBody: 'تمام هو التطبيق الفائق في الإمارات لحجز خدمات المنزل والصحة والسيارات ونمط الحياة الموثوقة. نجمع الآراء المنظمة لمساعدة المستثمرين على فهم تقدمنا وتوجيه قرارات المنتج القادمة. ملاحظاتكم ترشد أولوياتنا للميزات والأسواق والنمو.',
+      exploreSocials: 'تعرّف على قنواتنا الاجتماعية',
+      socialsFallback: 'مشاهدة على إنستغرام',
+      getTamam: 'حمّل تمام وتابعنا',
+      website: 'الموقع الإلكتروني',
+      instagram: 'إنستغرام',
+      linktree: 'لينكتري',
+      passwordPrompt: 'أدخل رمز الوصول',
+      submitPassword: 'متابعة',
+      invalidPassword: 'رمز غير صحيح.',
+      submit: 'إرسال الاستبيان',
+      savedDraft: 'تم حفظ المسودة.',
+      restoredDraft: 'تم استعادة المسودة.',
+      alreadySubmitted: 'تم إرسال هذا الاستبيان مسبقاً من هذا الجهاز.',
+      submitted: 'تم الإرسال',
+      timerLabel: 'الوقت المستغرق',
+      progressLabel: 'التقدم',
+      required: 'إلزامي',
+      optional: 'اختياري',
+      otherPlaceholder: 'يرجى التحديد',
+      loading: 'جارٍ التحميل…',
+      thanksTitle: 'شكراً لمشاركتك',
+      thanksBody: 'نقدّر وقتك—إجاباتك ستوجه تطور تمام لمجتمعنا.',
+      backHome: 'العودة إلى النظرة العامة',
+      surveyVendorTitle: 'استبيان الشركاء',
+      surveyCustomerTitle: 'استبيان العملاء',
+      surveyPublicTitle: 'استبيان الجمهور',
+      vendorBanner: 'هيكل العمولة لفئتك: {range} عمولة على كل طلب + اشتراك شهري 75 درهماً.',
+      vendorHelper: 'يرجى مراعاة العمولة أعلاه + 75 درهماً شهرياً عند الإجابة على أسئلة الرسوم.',
+      companyName: 'اسم الشركة',
+      businessEmail: 'البريد الإلكتروني للعمل',
+      phoneNumber: 'رقم الهاتف',
+      primaryCategory: 'الفئة الرئيسية للخدمة',
+      home: 'خدمات المنزل',
+      health: 'الصحة',
+      car: 'السيارات',
+      lifestyle: 'نمط الحياة / العافية',
+      averageOrderValue: 'متوسط قيمة الطلب (درهم)',
+      averageProfitMargin: 'متوسط هامش الربح (%)',
+      typicalMonthlyOrders: 'عدد الطلبات الشهري المعتاد (جميع القنوات)',
+      range0_10: '0–10',
+      range10_20: '10–20',
+      range20_40: '20–40',
+      range40_80: '40–80',
+      range80p: 'أكثر من 80',
+      other: 'أخرى',
+      vendorProfitableVolume: 'عند أي حجم طلب شهري من تمام يصبح النموذج مربحاً لكم؟',
+      orders5_10: '5–10 طلبات',
+      orders10_20: '10–20 طلباً',
+      orders20_40: '20–40 طلباً',
+      orders40p: 'أكثر من 40 طلباً',
+      vendorMinStay: 'أدنى عدد طلبات من تمام شهرياً للاستمرار بالاشتراك',
+      orders1_5: '1–5 طلبات',
+      vendorScenario1: 'إذا ولّد تمام 5,000–10,000 درهم شهرياً لأعمالكم، هل النموذج مقبول؟',
+      vendorScenario2: 'إذا ولّد تمام 10,000–20,000 درهماً شهرياً لأعمالكم، هل النموذج مقبول؟',
+      vendorScenario3: 'إذا ولّد تمام أكثر من 20,000 درهم شهرياً لأعمالكم، هل النموذج مقبول؟',
+      acceptable: 'مقبول',
+      neutral: 'محايد',
+      notAcceptable: 'غير مقبول',
+      vendorExpect: 'ما الذي تتوقعه من تمام لتبرير هذه الرسوم؟',
+      expectVolume: 'حجم عملاء مضمون',
+      expectMarketing: 'تسويق ورؤية أفضل',
+      expectPremium: 'وصول لعملاء مميزين',
+      expectTools: 'أدوات أعمال (تحليلات، جدولة، مدفوعات)',
+      expectPayout: 'تحويلات أسرع',
+      leaveReason: 'ما السبب الأكبر لمغادرة المنصة حتى مع وجود طلبات؟',
+      leaveCommission: 'عمولة مرتفعة',
+      leaveVolume: 'قلة العملاء',
+      leaveSupport: 'دعم ضعيف للشركاء',
+      leaveCompetitor: 'عروض أفضل من المنافسين',
+      recommend: 'هل توصي بتمام لشركات أخرى؟',
+      yes: 'نعم',
+      no: 'لا',
+      anythingElse: 'هل هناك أي أمور أخرى يجب أخذها بالاعتبار؟',
+      customerName: 'اسمك',
+      usageFrequency: 'كم مرة تستخدم تمام؟',
+      weekly: 'أسبوعياً',
+      monthly: 'شهرياً',
+      rarely: 'نادراً',
+      usedCategories: 'ما الفئات التي استخدمتها أكثر؟',
+      lifestyle: 'نمط الحياة',
+      easeBooking: 'ما مدى سهولة آخر حجز قمت به؟',
+      veryDifficult: '1 (صعب جداً)',
+      score2: '2',
+      score3: '3',
+      score4: '4',
+      veryEasy: '5 (سهل جداً)',
+      recommendScore: 'ما مدى احتمالية أن توصي بتمام لصديق أو زميل؟',
+      timeSave: 'مقارنة بالاتصال بالموردين، تمام يوفر عليك الوقت:',
+      muchMore: 'أكثر بكثير',
+      slightlyMore: 'أكثر بقليل',
+      same: 'بنفس القدر',
+      less: 'أقل',
+      moneySave: 'مقارنة بالبدائل، تمام يوفر عليك المال:',
+      futureServices: 'ما الخدمات الإضافية التي تود أن يقدمها تمام؟',
+      useMore: 'ما الذي يجعلك تستخدم تمام بشكل أكثر؟',
+      lowerCost: 'تكلفة أقل',
+      moreVariety: 'تنوع أكثر',
+      fasterBooking: 'حجز أسرع',
+      betterSupport: 'دعم عملاء أفضل',
+      loyalty: 'مكافآت/خصومات الولاء',
+      publicBookedBefore: 'هل حجزت خدمات عبر الإنترنت من قبل (منزل، سيارة، صحة، نمط حياة)؟',
+      yesBooked: 'نعم',
+      noBooked: 'لا',
+      usedPlatforms: 'إذا كانت الإجابة نعم، ما المنصات التي استخدمتها؟',
+      platformTamam: 'تمام',
+      platformUrban: 'أوربان كومباني',
+      platformCafu: 'كافو',
+      platformJustlife: 'جست لايف',
+      barrierNo: 'إذا كانت الإجابة لا، لماذا لم تستخدم التطبيقات؟',
+      barrierExpensive: 'مكلفة جداً',
+      barrierTrust: 'لا أثق بالتطبيقات',
+      barrierCall: 'أفضل الاتصال بالموردين مباشرة',
+      barrierUnknown: 'لم أكن أعلم عنها',
+      preferenceFactor: 'ما العوامل الأهم عند حجز الخدمات؟',
+      factorPrice: 'السعر',
+      factorSpeed: 'سرعة الخدمة',
+      factorQuality: 'جودة المزود',
+      factorTrust: 'الثقة والأمان',
+      factorEase: 'سهولة الاستخدام',
+      firstCategory: 'إذا جربت تمام، أي فئة ستجرب أولاً؟',
+      willingnessFee: 'هل تدفع رسماً بسيطاً (5–10 دراهم) لراحة الحجز عبر تمام؟',
+      maybe: 'ربما',
+      whyTamam: 'ما الذي يجعلك تختار تمام عن الخيارات الأخرى؟',
+      passwordVendorTitle: 'دخول الشركاء',
+      passwordCustomerTitle: 'دخول العملاء',
+      passwordResultsTitle: 'دخول اللوحة',
+      timerSeconds: '{seconds} ث',
+      progressValue: '{done}/{total} مجاب',
+      exportExcel: 'تصدير Excel',
+      exportJSON: 'تصدير JSON',
+      importJSON: 'استيراد JSON',
+      backupReset: 'نسخ احتياطي وإعادة ضبط',
+      refreshData: 'تحديث البيانات',
+      selectFile: 'اختر ملف JSON…',
+      kpiTotal: 'إجمالي الردود',
+      kpiAvgAOV: 'متوسط قيمة الطلب',
+      kpiAvgProfit: 'متوسط هامش الربح',
+      kpiAvgSeconds: 'متوسط الوقت (ثوانٍ)',
+      kpiAvgNps: 'متوسط درجة NPS',
+      kpiAvgEase: 'متوسط تقييم السهولة',
+      kpiWilling: '٪ مستعدون لدفع الرسوم',
+      kpiNps: 'توزيع NPS',
+      kpiBookedBefore: '٪ استخدموا خدمات عبر الإنترنت',
+      tabVendors: 'الشركاء',
+      tabCustomers: 'العملاء',
+      tabPublic: 'الجمهور',
+      openResponses: 'إجابات مفتوحة وخيار أخرى',
+      tableTitle: 'جميع الردود',
+      searchPlaceholder: 'ابحث بالاسم أو البريد أو الهاتف أو الفئة…',
+      sortDate: 'ترتيب حسب التاريخ',
+      sortName: 'ترتيب حسب الاسم',
+      copy: 'نسخ',
+      copied: 'تم النسخ',
+      close: 'إغلاق',
+      restoreConfirm: 'تم استعادة المسودة.',
+      timeSpent: 'المدة',
+      resultsEmpty: 'لا توجد ردود بعد.',
+      clearData: 'مسح البيانات المحلية',
+      dumpData: 'عرض قاعدة البيانات',
+      importSuccess: 'تم استيراد البيانات.',
+      resetDone: 'تم مسح القاعدة.',
+      exportReady: 'تم بدء التنزيل.',
+      invalidFile: 'ملف غير صالح.',
+      passwordPromptVendor: 'أدخل كلمة مرور استبيان الشركاء للمتابعة.',
+      passwordPromptCustomer: 'أدخل كلمة مرور استبيان العملاء للمتابعة.',
+      passwordPromptResults: 'أدخل كلمة مرور لوحة النتائج للمتابعة.',
+      durationLabel: 'المدة',
+      timestampLabel: 'وقت الإرسال',
+      instagramAlt: 'أيقونة إنستغرام',
+      '0': '٠',
+      '1': '١',
+      '2': '٢',
+      '3': '٣',
+      '4': '٤',
+      '5': '٥',
+      '6': '٦',
+      '7': '٧',
+      '8': '٨',
+      '9': '٩',
+      '10': '١٠'
+    }
+  };
+
+  const COMMISSION_BANDS = {
+    home: '15–20%',
+    car: '15–20%',
+    health: '25–30%',
+    lifestyle: '20–25%'
+  };
+
+  const STORAGE_KEYS = {
+    db: 'tamam_research_db',
+    drafts: {
+      vendor: 'draft_vendor',
+      customer: 'draft_customer',
+      public: 'draft_public'
+    },
+    completed: {
+      vendor: 'completed_vendor',
+      customer: 'completed_customer',
+      public: 'completed_public'
+    },
+    theme: 'tmm_theme',
+    lang: 'tmm_lang'
+  };
+
+  const defaultDB = () => ({ vendor: [], customer: [], public: [] });
+
+  function getDB() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.db);
+      if (!raw) return defaultDB();
+      const parsed = JSON.parse(raw);
+      return { vendor: parsed.vendor || [], customer: parsed.customer || [], public: parsed.public || [] };
+    } catch (e) {
+      logDebug('DB parse failed', e);
+      return defaultDB();
+    }
+  }
+  function saveDB(db) {
+    localStorage.setItem(STORAGE_KEYS.db, JSON.stringify(db));
+  }
+
+  const state = {
+    lang: localStorage.getItem(STORAGE_KEYS.lang) || 'en',
+    theme: localStorage.getItem(STORAGE_KEYS.theme) || 'light',
+    currentRoute: null,
+    routes: {},
+    timers: {},
+    surveys: {
+      vendor: { formEl: null, data: {}, start: null },
+      customer: { formEl: null, data: {}, start: null },
+      public: { formEl: null, data: {}, start: null }
+    },
+    charts: {},
+    chartInstances: {},
+    passwordUnlocked: {},
+    results: { tab: 'vendor' }
+  };
+
+  document.documentElement.setAttribute('lang', state.lang === 'ar' ? 'ar' : 'en');
+  document.getElementById('app-shell').setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.dataset.theme = state.theme;
+
+  const t = (key, vars = {}) => {
+    const str = I18N[state.lang][key] || key;
+    return str.replace(/\{(.*?)\}/g, (_, v) => vars[v] ?? '');
+  };
+
+  function showToast(message) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-6px)';
+      setTimeout(() => toast.remove(), 220);
+    }, 2800);
+  }
+
+  function updateNav() {
+    const nav = document.getElementById('nav');
+    nav.innerHTML = '';
+    NAV_ITEMS.forEach(item => {
+      const link = document.createElement('a');
+      link.href = item.hash;
+      link.textContent = t(item.key);
+      link.className = 'nav-link';
+      if (item.hash === location.hash || (!location.hash && item.hash === '#/surveys')) {
+        link.setAttribute('aria-current', 'true');
+      }
+      nav.appendChild(link);
+    });
+  }
+
+  function updateHeaderTexts() {
+    document.querySelector('[data-i18n="headerTitle"]').textContent = t('headerTitle');
+    document.getElementById('theme-toggle').setAttribute('aria-label', state.lang === 'ar' ? 'تبديل النمط' : 'Toggle theme');
+    document.getElementById('lang-toggle').setAttribute('aria-label', state.lang === 'ar' ? 'تغيير اللغة' : 'Switch language');
+    document.getElementById('lang-toggle').textContent = state.lang === 'en' ? 'AR' : 'EN';
+  }
+
+  const routes = {};
+
+  function registerRoute(hash, config) {
+    routes[hash] = { init: config.initOnce || (()=>{}), mount: config.mount, unmount: config.unmount || (()=>{}), initialized: false, titleKey: config.titleKey, onLang: config.onLang || (()=>{}) };
+  }
+
+  const app = document.getElementById('app');
+
+  function setRoute(hash) {
+    const target = routes[hash] || routes['#/surveys'];
+    if (state.currentRoute && state.currentRoute !== target) {
+      state.currentRoute.unmount();
+    }
+    if (!target.initialized) {
+      target.init();
+      target.initialized = true;
+    }
+    app.innerHTML = '';
+    target.mount(app);
+    state.currentRoute = target;
+    updateNav();
+    if (hash === '#/surveys') {
+      setTimeout(() => window.instgrm?.Embeds?.process(), 0);
+    }
+  }
+
+  window.addEventListener('hashchange', () => {
+    const hash = location.hash || '#/surveys';
+    logDebug('Route change', hash);
+    setRoute(hash);
+  });
+
+  function ensureHash() {
+    if (!location.hash) location.hash = '#/surveys';
+    else setRoute(location.hash);
+  }
+
+  function formatDate(ts) {
+    return new Date(ts).toLocaleString(state.lang === 'ar' ? 'ar-AE' : 'en-AE');
+  }
+
+  function startTimer(kind) {
+    state.surveys[kind].start = Date.now();
+  }
+  function stopTimer(kind) {
+    const entry = state.surveys[kind];
+    if (!entry.start) return 0;
+    const elapsed = Math.round((Date.now() - entry.start) / 1000);
+    entry.start = null;
+    return elapsed;
+  }
+
+  function autosave(kind) {
+    const entry = state.surveys[kind];
+    localStorage.setItem(STORAGE_KEYS.drafts[kind], JSON.stringify(entry.data));
+    logDebug('Draft saved', kind, entry.data);
+  }
+
+  function restoreDraft(kind) {
+    const raw = localStorage.getItem(STORAGE_KEYS.drafts[kind]);
+    if (!raw) return;
+    try {
+      const data = JSON.parse(raw);
+      state.surveys[kind].data = data;
+      showToast(t('restoredDraft'));
+      logDebug('Draft restored', kind, data);
+    } catch {}
+  }
+
+  function handleCompletion(kind) {
+    localStorage.setItem(STORAGE_KEYS.completed[kind], 'true');
+  }
+
+  function alreadyCompleted(kind) {
+    return localStorage.getItem(STORAGE_KEYS.completed[kind]) === 'true';
+  }
+
+  function resetDraft(kind) {
+    localStorage.removeItem(STORAGE_KEYS.drafts[kind]);
+    state.surveys[kind].data = {};
+  }
+
+  function recordSubmission(kind, data) {
+    const db = getDB();
+    db[kind].push(data);
+    saveDB(db);
+    document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind } }));
+    logDebug('Submit', kind, data);
+  }
+
+  function createInput(name, type = 'text', attrs = {}) {
+    const input = document.createElement('input');
+    input.type = type;
+    input.name = name;
+    input.className = 'field-input';
+    Object.entries(attrs).forEach(([key, value]) => input.setAttribute(key, value));
+    if (type === 'number') input.inputMode = 'decimal';
+    if (type === 'tel' || type === 'email' || type === 'number') input.dir = 'ltr';
+    return input;
+  }
+
+  function createOtherInput(fieldKey, placeholderKey) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'field-input option-other';
+    input.placeholder = t(placeholderKey || 'otherPlaceholder');
+    input.dataset.fieldKey = fieldKey;
+    input.required = true;
+    input.dataset.requiredInput = 'true';
+    return input;
+  }
+
+  function bindFieldValue(input, kind, field) {
+    const survey = state.surveys[kind];
+    const patchValue = () => {
+      const existing = survey.data[field];
+      if (existing !== undefined) {
+        if (input.type === 'checkbox' && Array.isArray(existing)) {
+          input.checked = existing.includes(input.value);
+        } else if (input.type === 'radio') {
+          input.checked = existing === input.value;
+        } else {
+          input.value = existing;
+        }
+      }
+    };
+    patchValue();
+    const handler = () => {
+      if (input.type === 'checkbox') {
+        const arr = Array.isArray(survey.data[field]) ? survey.data[field] : [];
+        if (input.checked) {
+          if (!arr.includes(input.value)) arr.push(input.value);
+        } else {
+          const idx = arr.indexOf(input.value);
+          if (idx > -1) arr.splice(idx, 1);
+        }
+        survey.data[field] = arr;
+      } else if (input.type === 'radio') {
+        survey.data[field] = input.value;
+      } else {
+        survey.data[field] = input.value;
+      }
+      autosave(kind);
+      updateProgress(kind);
+    };
+    input.addEventListener('input', handler);
+    input.addEventListener('change', handler);
+  }
+
+  function updateProgress(kind) {
+    const survey = state.surveys[kind];
+    if (!survey.progressEl) return;
+    const { total, answered } = computeProgress(survey.formEl);
+    survey.progressEl.querySelector('.progress-inner').style.width = `${total ? (answered / total) * 100 : 0}%`;
+    survey.progressLabel.textContent = `${t('progressLabel')} · ${t('progressValue', { done: numberLabel(answered), total: numberLabel(total) })}`;
+  }
+
+  function computeProgress(form) {
+    const requiredElements = Array.from(form.querySelectorAll('[data-required="true"]'));
+    let total = 0; let answered = 0;
+    requiredElements.forEach(wrapper => {
+      if (wrapper.offsetParent === null) return;
+      total++;
+      const inputs = wrapper.querySelectorAll('input, textarea, select');
+      let filled = false;
+      inputs.forEach(input => {
+        if (input.type === 'radio') {
+          const group = form.querySelectorAll(`input[name="${input.name}"]`);
+          if (Array.from(group).some(r => r.checked)) filled = true;
+        } else if (input.type === 'checkbox') {
+          const group = form.querySelectorAll(`input[name="${input.name}"]`);
+          if (Array.from(group).some(c => c.checked)) filled = true;
+        } else if (input.value?.trim()) {
+          filled = true;
+        }
+      });
+      if (filled) answered++;
+    });
+    return { total, answered };
+  }
+
+  function validateForm(form) {
+    const requiredWrappers = Array.from(form.querySelectorAll('[data-required="true"]'));
+    for (const wrapper of requiredWrappers) {
+      if (wrapper.offsetParent === null) continue;
+      const inputs = wrapper.querySelectorAll('input, textarea, select');
+      let valid = false;
+      inputs.forEach(input => {
+        if (input.type === 'radio') {
+          const group = form.querySelectorAll(`input[name="${input.name}"]`);
+          if (Array.from(group).some(r => r.checked)) valid = true;
+        } else if (input.type === 'checkbox') {
+          const group = form.querySelectorAll(`input[name="${input.name}"]`);
+          if (Array.from(group).some(c => c.checked)) valid = true;
+        } else if (input.value?.trim()) {
+          valid = true;
+        }
+      });
+      if (!valid) {
+        const firstInput = wrapper.querySelector('input, textarea, select');
+        if (firstInput) firstInput.focus();
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function createPasswordGate(titleKey, promptKey, correct) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'card password-gate';
+    const heading = document.createElement('h2');
+    heading.className = 'section-title';
+    heading.dataset.i18n = titleKey;
+    heading.textContent = t(titleKey);
+    const paragraph = document.createElement('p');
+    paragraph.dataset.i18n = promptKey;
+    paragraph.textContent = t(promptKey);
+    const form = document.createElement('form');
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const value = input.value.trim();
+      if (value === correct) {
+        wrapper.dispatchEvent(new CustomEvent('password-ok', { bubbles: true }));
+        logDebug('Password ok', titleKey);
+      } else {
+        showToast(t('invalidPassword'));
+        logDebug('Password fail', titleKey, value);
+      }
+    });
+    const input = createInput('password');
+    input.type = 'password';
+    input.placeholder = t('passwordPrompt');
+    input.dataset.i18nPlaceholder = 'passwordPrompt';
+    input.required = true;
+    const submit = document.createElement('button');
+    submit.type = 'submit';
+    submit.className = 'btn btn-primary';
+    submit.dataset.i18n = 'submitPassword';
+    submit.textContent = t('submitPassword');
+    form.appendChild(input);
+    form.appendChild(submit);
+    wrapper.appendChild(heading);
+    wrapper.appendChild(paragraph);
+    wrapper.appendChild(form);
+    setTimeout(() => input.focus(), 50);
+    return wrapper;
+  }
+  function renderHome(container) {
+    const view = document.createElement('section');
+    view.className = 'view active';
+
+    const intro = document.createElement('div');
+    intro.className = 'intro card';
+    const title = document.createElement('h2');
+    title.className = 'section-title';
+    title.textContent = t('introTitle');
+    const body = document.createElement('p');
+    body.className = 'section-subtitle';
+    body.textContent = t('introBody');
+    intro.appendChild(title);
+    intro.appendChild(body);
+
+    const socialsCard = document.createElement('div');
+    socialsCard.className = 'card';
+    const socialTitle = document.createElement('h3');
+    socialTitle.className = 'section-title';
+    socialTitle.textContent = t('exploreSocials');
+    socialsCard.appendChild(socialTitle);
+    const carousel = document.createElement('div');
+    carousel.className = 'social-carousel';
+    const reels = [
+      'https://www.instagram.com/reel/DLjucH-ydKX/?igsh=dTV5ZHM5Y2NocHRw',
+      'https://www.instagram.com/reel/DLNhwL9yw8o/?igsh=MWgxc285ZGo1bTA3Mw==',
+      'https://www.instagram.com/reel/DKT-dtDSIb4/?igsh=dzV0NjRnanQ5N2tu',
+      'https://www.instagram.com/reel/DMQHNltSns9/?igsh=ODRrZ3VjeHo5amVl',
+      'https://www.instagram.com/reel/DMaLyjXy2bH/?igsh=NHh4cXFvYjB2aGVw'
+    ];
+    reels.forEach(url => {
+      const card = document.createElement('div');
+      card.className = 'social-card';
+      const block = document.createElement('blockquote');
+      block.className = 'instagram-media';
+      block.dataset.instgrmCaptioned = 'false';
+      block.style.background = 'transparent';
+      const link = document.createElement('a');
+      link.href = url;
+      block.appendChild(link);
+      card.appendChild(block);
+      const fallback = document.createElement('a');
+      fallback.href = url;
+      fallback.target = '_blank';
+      fallback.rel = 'noopener';
+      fallback.className = 'social-fallback';
+      const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      icon.setAttribute('viewBox', '0 0 24 24');
+      icon.setAttribute('fill', 'currentColor');
+      icon.setAttribute('aria-hidden', 'true');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.9.2 2.4.4.6.2 1 .5 1.5 1s.8.9 1 1.5c.2.5.3 1.2.4 2.4.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.9-.4 2.4-.2.6-.5 1-1 1.5s-.9.8-1.5 1c-.5.2-1.2.3-2.4.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.9-.2-2.4-.4-.6-.2-1-.5-1.5-1s-.8-.9-1-1.5c-.2-.5-.3-1.2-.4-2.4C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.9.4-2.4.2-.6.5-1 1-1.5s.9-.8 1.5-1c.5-.2 1.2-.3 2.4-.4C8.4 2.2 8.8 2.2 12 2.2zm0-2.2C8.7 0 8.3 0 7.1.1 5.9.2 5 .4 4.2.7c-.8.3-1.5.7-2.2 1.4S1.1 3.6.7 4.4c-.3.8-.5 1.7-.6 2.9C0 8.3 0 8.7 0 12s0 3.7.1 4.9c.1 1.2.3 2.1.6 2.9.3.8.7 1.5 1.4 2.2.7.7 1.4 1.1 2.2 1.4.8.3 1.7.5 2.9.6 1.2.1 1.6.1 4.9.1s3.7 0 4.9-.1c1.2-.1 2.1-.3 2.9-.6.8-.3 1.5-.7 2.2-1.4.7-.7 1.1-1.4 1.4-2.2.3-.8.5-1.7.6-2.9.1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.1-1.2-.3-2.1-.6-2.9-.3-.8-.7-1.5-1.4-2.2C21.1.7 20.4.3 19.6 0c-.8-.3-1.7-.5-2.9-.6C15.3 0 14.9 0 12 0z');
+      icon.appendChild(path);
+      const span = document.createElement('span');
+      span.dataset.i18n = 'socialsFallback';
+      span.textContent = t('socialsFallback');
+      fallback.appendChild(icon);
+      fallback.appendChild(span);
+      card.appendChild(fallback);
+      carousel.appendChild(card);
+    });
+    socialsCard.appendChild(carousel);
+
+    const ctaCard = document.createElement('div');
+    ctaCard.className = 'cta-grid';
+    const ctaTitle = document.createElement('h3');
+    ctaTitle.className = 'section-title';
+    ctaTitle.textContent = t('getTamam');
+    ctaCard.appendChild(ctaTitle);
+    const btnRow = document.createElement('div');
+    btnRow.className = 'cta-buttons';
+    const appStore = document.createElement('a');
+    appStore.href = 'https://apps.apple.com/ae/app/tamam-services-on-demand/id6740270481';
+    appStore.target = '_blank';
+    appStore.rel = 'noopener';
+    const appImg = document.createElement('img');
+    appImg.className = 'store-badge';
+    appImg.src = 'https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg';
+    appImg.alt = 'Download on the App Store';
+    appStore.appendChild(appImg);
+    const play = document.createElement('a');
+    play.href = 'https://play.google.com/store/apps/details?id=com.tamam.customer&pcampaignid=web_share';
+    play.target = '_blank';
+    play.rel = 'noopener';
+    const playImg = document.createElement('img');
+    playImg.className = 'store-badge';
+    playImg.src = 'https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg';
+    playImg.alt = 'Get it on Google Play';
+    play.appendChild(playImg);
+    btnRow.appendChild(appStore);
+    btnRow.appendChild(play);
+
+    const linkRow = document.createElement('div');
+    linkRow.className = 'cta-links';
+    const links = [
+      { href: 'https://gettamam.com', key: 'website' },
+      { href: 'https://www.instagram.com/tamam.uae', key: 'instagram' },
+      { href: 'https://linktr.ee/TamamApp', key: 'linktree' }
+    ];
+    links.forEach(l => {
+      const a = document.createElement('a');
+      a.href = l.href;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.className = 'cta-link';
+      a.textContent = t(l.key);
+      linkRow.appendChild(a);
+    });
+    ctaCard.appendChild(btnRow);
+    ctaCard.appendChild(linkRow);
+
+    view.appendChild(intro);
+    view.appendChild(socialsCard);
+    view.appendChild(ctaCard);
+
+    applyI18n(view);
+    container.appendChild(view);
+  }
+  const SURVEY_CONFIGS = {
+    vendor: {
+      titleKey: 'surveyVendorTitle',
+      kind: 'vendor',
+      fields: [
+        { key: 'company', type: 'text', labelKey: 'companyName', required: true },
+        { key: 'email', type: 'email', labelKey: 'businessEmail', required: false },
+        { key: 'phone', type: 'tel', labelKey: 'phoneNumber', required: false },
+        {
+          key: 'category',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'primaryCategory',
+          required: true,
+          options: [
+            { value: 'home', labelKey: 'home' },
+            { value: 'health', labelKey: 'health' },
+            { value: 'car', labelKey: 'car' },
+            { value: 'lifestyle', labelKey: 'lifestyle' }
+          ],
+          afterRender: (wrapper) => {
+            wrapper.dataset.stickySource = 'commission';
+          }
+        },
+        { key: 'aov', type: 'number', labelKey: 'averageOrderValue', required: true },
+        { key: 'avg_profit', type: 'number', labelKey: 'averageProfitMargin', required: true },
+        {
+          key: 'orders_all',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'typicalMonthlyOrders',
+          required: true,
+          options: [
+            { value: '0-10', labelKey: 'range0_10' },
+            { value: '10-20', labelKey: 'range10_20' },
+            { value: '20-40', labelKey: 'range20_40' },
+            { value: '40-80', labelKey: 'range40_80' },
+            { value: '80+', labelKey: 'range80p' },
+            { value: 'other', labelKey: 'other', otherKey: 'orders_all_other' }
+          ]
+        },
+        {
+          type: 'note',
+          noteKey: 'vendorHelper'
+        },
+        {
+          key: 'orders_profitable',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'vendorProfitableVolume',
+          required: true,
+          options: [
+            { value: '5-10', labelKey: 'orders5_10' },
+            { value: '10-20', labelKey: 'orders10_20' },
+            { value: '20-40', labelKey: 'orders20_40' },
+            { value: '40+', labelKey: 'orders40p' },
+            { value: 'other', labelKey: 'other', otherKey: 'orders_profitable_other' }
+          ]
+        },
+        {
+          key: 'min_orders_to_stay',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'vendorMinStay',
+          required: true,
+          options: [
+            { value: '1-5', labelKey: 'orders1_5' },
+            { value: '5-10', labelKey: 'orders5_10' },
+            { value: '10-20', labelKey: 'orders10_20' },
+            { value: '20+', labelKey: 'orders40p' },
+            { value: 'other', labelKey: 'other', otherKey: 'min_orders_to_stay_other' }
+          ]
+        },
+        {
+          key: 'accept_5_10k',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'vendorScenario1',
+          required: true,
+          options: [
+            { value: 'acceptable', labelKey: 'acceptable' },
+            { value: 'neutral', labelKey: 'neutral' },
+            { value: 'not', labelKey: 'notAcceptable' },
+            { value: 'other', labelKey: 'other', otherKey: 'accept_5_10k_other' }
+          ]
+        },
+        {
+          key: 'accept_10_20k',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'vendorScenario2',
+          required: true,
+          options: [
+            { value: 'acceptable', labelKey: 'acceptable' },
+            { value: 'neutral', labelKey: 'neutral' },
+            { value: 'not', labelKey: 'notAcceptable' },
+            { value: 'other', labelKey: 'other', otherKey: 'accept_10_20k_other' }
+          ]
+        },
+        {
+          key: 'accept_20k_plus',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'vendorScenario3',
+          required: true,
+          options: [
+            { value: 'acceptable', labelKey: 'acceptable' },
+            { value: 'neutral', labelKey: 'neutral' },
+            { value: 'not', labelKey: 'notAcceptable' },
+            { value: 'other', labelKey: 'other', otherKey: 'accept_20k_plus_other' }
+          ]
+        },
+        {
+          key: 'value_expect',
+          type: 'choice',
+          mode: 'multi',
+          labelKey: 'vendorExpect',
+          required: true,
+          options: [
+            { value: 'volume', labelKey: 'expectVolume' },
+            { value: 'marketing', labelKey: 'expectMarketing' },
+            { value: 'premium', labelKey: 'expectPremium' },
+            { value: 'tools', labelKey: 'expectTools' },
+            { value: 'payout', labelKey: 'expectPayout' },
+            { value: 'other', labelKey: 'other', otherKey: 'value_expect_other' }
+          ]
+        },
+        {
+          key: 'leave_reason',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'leaveReason',
+          required: true,
+          options: [
+            { value: 'commission', labelKey: 'leaveCommission' },
+            { value: 'volume', labelKey: 'leaveVolume' },
+            { value: 'support', labelKey: 'leaveSupport' },
+            { value: 'competitor', labelKey: 'leaveCompetitor' },
+            { value: 'other', labelKey: 'other', otherKey: 'leave_reason_other' }
+          ]
+        },
+        {
+          key: 'recommend',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'recommend',
+          required: true,
+          options: [
+            { value: 'yes', labelKey: 'yes' },
+            { value: 'no', labelKey: 'no' },
+            { value: 'other', labelKey: 'other', otherKey: 'recommend_other' }
+          ]
+        },
+        { key: 'notes', type: 'textarea', labelKey: 'anythingElse', required: false }
+      ],
+      recordFields: ['company','email','phone','category','aov','avg_profit','orders_all','orders_all_other','orders_profitable','orders_profitable_other','min_orders_to_stay','min_orders_to_stay_other','accept_5_10k','accept_5_10k_other','accept_10_20k','accept_10_20k_other','accept_20k_plus','accept_20k_plus_other','value_expect','value_expect_other','leave_reason','leave_reason_other','recommend','recommend_other','notes','ts','seconds']
+    },
+    customer: {
+      titleKey: 'surveyCustomerTitle',
+      kind: 'customer',
+      fields: [
+        { key: 'name', type: 'text', labelKey: 'customerName', required: true },
+        { key: 'email', type: 'email', labelKey: 'businessEmail', required: false },
+        { key: 'phone', type: 'tel', labelKey: 'phoneNumber', required: false },
+        {
+          key: 'freq',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'usageFrequency',
+          required: true,
+          options: [
+            { value: 'weekly', labelKey: 'weekly' },
+            { value: 'monthly', labelKey: 'monthly' },
+            { value: 'rarely', labelKey: 'rarely' },
+            { value: 'other', labelKey: 'other', otherKey: 'freq_other' }
+          ]
+        },
+        {
+          key: 'cats',
+          type: 'choice',
+          mode: 'multi',
+          labelKey: 'usedCategories',
+          required: true,
+          options: [
+            { value: 'home', labelKey: 'home' },
+            { value: 'health', labelKey: 'health' },
+            { value: 'car', labelKey: 'car' },
+            { value: 'lifestyle', labelKey: 'lifestyle' },
+            { value: 'other', labelKey: 'other', otherKey: 'cats_other' }
+          ]
+        },
+        {
+          key: 'ease',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'easeBooking',
+          required: true,
+          options: [
+            { value: '1', labelKey: 'veryDifficult' },
+            { value: '2', labelKey: 'score2' },
+            { value: '3', labelKey: 'score3' },
+            { value: '4', labelKey: 'score4' },
+            { value: '5', labelKey: 'veryEasy' }
+          ]
+        },
+        {
+          key: 'nps',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'recommendScore',
+          required: true,
+          options: Array.from({ length: 11 }, (_, i) => ({ value: String(i), labelKey: i.toString() }))
+        },
+        {
+          key: 'time_save',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'timeSave',
+          required: true,
+          options: [
+            { value: 'much_more', labelKey: 'muchMore' },
+            { value: 'slightly_more', labelKey: 'slightlyMore' },
+            { value: 'same', labelKey: 'same' },
+            { value: 'less', labelKey: 'less' },
+            { value: 'other', labelKey: 'other', otherKey: 'time_save_other' }
+          ]
+        },
+        {
+          key: 'money_save',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'moneySave',
+          required: true,
+          options: [
+            { value: 'much_more', labelKey: 'muchMore' },
+            { value: 'slightly_more', labelKey: 'slightlyMore' },
+            { value: 'same', labelKey: 'same' },
+            { value: 'less', labelKey: 'less' },
+            { value: 'other', labelKey: 'other', otherKey: 'money_save_other' }
+          ]
+        },
+        { key: 'wants_services', type: 'textarea', labelKey: 'futureServices', required: false },
+        {
+          key: 'more',
+          type: 'choice',
+          mode: 'multi',
+          labelKey: 'useMore',
+          required: true,
+          options: [
+            { value: 'lower_cost', labelKey: 'lowerCost' },
+            { value: 'variety', labelKey: 'moreVariety' },
+            { value: 'faster', labelKey: 'fasterBooking' },
+            { value: 'support', labelKey: 'betterSupport' },
+            { value: 'loyalty', labelKey: 'loyalty' },
+            { value: 'other', labelKey: 'other', otherKey: 'more_other' }
+          ]
+        },
+        { key: 'notes', type: 'textarea', labelKey: 'anythingElse', required: false }
+      ],
+      recordFields: ['name','email','phone','freq','freq_other','cats','cats_other','ease','nps','time_save','time_save_other','money_save','money_save_other','wants_services','more','more_other','notes','ts','seconds']
+    },
+    public: {
+      titleKey: 'surveyPublicTitle',
+      kind: 'public',
+      fields: [
+        { key: 'name', type: 'text', labelKey: 'customerName', required: true },
+        { key: 'email', type: 'email', labelKey: 'businessEmail', required: false },
+        { key: 'phone', type: 'tel', labelKey: 'phoneNumber', required: false },
+        {
+          key: 'booked_before',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'publicBookedBefore',
+          required: true,
+          options: [
+            { value: 'yes', labelKey: 'yesBooked' },
+            { value: 'no', labelKey: 'noBooked' }
+          ]
+        },
+        {
+          key: 'platforms',
+          type: 'choice',
+          mode: 'multi',
+          labelKey: 'usedPlatforms',
+          required: true,
+          dependsOn: { field: 'booked_before', value: 'yes' },
+          options: [
+            { value: 'tamam', labelKey: 'platformTamam' },
+            { value: 'urban', labelKey: 'platformUrban' },
+            { value: 'cafu', labelKey: 'platformCafu' },
+            { value: 'justlife', labelKey: 'platformJustlife' },
+            { value: 'other', labelKey: 'other', otherKey: 'platforms_other' }
+          ]
+        },
+        {
+          key: 'barrier',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'barrierNo',
+          required: true,
+          dependsOn: { field: 'booked_before', value: 'no' },
+          options: [
+            { value: 'expensive', labelKey: 'barrierExpensive' },
+            { value: 'trust', labelKey: 'barrierTrust' },
+            { value: 'call', labelKey: 'barrierCall' },
+            { value: 'unknown', labelKey: 'barrierUnknown' },
+            { value: 'other', labelKey: 'other', otherKey: 'barrier_other' }
+          ]
+        },
+        {
+          key: 'top_factor',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'preferenceFactor',
+          required: true,
+          options: [
+            { value: 'price', labelKey: 'factorPrice' },
+            { value: 'speed', labelKey: 'factorSpeed' },
+            { value: 'quality', labelKey: 'factorQuality' },
+            { value: 'trust', labelKey: 'factorTrust' },
+            { value: 'ease', labelKey: 'factorEase' },
+            { value: 'other', labelKey: 'other', otherKey: 'top_factor_other' }
+          ]
+        },
+        {
+          key: 'first_cat',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'firstCategory',
+          required: true,
+          options: [
+            { value: 'home', labelKey: 'home' },
+            { value: 'health', labelKey: 'health' },
+            { value: 'car', labelKey: 'car' },
+            { value: 'lifestyle', labelKey: 'lifestyle' },
+            { value: 'other', labelKey: 'other', otherKey: 'first_cat_other' }
+          ]
+        },
+        {
+          key: 'premium',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'willingnessFee',
+          required: true,
+          options: [
+            { value: 'yes', labelKey: 'yes' },
+            { value: 'no', labelKey: 'no' },
+            { value: 'maybe', labelKey: 'maybe' },
+            { value: 'other', labelKey: 'other', otherKey: 'premium_other' }
+          ]
+        },
+        { key: 'why_tamam', type: 'textarea', labelKey: 'whyTamam', required: true }
+      ],
+      recordFields: ['name','email','phone','booked_before','platforms','platforms_other','barrier','barrier_other','top_factor','top_factor_other','first_cat','first_cat_other','premium','premium_other','why_tamam','ts','seconds']
+    }
+  };
+  function createField(config, surveyKind) {
+    const wrapper = document.createElement('div');
+    if (config.type !== 'note') {
+      wrapper.className = 'field-group';
+      if (config.required) wrapper.dataset.required = 'true';
+      if (config.key) wrapper.dataset.fieldKey = config.key;
+    }
+    if (config.dependsOn) {
+      wrapper.dataset.dependsField = config.dependsOn.field;
+      wrapper.dataset.dependsValue = config.dependsOn.value;
+    }
+
+    if (config.type === 'note') {
+      const note = document.createElement('div');
+      note.className = 'field-description';
+      note.dataset.i18n = config.noteKey;
+      note.textContent = t(config.noteKey);
+      wrapper.appendChild(note);
+      return wrapper;
+    }
+
+    const label = document.createElement('label');
+    label.className = 'field-label';
+    label.dataset.i18n = config.labelKey;
+    label.textContent = t(config.labelKey);
+    if (!config.required) {
+      const opt = document.createElement('span');
+      opt.className = 'pill';
+      opt.dataset.i18n = 'optional';
+      opt.textContent = t('optional');
+      label.appendChild(document.createTextNode(' '));
+      label.appendChild(opt);
+    }
+    wrapper.appendChild(label);
+
+    if (config.type === 'text' || config.type === 'email' || config.type === 'tel' || config.type === 'number') {
+      const input = createInput(config.key, config.type);
+      bindFieldValue(input, surveyKind, config.key);
+      wrapper.appendChild(input);
+      return wrapper;
+    }
+
+    if (config.type === 'textarea') {
+      const area = document.createElement('textarea');
+      area.name = config.key;
+      area.className = 'field-input';
+      area.addEventListener('input', () => {
+        state.surveys[surveyKind].data[config.key] = area.value;
+        autosave(surveyKind);
+        if (config.required) updateProgress(surveyKind);
+      });
+      const existing = state.surveys[surveyKind].data[config.key];
+      if (existing) area.value = existing;
+      wrapper.appendChild(area);
+      return wrapper;
+    }
+
+    if (config.type === 'choice') {
+      const list = document.createElement('div');
+      list.className = 'options';
+      wrapper.appendChild(list);
+
+      const makeOther = (otherKey) => {
+        const otherWrap = document.createElement('div');
+        otherWrap.className = 'field-group option-other-wrapper';
+        otherWrap.style.display = 'none';
+        otherWrap.dataset.otherFor = config.key;
+        otherWrap.dataset.otherKey = otherKey;
+        otherWrap.dataset.required = 'true';
+        const otherInput = createOtherInput(otherKey);
+        otherInput.addEventListener('input', () => {
+          state.surveys[surveyKind].data[otherKey] = otherInput.value;
+          autosave(surveyKind);
+          updateProgress(surveyKind);
+        });
+        const existingOther = state.surveys[surveyKind].data[otherKey];
+        if (existingOther) otherInput.value = existingOther;
+        otherWrap.appendChild(otherInput);
+        return otherWrap;
+      };
+
+      config.options.forEach(option => {
+        const optionItem = document.createElement('label');
+        optionItem.className = 'option-item';
+        const input = document.createElement('input');
+        input.name = config.key;
+        const value = option.value;
+        input.value = value;
+        if (config.mode === 'multi') {
+          input.type = 'checkbox';
+        } else {
+          input.type = 'radio';
+        }
+        optionItem.appendChild(input);
+        const span = document.createElement('span');
+        if (option.labelKey) {
+          span.dataset.i18n = option.labelKey;
+          span.textContent = t(option.labelKey);
+        } else if (option.dynamicNumber !== undefined) {
+          span.dataset.number = option.dynamicNumber;
+          span.textContent = numberLabel(option.dynamicNumber);
+        } else if (option.label) {
+          span.textContent = option.label;
+        }
+        optionItem.appendChild(span);
+        list.appendChild(optionItem);
+
+        bindFieldValue(input, surveyKind, config.key);
+
+        if (option.otherKey) {
+          const otherWrap = makeOther(option.otherKey);
+          wrapper.appendChild(otherWrap);
+          input.dataset.otherToggle = 'true';
+          input.dataset.otherTarget = option.otherKey;
+          input.addEventListener('change', () => {
+            toggleOtherField(config, surveyKind);
+          });
+        }
+        input.addEventListener('change', () => {
+          toggleConditionalFields(surveyKind);
+        });
+      });
+
+      setTimeout(() => toggleOtherField(config, surveyKind));
+      return wrapper;
+    }
+
+    return wrapper;
+  }
+
+  function numberLabel(num) {
+    return state.lang === 'ar' ? num.toLocaleString('ar') : String(num);
+  }
+
+  function localizeValue(value) {
+    if (typeof value === 'number') return numberLabel(value);
+    if (typeof value === 'string' && state.lang === 'ar') {
+      return value.replace(/\d/g, d => numberLabel(Number(d)));
+    }
+    return value;
+  }
+
+  function toggleOtherField(config, surveyKind) {
+    const survey = state.surveys[surveyKind];
+    if (!survey.formEl) return;
+    const wrappers = survey.formEl.querySelectorAll(`[data-other-for="${config.key}"]`);
+    wrappers.forEach(wrapper => {
+      const otherKey = wrapper.dataset.otherKey;
+      let shouldShow = false;
+      const inputs = survey.formEl.querySelectorAll(`input[name="${config.key}"]`);
+      inputs.forEach(input => {
+        if (input.dataset.otherToggle === 'true' && input.dataset.otherTarget === otherKey) {
+          if ((input.type === 'checkbox' && input.checked) || (input.type === 'radio' && input.checked)) {
+            shouldShow = true;
+          }
+        }
+      });
+      wrapper.style.display = shouldShow ? 'block' : 'none';
+      if (!shouldShow) {
+        survey.data[otherKey] = '';
+        const input = wrapper.querySelector('input');
+        if (input) input.value = '';
+      }
+    });
+    autosave(surveyKind);
+    updateProgress(surveyKind);
+  }
+
+  function toggleConditionalFields(kind) {
+    const survey = state.surveys[kind];
+    if (!survey.formEl) return;
+    const groups = survey.formEl.querySelectorAll('[data-depends-field]');
+    groups.forEach(group => {
+      const field = group.dataset.dependsField;
+      const value = group.dataset.dependsValue;
+      const current = survey.data[field];
+      const shouldShow = Array.isArray(current) ? current.includes(value) : current === value;
+      group.style.display = shouldShow ? '' : 'none';
+      if (!shouldShow) {
+        const inputs = group.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+          if (input.type === 'radio' || input.type === 'checkbox') input.checked = false;
+          else input.value = '';
+        });
+        const fieldKey = group.dataset.fieldKey;
+        if (fieldKey) {
+          if (Array.isArray(state.surveys[kind].data[fieldKey])) state.surveys[kind].data[fieldKey] = [];
+          else state.surveys[kind].data[fieldKey] = '';
+        }
+      }
+    });
+    updateProgress(kind);
+    autosave(kind);
+  }
+
+  function ensureRecordFields(record, fields) {
+    fields.forEach(key => {
+      if (!(key in record)) {
+        record[key] = Array.isArray(record[key]) ? [] : '';
+      }
+    });
+    return record;
+  }
+  function mountSurvey(container, config) {
+    const kind = config.kind;
+    const surveyState = state.surveys[kind];
+    if (!surveyState.data) surveyState.data = {};
+
+    const view = document.createElement('section');
+    view.className = 'view active';
+    const card = document.createElement('div');
+    card.className = 'card';
+    const heading = document.createElement('h2');
+    heading.className = 'section-title';
+    heading.dataset.i18n = config.titleKey;
+    heading.textContent = t(config.titleKey);
+    card.appendChild(heading);
+
+    const statusRow = document.createElement('div');
+    statusRow.style.display = 'flex';
+    statusRow.style.flexWrap = 'wrap';
+    statusRow.style.gap = '12px';
+    statusRow.style.alignItems = 'center';
+
+    const progressLabel = document.createElement('div');
+    progressLabel.className = 'field-description';
+    progressLabel.dataset.i18n = 'progressLabel';
+    progressLabel.textContent = `${t('progressLabel')} · ${t('progressValue', { done: numberLabel(0), total: numberLabel(0) })}`;
+    statusRow.appendChild(progressLabel);
+
+    const timerLabel = document.createElement('div');
+    timerLabel.className = 'field-description';
+    timerLabel.dataset.i18nTimer = 'timerLabel';
+    timerLabel.textContent = `${t('timerLabel')}: ${t('timerSeconds', { seconds: numberLabel(0) })}`;
+    statusRow.appendChild(timerLabel);
+
+    card.appendChild(statusRow);
+
+    const progressBar = document.createElement('div');
+    progressBar.className = 'progress-bar';
+    const inner = document.createElement('div');
+    inner.className = 'progress-inner';
+    progressBar.appendChild(inner);
+    card.appendChild(progressBar);
+
+    const form = document.createElement('form');
+    form.noValidate = true;
+
+    config.fields.forEach(fieldConfig => {
+      const field = createField(fieldConfig, kind);
+      form.appendChild(field);
+      if (fieldConfig.afterRender) fieldConfig.afterRender(field);
+    });
+
+    const actions = document.createElement('div');
+    actions.className = 'form-actions';
+    const submit = document.createElement('button');
+    submit.type = 'submit';
+    submit.className = 'btn btn-primary';
+    submit.dataset.i18n = 'submit';
+    submit.textContent = t('submit');
+    actions.appendChild(submit);
+    form.appendChild(actions);
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      if (alreadyCompleted(kind)) {
+        showToast(t('alreadySubmitted'));
+        return;
+      }
+      if (!validateForm(form)) return;
+      const seconds = stopTimer(kind);
+      clearInterval(state.timers[kind]);
+      const record = { ...state.surveys[kind].data };
+      Object.keys(record).forEach(key => {
+        if (Array.isArray(record[key])) record[key] = [...record[key]];
+      });
+      record.ts = new Date().toISOString();
+      record.seconds = seconds;
+      ensureRecordFields(record, config.recordFields);
+      recordSubmission(kind, record);
+      resetDraft(kind);
+      handleCompletion(kind);
+      state.surveys[kind].data = {};
+      showToast(t('submitted'));
+      location.hash = '#/surveys/thanks';
+    });
+
+    card.appendChild(form);
+    view.appendChild(card);
+    container.appendChild(view);
+
+    surveyState.formEl = form;
+    surveyState.progressEl = progressBar;
+    surveyState.progressLabel = progressLabel;
+    surveyState.timerEl = timerLabel;
+
+    setTimeout(() => {
+      toggleConditionalFields(kind);
+      config.fields.filter(f => f.type === 'choice').forEach(f => toggleOtherField(f, kind));
+      updateProgress(kind);
+    });
+
+    startTimer(kind);
+    if (state.timers[kind]) clearInterval(state.timers[kind]);
+    state.timers[kind] = setInterval(() => {
+      if (surveyState.start) {
+        const seconds = Math.round((Date.now() - surveyState.start) / 1000);
+        surveyState.timerEl.textContent = `${t('timerLabel')}: ${t('timerSeconds', { seconds: numberLabel(seconds) })}`;
+      }
+    }, 1000);
+
+    if (config.kind === 'vendor') {
+      setupCommissionBanner(form);
+    }
+
+    surveyState.langUpdater = () => {
+      applyI18n(view);
+      updateProgress(kind);
+      const seconds = surveyState.start ? Math.round((Date.now() - surveyState.start) / 1000) : 0;
+      surveyState.timerEl.textContent = `${t('timerLabel')}: ${t('timerSeconds', { seconds: numberLabel(seconds) })}`;
+      if (config.kind === 'vendor') {
+        const banner = form.querySelector('.sticky-banner');
+        const selected = form.querySelector('input[name="category"]:checked');
+        const range = COMMISSION_BANDS[selected?.value || 'home'];
+        if (banner) banner.textContent = t('vendorBanner', { range });
+      }
+    };
+    surveyState.langUpdater();
+  }
+
+  function setupCommissionBanner(form) {
+    const categoryInputs = form.querySelectorAll('input[name="category"]');
+    if (!categoryInputs.length) return;
+    const banner = document.createElement('div');
+    banner.className = 'sticky-banner';
+    const updateBanner = () => {
+      let selected = 'home';
+      categoryInputs.forEach(input => { if (input.checked) selected = input.value; });
+      const range = COMMISSION_BANDS[selected] || COMMISSION_BANDS.home;
+      banner.textContent = t('vendorBanner', { range });
+    };
+    updateBanner();
+    const categoryField = form.querySelector('[data-sticky-source="commission"]');
+    if (categoryField) {
+      categoryField.after(banner);
+    } else {
+      form.prepend(banner);
+    }
+    categoryInputs.forEach(input => input.addEventListener('change', () => {
+      updateBanner();
+    }));
+  }
+  function updateI18nElement(el) {
+    const key = el.dataset.i18n;
+    if (!key) return;
+    const text = t(key);
+    if (el.tagName === 'LABEL') {
+      let textNode = Array.from(el.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+      if (!textNode) {
+        textNode = document.createTextNode('');
+        el.insertBefore(textNode, el.firstChild);
+      }
+      textNode.textContent = text + (el.querySelector('.pill') ? ' ' : '');
+    } else {
+      el.textContent = text;
+    }
+  }
+
+  function applyI18n(root) {
+    root.querySelectorAll('[data-i18n]').forEach(updateI18nElement);
+    root.querySelectorAll('[data-number]').forEach(el => {
+      const num = Number(el.dataset.number);
+      if (!Number.isNaN(num)) el.textContent = numberLabel(num);
+    });
+    root.querySelectorAll('.option-other').forEach(input => {
+      input.placeholder = t('otherPlaceholder');
+    });
+    root.querySelectorAll('[data-i18n-placeholder]').forEach(input => {
+      input.placeholder = t(input.dataset.i18nPlaceholder);
+    });
+  }
+  function renderThanks(container) {
+    const view = document.createElement('section');
+    view.className = 'view active';
+    const card = document.createElement('div');
+    card.className = 'card thanks';
+    const title = document.createElement('h2');
+    title.className = 'section-title';
+    title.dataset.i18n = 'thanksTitle';
+    title.textContent = t('thanksTitle');
+    const body = document.createElement('p');
+    body.className = 'section-subtitle';
+    body.dataset.i18n = 'thanksBody';
+    body.textContent = t('thanksBody');
+    const back = document.createElement('a');
+    back.href = '#/surveys';
+    back.className = 'cta-link';
+    back.dataset.i18n = 'backHome';
+    back.textContent = t('backHome');
+    card.appendChild(title);
+    card.appendChild(body);
+    card.appendChild(back);
+    view.appendChild(card);
+    applyI18n(view);
+    container.appendChild(view);
+  }
+  function createSurveyRoute(hash, config, password) {
+    registerRoute(hash, {
+      mount(container) {
+        container.innerHTML = '';
+        if (password && !state.passwordUnlocked[config.kind]) {
+          const gate = createPasswordGate(password.titleKey, password.promptKey, password.code);
+          gate.addEventListener('password-ok', () => {
+            state.passwordUnlocked[config.kind] = true;
+            setRoute(hash);
+          });
+          applyI18n(gate);
+          container.appendChild(gate);
+          return;
+        }
+        restoreDraft(config.kind);
+        mountSurvey(container, config);
+        if (alreadyCompleted(config.kind)) {
+          const info = document.createElement('div');
+          info.className = 'field-description';
+          info.dataset.i18n = 'alreadySubmitted';
+          info.textContent = t('alreadySubmitted');
+          const form = container.querySelector('form');
+          if (form) {
+            form.insertBefore(info, form.firstChild);
+            const submit = form.querySelector('button[type="submit"]');
+            if (submit) {
+              submit.disabled = true;
+              submit.style.opacity = '0.6';
+              submit.style.cursor = 'not-allowed';
+            }
+          }
+        }
+      },
+      unmount() {
+        clearInterval(state.timers[config.kind]);
+        stopTimer(config.kind);
+        state.surveys[config.kind].formEl = null;
+      },
+      onLang() {
+        if (password && !state.passwordUnlocked[config.kind]) {
+          const gate = document.querySelector('.password-gate');
+          if (gate) applyI18n(gate);
+        } else {
+          state.surveys[config.kind].langUpdater?.();
+        }
+      }
+    });
+  }
+
+  function initRoutes() {
+    registerRoute('#/surveys', {
+      mount(container) {
+        container.innerHTML = '';
+        renderHome(container);
+      },
+      unmount() {},
+      onLang() {
+        const view = app.querySelector('.view');
+        if (view) applyI18n(view);
+      }
+    });
+
+    registerRoute('#/surveys/thanks', {
+      mount(container) {
+        container.innerHTML = '';
+        renderThanks(container);
+      },
+      unmount() {},
+      onLang() {
+        const view = app.querySelector('.view');
+        if (view) applyI18n(view);
+      }
+    });
+
+    createSurveyRoute('#/surveys/vendors', SURVEY_CONFIGS.vendor, {
+      code: '00994',
+      titleKey: 'passwordVendorTitle',
+      promptKey: 'passwordPromptVendor'
+    });
+    createSurveyRoute('#/surveys/customers', SURVEY_CONFIGS.customer, {
+      code: '11636',
+      titleKey: 'passwordCustomerTitle',
+      promptKey: 'passwordPromptCustomer'
+    });
+    createSurveyRoute('#/surveys/public', SURVEY_CONFIGS.public, null);
+
+    registerRoute('#/surveys/results', {
+      mount(container) {
+        container.innerHTML = '';
+        if (!state.passwordUnlocked.results) {
+          const gate = createPasswordGate('passwordResultsTitle', 'passwordPromptResults', '@Tamam@3469-@');
+          gate.addEventListener('password-ok', () => {
+            state.passwordUnlocked.results = true;
+            setRoute('#/surveys/results');
+          });
+          applyI18n(gate);
+          container.appendChild(gate);
+          return;
+        }
+        renderResults(container);
+      },
+      unmount() {
+        Object.values(state.chartInstances).forEach(group => {
+          Object.values(group || {}).forEach(chart => chart?.destroy());
+        });
+      },
+      onLang() {
+        if (!state.passwordUnlocked.results) {
+          const gate = document.querySelector('.password-gate');
+          if (gate) applyI18n(gate);
+        } else {
+          const view = app.querySelector('.view');
+          if (view) {
+            applyI18n(view);
+            const content = view.querySelector('.dashboard-grid');
+            if (content) renderResultsTab(content, state.results.tab);
+          }
+        }
+      }
+    });
+  }
+  function updateThemeToggle() {
+    const btn = document.getElementById('theme-toggle');
+    btn.textContent = state.theme === 'light' ? '🌞' : '🌙';
+  }
+
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    state.theme = state.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = state.theme;
+    localStorage.setItem(STORAGE_KEYS.theme, state.theme);
+    updateThemeToggle();
+  });
+
+  document.getElementById('lang-toggle').addEventListener('click', () => {
+    state.lang = state.lang === 'en' ? 'ar' : 'en';
+    localStorage.setItem(STORAGE_KEYS.lang, state.lang);
+    document.documentElement.setAttribute('lang', state.lang === 'ar' ? 'ar' : 'en');
+    document.getElementById('app-shell').setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
+    updateHeaderTexts();
+    updateNav();
+    initDebug();
+    if (state.currentRoute && state.currentRoute.onLang) state.currentRoute.onLang();
+  });
+  function clearAllStorage() {
+    saveDB(defaultDB());
+    Object.values(STORAGE_KEYS.drafts).forEach(key => localStorage.removeItem(key));
+    Object.values(STORAGE_KEYS.completed).forEach(key => localStorage.removeItem(key));
+    showToast(t('resetDone'));
+    document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'all' } }));
+  }
+
+  function dumpDB() {
+    logDebug('DB snapshot', getDB());
+    showToast(t('dumpData'));
+  }
+
+  function initDebug() {
+    const panel = document.getElementById('debug-panel');
+    if (!DEBUG) {
+      panel.style.display = 'none';
+      return;
+    }
+    panel.innerHTML = '';
+    const clearBtn = document.createElement('button');
+    clearBtn.dataset.i18n = 'clearData';
+    clearBtn.textContent = t('clearData');
+    clearBtn.addEventListener('click', clearAllStorage);
+    const dumpBtn = document.createElement('button');
+    dumpBtn.dataset.i18n = 'dumpData';
+    dumpBtn.textContent = t('dumpData');
+    dumpBtn.addEventListener('click', dumpDB);
+    panel.appendChild(clearBtn);
+    panel.appendChild(dumpBtn);
+  }
+  initRoutes();
+  initDebug();
+  updateHeaderTexts();
+  updateThemeToggle();
+  updateNav();
+  ensureHash();
+  const modalBackdrop = document.getElementById('modal-backdrop');
+  const modalContent = document.getElementById('modal-content');
+  const modalClose = document.getElementById('modal-close');
+
+  function openModal(node) {
+    modalContent.innerHTML = '';
+    modalContent.appendChild(node);
+    modalBackdrop.classList.add('active');
+    modalBackdrop.removeAttribute('hidden');
+    modalClose.focus();
+    document.addEventListener('keydown', trapEscape);
+  }
+
+  function closeModal() {
+    modalBackdrop.classList.remove('active');
+    modalBackdrop.setAttribute('hidden', 'hidden');
+    modalContent.innerHTML = '';
+    document.removeEventListener('keydown', trapEscape);
+  }
+
+  function trapEscape(event) {
+    if (event.key === 'Escape') {
+      closeModal();
+    }
+  }
+
+  modalClose.addEventListener('click', closeModal);
+  modalBackdrop.addEventListener('click', (e) => {
+    if (e.target === modalBackdrop) closeModal();
+  });
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(t('copied'));
+    } catch (e) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      showToast(t('copied'));
+    }
+  }
+  const RESULTS_MAP = {
+    vendor: {
+      labelKey: 'tabVendors',
+      searchFields: ['company', 'email', 'phone', 'category'],
+      kpi: records => {
+        const total = records.length;
+        const avg = (list, key) => {
+          const nums = list.map(r => Number(r[key])).filter(n => !Number.isNaN(n));
+          if (!nums.length) return 0;
+          return nums.reduce((a, b) => a + b, 0) / nums.length;
+        };
+        const avgSeconds = avg(records, 'seconds');
+        return [
+          { labelKey: 'kpiTotal', value: total },
+          { labelKey: 'kpiAvgAOV', value: avg(records, 'aov').toFixed(1) },
+          { labelKey: 'kpiAvgProfit', value: avg(records, 'avg_profit').toFixed(1) + '%' },
+          { labelKey: 'kpiAvgSeconds', value: avgSeconds.toFixed(0) }
+        ];
+      },
+      charts: [
+        { id: 'orders_all', type: 'bar', field: 'orders_all', labelKey: 'typicalMonthlyOrders' },
+        { id: 'orders_profitable', type: 'bar', field: 'orders_profitable', labelKey: 'vendorProfitableVolume' },
+        { id: 'min_orders_to_stay', type: 'bar', field: 'min_orders_to_stay', labelKey: 'vendorMinStay' },
+        { id: 'revenue_accept', type: 'stacked', labelKey: 'vendorExpect', fields: [
+          { field: 'accept_5_10k', labelKey: 'vendorScenario1' },
+          { field: 'accept_10_20k', labelKey: 'vendorScenario2' },
+          { field: 'accept_20k_plus', labelKey: 'vendorScenario3' }
+        ], choices: ['acceptable', 'neutral', 'not', 'other'] },
+        { id: 'value_expect', type: 'bar', field: 'value_expect', mode: 'multi', labelKey: 'vendorExpect' },
+        { id: 'leave_reason', type: 'bar', field: 'leave_reason', labelKey: 'leaveReason' },
+        { id: 'recommend', type: 'bar', field: 'recommend', labelKey: 'recommend' }
+      ],
+      openFields: [
+        { key: 'orders_all_other', label: () => `${t('other')} (${t('typicalMonthlyOrders')})` },
+        { key: 'orders_profitable_other', label: () => `${t('other')} (${t('vendorProfitableVolume')})` },
+        { key: 'min_orders_to_stay_other', label: () => `${t('other')} (${t('vendorMinStay')})` },
+        { key: 'accept_5_10k_other', label: () => `${t('other')} (${t('vendorScenario1')})` },
+        { key: 'accept_10_20k_other', label: () => `${t('other')} (${t('vendorScenario2')})` },
+        { key: 'accept_20k_plus_other', label: () => `${t('other')} (${t('vendorScenario3')})` },
+        { key: 'value_expect_other', label: () => `${t('other')} (${t('vendorExpect')})` },
+        { key: 'leave_reason_other', label: () => `${t('other')} (${t('leaveReason')})` },
+        { key: 'recommend_other', label: () => `${t('other')} (${t('recommend')})` },
+        { key: 'notes', labelKey: 'anythingElse' }
+      ],
+      columns: [
+        { key: 'company', labelKey: 'companyName' },
+        { key: 'email', labelKey: 'businessEmail' },
+        { key: 'phone', labelKey: 'phoneNumber' },
+        { key: 'category', labelKey: 'primaryCategory' },
+        { key: 'aov', labelKey: 'averageOrderValue' },
+        { key: 'avg_profit', labelKey: 'averageProfitMargin' },
+        { key: 'orders_all', labelKey: 'typicalMonthlyOrders' },
+        { key: 'orders_all_other', label: () => `${t('other')} (${t('typicalMonthlyOrders')})` },
+        { key: 'orders_profitable', labelKey: 'vendorProfitableVolume' },
+        { key: 'orders_profitable_other', label: () => `${t('other')} (${t('vendorProfitableVolume')})` },
+        { key: 'min_orders_to_stay', labelKey: 'vendorMinStay' },
+        { key: 'min_orders_to_stay_other', label: () => `${t('other')} (${t('vendorMinStay')})` },
+        { key: 'accept_5_10k', labelKey: 'vendorScenario1' },
+        { key: 'accept_5_10k_other', label: () => `${t('other')} (${t('vendorScenario1')})` },
+        { key: 'accept_10_20k', labelKey: 'vendorScenario2' },
+        { key: 'accept_10_20k_other', label: () => `${t('other')} (${t('vendorScenario2')})` },
+        { key: 'accept_20k_plus', labelKey: 'vendorScenario3' },
+        { key: 'accept_20k_plus_other', label: () => `${t('other')} (${t('vendorScenario3')})` },
+        { key: 'value_expect', labelKey: 'vendorExpect' },
+        { key: 'value_expect_other', label: () => `${t('other')} (${t('vendorExpect')})` },
+        { key: 'leave_reason', labelKey: 'leaveReason' },
+        { key: 'leave_reason_other', label: () => `${t('other')} (${t('leaveReason')})` },
+        { key: 'recommend', labelKey: 'recommend' },
+        { key: 'recommend_other', label: () => `${t('other')} (${t('recommend')})` },
+        { key: 'notes', labelKey: 'anythingElse' },
+        { key: 'seconds', labelKey: 'durationLabel' },
+        { key: 'ts', labelKey: 'timestampLabel' }
+      ]
+    },
+    customer: {
+      labelKey: 'tabCustomers',
+      searchFields: ['name', 'email', 'phone'],
+      kpi: records => {
+        const total = records.length;
+        const avg = (list, key) => {
+          const nums = list.map(r => Number(r[key])).filter(n => !Number.isNaN(n));
+          if (!nums.length) return 0;
+          return nums.reduce((a, b) => a + b, 0) / nums.length;
+        };
+        return [
+          { labelKey: 'kpiTotal', value: total },
+          { labelKey: 'kpiAvgNps', value: avg(records, 'nps').toFixed(1) },
+          { labelKey: 'kpiAvgEase', value: avg(records, 'ease').toFixed(1) },
+          { labelKey: 'kpiAvgSeconds', value: avg(records, 'seconds').toFixed(0) }
+        ];
+      },
+      charts: [
+        { id: 'freq', type: 'bar', field: 'freq', labelKey: 'usageFrequency' },
+        { id: 'cats', type: 'bar', field: 'cats', mode: 'multi', labelKey: 'usedCategories' },
+        { id: 'ease', type: 'bar', field: 'ease', labelKey: 'easeBooking' },
+        { id: 'nps', type: 'bar', field: 'nps', labelKey: 'recommendScore' },
+        { id: 'time_save', type: 'bar', field: 'time_save', labelKey: 'timeSave' },
+        { id: 'money_save', type: 'bar', field: 'money_save', labelKey: 'moneySave' },
+        { id: 'more', type: 'bar', field: 'more', mode: 'multi', labelKey: 'useMore' }
+      ],
+      openFields: [
+        { key: 'freq_other', label: () => `${t('other')} (${t('usageFrequency')})` },
+        { key: 'cats_other', label: () => `${t('other')} (${t('usedCategories')})` },
+        { key: 'time_save_other', label: () => `${t('other')} (${t('timeSave')})` },
+        { key: 'money_save_other', label: () => `${t('other')} (${t('moneySave')})` },
+        { key: 'more_other', label: () => `${t('other')} (${t('useMore')})` },
+        { key: 'wants_services', labelKey: 'futureServices' },
+        { key: 'notes', labelKey: 'anythingElse' }
+      ],
+      columns: [
+        { key: 'name', labelKey: 'customerName' },
+        { key: 'email', labelKey: 'businessEmail' },
+        { key: 'phone', labelKey: 'phoneNumber' },
+        { key: 'freq', labelKey: 'usageFrequency' },
+        { key: 'freq_other', label: () => `${t('other')} (${t('usageFrequency')})` },
+        { key: 'cats', labelKey: 'usedCategories' },
+        { key: 'cats_other', label: () => `${t('other')} (${t('usedCategories')})` },
+        { key: 'ease', labelKey: 'easeBooking' },
+        { key: 'nps', labelKey: 'recommendScore' },
+        { key: 'time_save', labelKey: 'timeSave' },
+        { key: 'time_save_other', label: () => `${t('other')} (${t('timeSave')})` },
+        { key: 'money_save', labelKey: 'moneySave' },
+        { key: 'money_save_other', label: () => `${t('other')} (${t('moneySave')})` },
+        { key: 'wants_services', labelKey: 'futureServices' },
+        { key: 'more', labelKey: 'useMore' },
+        { key: 'more_other', label: () => `${t('other')} (${t('useMore')})` },
+        { key: 'notes', labelKey: 'anythingElse' },
+        { key: 'seconds', labelKey: 'durationLabel' },
+        { key: 'ts', labelKey: 'timestampLabel' }
+      ]
+    },
+    public: {
+      labelKey: 'tabPublic',
+      searchFields: ['name', 'email', 'phone'],
+      kpi: records => {
+        const total = records.length;
+        const yes = records.filter(r => r.booked_before === 'yes').length;
+        const willing = records.filter(r => r.premium === 'yes').length;
+        const avgSeconds = records.map(r => Number(r.seconds)).filter(n => !Number.isNaN(n));
+        const avg = avgSeconds.length ? avgSeconds.reduce((a,b)=>a+b,0)/avgSeconds.length : 0;
+        return [
+          { labelKey: 'kpiTotal', value: total },
+          { labelKey: 'kpiBookedBefore', value: total ? Math.round((yes/total)*100) + '%' : '0%' },
+          { labelKey: 'kpiWilling', value: total ? Math.round((willing/total)*100) + '%' : '0%' },
+          { labelKey: 'kpiAvgSeconds', value: avg.toFixed(0) }
+        ];
+      },
+      charts: [
+        { id: 'booked_before', type: 'bar', field: 'booked_before', labelKey: 'publicBookedBefore' },
+        { id: 'platforms', type: 'bar', field: 'platforms', mode: 'multi', labelKey: 'usedPlatforms' },
+        { id: 'barrier', type: 'bar', field: 'barrier', labelKey: 'barrierNo' },
+        { id: 'top_factor', type: 'bar', field: 'top_factor', labelKey: 'preferenceFactor' },
+        { id: 'first_cat', type: 'bar', field: 'first_cat', labelKey: 'firstCategory' },
+        { id: 'premium', type: 'bar', field: 'premium', labelKey: 'willingnessFee' }
+      ],
+      openFields: [
+        { key: 'platforms_other', label: () => `${t('other')} (${t('usedPlatforms')})` },
+        { key: 'barrier_other', label: () => `${t('other')} (${t('barrierNo')})` },
+        { key: 'top_factor_other', label: () => `${t('other')} (${t('preferenceFactor')})` },
+        { key: 'first_cat_other', label: () => `${t('other')} (${t('firstCategory')})` },
+        { key: 'premium_other', label: () => `${t('other')} (${t('willingnessFee')})` },
+        { key: 'why_tamam', labelKey: 'whyTamam' }
+      ],
+      columns: [
+        { key: 'name', labelKey: 'customerName' },
+        { key: 'email', labelKey: 'businessEmail' },
+        { key: 'phone', labelKey: 'phoneNumber' },
+        { key: 'booked_before', labelKey: 'publicBookedBefore' },
+        { key: 'platforms', labelKey: 'usedPlatforms' },
+        { key: 'platforms_other', label: () => `${t('other')} (${t('usedPlatforms')})` },
+        { key: 'barrier', labelKey: 'barrierNo' },
+        { key: 'barrier_other', label: () => `${t('other')} (${t('barrierNo')})` },
+        { key: 'top_factor', labelKey: 'preferenceFactor' },
+        { key: 'top_factor_other', label: () => `${t('other')} (${t('preferenceFactor')})` },
+        { key: 'first_cat', labelKey: 'firstCategory' },
+        { key: 'first_cat_other', label: () => `${t('other')} (${t('firstCategory')})` },
+        { key: 'premium', labelKey: 'willingnessFee' },
+        { key: 'premium_other', label: () => `${t('other')} (${t('willingnessFee')})` },
+        { key: 'why_tamam', labelKey: 'whyTamam' },
+        { key: 'seconds', labelKey: 'durationLabel' },
+        { key: 'ts', labelKey: 'timestampLabel' }
+      ]
+    }
+  };
+  function getFieldDefinition(kind, field) {
+    return SURVEY_CONFIGS[kind]?.fields?.find(f => f.key === field);
+  }
+
+  function getOptionLabel(kind, field, value) {
+    const def = getFieldDefinition(kind, field);
+    if (def && def.type === 'choice') {
+      const opt = def.options.find(o => o.value === value);
+      if (opt) {
+        if (opt.labelKey) return t(opt.labelKey);
+        if (opt.label) return opt.label;
+      }
+    }
+    if (value === 'other') return t('other');
+    if (value === 'not') return t('notAcceptable');
+    return value;
+  }
+
+  function getOptionOrder(kind, field) {
+    const def = getFieldDefinition(kind, field);
+    if (def && def.type === 'choice') {
+      return def.options.map(o => o.value);
+    }
+    return [];
+  }
+
+  function aggregateCounts(kind, field, mode, records) {
+    const counts = new Map();
+    const add = (val) => {
+      if (!val) return;
+      const key = String(val);
+      counts.set(key, (counts.get(key) || 0) + 1);
+    };
+    records.forEach(rec => {
+      const value = rec[field];
+      if (mode === 'multi' && Array.isArray(value)) {
+        value.forEach(add);
+      } else {
+        add(value);
+      }
+    });
+    const order = getOptionOrder(kind, field);
+    const labels = [];
+    const values = [];
+    const used = new Set();
+    order.forEach(val => {
+      if (counts.has(val)) {
+        labels.push(getOptionLabel(kind, field, val));
+        values.push(counts.get(val));
+        used.add(val);
+      }
+    });
+    counts.forEach((count, key) => {
+      if (used.has(key)) return;
+      labels.push(getOptionLabel(kind, field, key));
+      values.push(count);
+    });
+    return { labels, values };
+  }
+
+  function aggregateStacked(kind, chartConfig, records) {
+    const segments = chartConfig.choices;
+    const datasets = [];
+    const labels = chartConfig.fields.map(f => t(f.labelKey));
+    segments.forEach(segment => {
+      const data = chartConfig.fields.map(f => {
+        const value = records.filter(rec => rec[f.field] === segment).length;
+        return value;
+      });
+      let labelKey = segment === 'not' ? 'notAcceptable' : segment;
+      datasets.push({
+        label: t(labelKey),
+        data,
+        backgroundColor: segment === 'acceptable' ? 'rgba(108,122,255,0.7)' : segment === 'neutral' ? 'rgba(171,123,255,0.7)' : segment === 'not' ? 'rgba(255,107,129,0.7)' : 'rgba(255,199,135,0.7)'
+      });
+    });
+    return { labels, datasets };
+  }
+
+  function renderKPIs(kind, records) {
+    const kpis = RESULTS_MAP[kind].kpi(records);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'kpi-grid';
+    kpis.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'kpi-card';
+      const label = document.createElement('div');
+      label.className = 'field-description';
+      label.dataset.i18n = item.labelKey;
+      label.textContent = t(item.labelKey);
+      const value = document.createElement('div');
+      value.style.fontSize = '1.6rem';
+      value.style.fontWeight = '600';
+      value.textContent = localizeValue(item.value);
+      card.appendChild(label);
+      card.appendChild(value);
+      wrapper.appendChild(card);
+    });
+    return wrapper;
+  }
+
+  function renderCharts(kind, records) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'charts-grid';
+    const charts = RESULTS_MAP[kind].charts;
+    state.chartInstances[kind] = state.chartInstances[kind] || {};
+    charts.forEach(chartConfig => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const title = document.createElement('h3');
+      title.className = 'section-title';
+      title.dataset.i18n = chartConfig.labelKey;
+      title.textContent = t(chartConfig.labelKey);
+      card.appendChild(title);
+      const canvas = document.createElement('canvas');
+      canvas.style.height = '260px';
+      card.appendChild(canvas);
+      wrapper.appendChild(card);
+      const ctx = canvas.getContext('2d');
+      if (state.chartInstances[kind][chartConfig.id]) {
+        state.chartInstances[kind][chartConfig.id].destroy();
+        delete state.chartInstances[kind][chartConfig.id];
+      }
+      if (!records.length) return;
+      const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { color: getComputedStyle(document.body).color } },
+          y: { ticks: { color: getComputedStyle(document.body).color }, beginAtZero: true }
+        },
+        plugins: {
+          legend: { display: chartConfig.type === 'stacked', rtl: state.lang === 'ar', labels: { color: getComputedStyle(document.body).color } },
+          tooltip: { rtl: state.lang === 'ar' }
+        }
+      };
+      if (state.lang === 'ar') {
+        options.locale = 'ar-AE';
+      }
+      let data;
+      if (chartConfig.type === 'stacked') {
+        const agg = aggregateStacked(kind, chartConfig, records);
+        data = { labels: agg.labels, datasets: agg.datasets };
+        options.scales.y.stacked = true;
+        options.scales.x.stacked = true;
+      } else {
+        const mode = chartConfig.mode === 'multi' ? 'multi' : 'single';
+        const agg = aggregateCounts(kind, chartConfig.field, mode, records);
+        data = {
+          labels: agg.labels,
+          datasets: [{
+            label: t(chartConfig.labelKey),
+            data: agg.values,
+            backgroundColor: 'rgba(108,122,255,0.7)',
+            borderRadius: 8
+          }]
+        };
+      }
+      if (state.chartInstances[kind][chartConfig.id]) {
+        state.chartInstances[kind][chartConfig.id].destroy();
+      }
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data,
+        options
+      });
+      state.chartInstances[kind][chartConfig.id] = chart;
+    });
+    return wrapper;
+  }
+
+  function renderOpenResponses(kind, records) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'open-text card';
+    const title = document.createElement('h3');
+    title.className = 'section-title';
+    title.dataset.i18n = 'openResponses';
+    title.textContent = t('openResponses');
+    wrapper.appendChild(title);
+    const fields = RESULTS_MAP[kind].openFields;
+    if (!records.length) {
+      const empty = document.createElement('div');
+      empty.dataset.i18n = 'resultsEmpty';
+      empty.textContent = t('resultsEmpty');
+      wrapper.appendChild(empty);
+      return wrapper;
+    }
+    fields.forEach(field => {
+      const list = records.map(r => ({ value: r[field.key], record: r })).filter(item => item.value && String(item.value).trim());
+      if (!list.length) return;
+      const block = document.createElement('div');
+      block.className = 'card';
+      block.style.background = 'transparent';
+      block.style.boxShadow = 'none';
+      const heading = document.createElement('h4');
+      const label = field.labelKey ? t(field.labelKey) : field.label();
+      heading.textContent = label;
+      block.appendChild(heading);
+      list.forEach(item => {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.justifyContent = 'space-between';
+        row.style.alignItems = 'center';
+        row.style.gap = '12px';
+        const text = document.createElement('div');
+        text.textContent = item.value;
+        text.style.flex = '1';
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.dataset.i18n = 'copy';
+        btn.textContent = t('copy');
+        btn.addEventListener('click', () => copyText(String(item.value)));
+        row.appendChild(text);
+        row.appendChild(btn);
+        block.appendChild(row);
+      });
+      wrapper.appendChild(block);
+    });
+    return wrapper;
+  }
+
+  function formatValueForTable(kind, key, value) {
+    let output = value;
+    if (Array.isArray(value)) {
+      output = value.map(v => getOptionLabel(kind, key, v)).join(', ');
+    } else if (key === 'ts' && value) {
+      output = formatDate(value);
+    } else if (key === 'seconds' && value !== undefined) {
+      output = numberLabel(Number(value));
+    } else if (typeof value === 'string' && value.trim() === '') {
+      return '';
+    }
+    if (output === undefined || output === null) return '';
+    return localizeValue(output);
+  }
+
+  function renderTable(kind, records) {
+    const section = document.createElement('div');
+    section.className = 'card';
+    const header = document.createElement('div');
+    header.className = 'section-title';
+    header.dataset.i18n = 'tableTitle';
+    header.textContent = t('tableTitle');
+    section.appendChild(header);
+
+    const controls = document.createElement('div');
+    controls.className = 'search-row';
+    const search = createInput('search');
+    search.placeholder = t('searchPlaceholder');
+    search.dataset.i18nPlaceholder = 'searchPlaceholder';
+    const sortDate = document.createElement('button');
+    sortDate.className = 'cta-link';
+    sortDate.dataset.i18n = 'sortDate';
+    sortDate.textContent = t('sortDate');
+    const sortName = document.createElement('button');
+    sortName.className = 'cta-link';
+    sortName.dataset.i18n = 'sortName';
+    sortName.textContent = t('sortName');
+    controls.appendChild(search);
+    controls.appendChild(sortDate);
+    controls.appendChild(sortName);
+    section.appendChild(controls);
+
+    const tableWrapper = document.createElement('div');
+    tableWrapper.className = 'table-wrapper';
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    RESULTS_MAP[kind].columns.forEach(col => {
+      const th = document.createElement('th');
+      if (col.labelKey) {
+        th.dataset.i18n = col.labelKey;
+        th.textContent = t(col.labelKey);
+      } else {
+        th.textContent = col.label();
+      }
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+    tableWrapper.appendChild(table);
+    section.appendChild(tableWrapper);
+
+    const stateTable = { search: '', sort: 'date' };
+
+    function applyFilter() {
+      let rows = [...records];
+      if (stateTable.search) {
+        const term = stateTable.search.toLowerCase();
+        rows = rows.filter(rec => RESULTS_MAP[kind].searchFields.some(field => (rec[field] || '').toString().toLowerCase().includes(term)));
+      }
+      if (stateTable.sort === 'date') {
+        rows.sort((a, b) => new Date(b.ts || 0) - new Date(a.ts || 0));
+      } else {
+        rows.sort((a, b) => (a.name || a.company || '').localeCompare(b.name || b.company || '', state.lang === 'ar' ? 'ar' : 'en'));
+      }
+      return rows;
+    }
+
+    function renderRows() {
+      tbody.innerHTML = '';
+      const rows = applyFilter();
+      if (!rows.length) {
+        const emptyRow = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = RESULTS_MAP[kind].columns.length;
+        cell.dataset.i18n = 'resultsEmpty';
+        cell.textContent = t('resultsEmpty');
+        emptyRow.appendChild(cell);
+        tbody.appendChild(emptyRow);
+        return;
+      }
+      rows.forEach(rec => {
+        const tr = document.createElement('tr');
+        RESULTS_MAP[kind].columns.forEach(col => {
+          const td = document.createElement('td');
+          const raw = rec[col.key];
+          td.textContent = formatValueForTable(kind, col.key, raw);
+          tr.appendChild(td);
+        });
+        tr.addEventListener('click', () => {
+          const detail = document.createElement('div');
+          detail.style.display = 'grid';
+          detail.style.gap = '12px';
+          RESULTS_MAP[kind].columns.forEach(col => {
+            const label = col.labelKey ? t(col.labelKey) : col.label();
+            const row = document.createElement('div');
+            row.innerHTML = `<strong>${label}</strong><div>${formatValueForTable(kind, col.key, rec[col.key]) || '-'}</div>`;
+            detail.appendChild(row);
+          });
+          const meta = document.createElement('div');
+          meta.innerHTML = `<strong>${t('timeSpent')}</strong><div>${t('timerSeconds', { seconds: numberLabel(rec.seconds || 0) })}</div>`;
+          detail.appendChild(meta);
+          openModal(detail);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    search.addEventListener('input', () => {
+      stateTable.search = search.value.trim();
+      renderRows();
+    });
+    sortDate.addEventListener('click', () => {
+      stateTable.sort = 'date';
+      renderRows();
+    });
+    sortName.addEventListener('click', () => {
+      stateTable.sort = 'name';
+      renderRows();
+    });
+
+    renderRows();
+    return section;
+  }
+  function prepareRecordsForExport(kind) {
+    const db = getDB();
+    return db[kind].map(rec => {
+      const copy = {};
+      SURVEY_CONFIGS[kind].recordFields.forEach(key => {
+        let value = rec[key];
+        if (Array.isArray(value)) value = value.join(', ');
+        copy[key] = value ?? '';
+      });
+      return copy;
+    });
+  }
+
+  function triggerDownload(filename, blob) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportExcel() {
+    const wb = XLSX.utils.book_new();
+    ['vendor','customer','public'].forEach(kind => {
+      const data = prepareRecordsForExport(kind);
+      const sheet = XLSX.utils.json_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, sheet, kind.charAt(0).toUpperCase() + kind.slice(1));
+    });
+    XLSX.writeFile(wb, 'tamam-research.xlsx');
+    showToast(t('exportReady'));
+  }
+
+  function exportJSON(download = true) {
+    const db = getDB();
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+    if (download) {
+      triggerDownload('tamam-research.json', blob);
+      showToast(t('exportReady'));
+    }
+    return blob;
+  }
+
+  function mergeDB(newData) {
+    const db = getDB();
+    ['vendor','customer','public'].forEach(kind => {
+      if (Array.isArray(newData[kind])) {
+        newData[kind].forEach(item => db[kind].push(item));
+      }
+    });
+    saveDB(db);
+    document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'all' } }));
+  }
+
+  function importJSONFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        mergeDB(data);
+        showToast(t('importSuccess'));
+        if (state.currentRoute === routes['#/surveys/results']) {
+          state.currentRoute.mount(app);
+        }
+      } catch (e) {
+        showToast(t('invalidFile'));
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function backupAndReset() {
+    exportJSON(true);
+    setTimeout(() => {
+      clearAllStorage();
+      if (state.currentRoute === routes['#/surveys/results']) {
+        state.currentRoute.mount(app);
+      }
+    }, 400);
+  }
+  function renderResults(container) {
+    const view = document.createElement('section');
+    view.className = 'view active';
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const controls = document.createElement('div');
+    controls.className = 'export-bar';
+    const exportExcelBtn = document.createElement('button');
+    exportExcelBtn.className = 'cta-link';
+    exportExcelBtn.dataset.i18n = 'exportExcel';
+    exportExcelBtn.textContent = t('exportExcel');
+    exportExcelBtn.addEventListener('click', exportExcel);
+    const exportJsonBtn = document.createElement('button');
+    exportJsonBtn.className = 'cta-link';
+    exportJsonBtn.dataset.i18n = 'exportJSON';
+    exportJsonBtn.textContent = t('exportJSON');
+    exportJsonBtn.addEventListener('click', () => exportJSON(true));
+    const importLabel = document.createElement('label');
+    importLabel.className = 'cta-link';
+    importLabel.style.cursor = 'pointer';
+    importLabel.dataset.i18n = 'importJSON';
+    importLabel.textContent = t('importJSON');
+    const importInput = document.createElement('input');
+    importInput.type = 'file';
+    importInput.accept = 'application/json';
+    importInput.style.display = 'none';
+    importInput.addEventListener('change', () => {
+      if (importInput.files?.length) {
+        importJSONFile(importInput.files[0]);
+        importInput.value = '';
+      }
+    });
+    importLabel.appendChild(importInput);
+    const backupBtn = document.createElement('button');
+    backupBtn.className = 'cta-link';
+    backupBtn.dataset.i18n = 'backupReset';
+    backupBtn.textContent = t('backupReset');
+    backupBtn.addEventListener('click', backupAndReset);
+    const refreshBtn = document.createElement('button');
+    refreshBtn.className = 'cta-link';
+    refreshBtn.dataset.i18n = 'refreshData';
+    refreshBtn.textContent = t('refreshData');
+    refreshBtn.addEventListener('click', () => {
+      cardContent.innerHTML = '';
+      renderResultsTab(cardContent, state.results.tab);
+    });
+    controls.appendChild(exportExcelBtn);
+    controls.appendChild(exportJsonBtn);
+    controls.appendChild(importLabel);
+    controls.appendChild(backupBtn);
+    controls.appendChild(refreshBtn);
+    card.appendChild(controls);
+
+    const tabBar = document.createElement('div');
+    tabBar.className = 'tab-bar';
+    const cardContent = document.createElement('div');
+    cardContent.className = 'dashboard-grid';
+
+    Object.keys(RESULTS_MAP).forEach(kind => {
+      const tabBtn = document.createElement('button');
+      tabBtn.className = 'tab-btn';
+      tabBtn.dataset.kind = kind;
+      tabBtn.dataset.i18n = RESULTS_MAP[kind].labelKey;
+      tabBtn.textContent = t(RESULTS_MAP[kind].labelKey);
+      if (state.results.tab === kind) tabBtn.classList.add('active');
+      tabBtn.addEventListener('click', () => {
+        state.results.tab = kind;
+        tabBar.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        tabBtn.classList.add('active');
+        cardContent.innerHTML = '';
+        renderResultsTab(cardContent, kind);
+      });
+      tabBar.appendChild(tabBtn);
+    });
+    card.appendChild(tabBar);
+    card.appendChild(cardContent);
+    view.appendChild(card);
+    container.appendChild(view);
+
+    renderResultsTab(cardContent, state.results.tab);
+    applyI18n(view);
+  }
+
+  function renderResultsTab(container, kind) {
+    const records = getDB()[kind];
+    container.innerHTML = '';
+    container.appendChild(renderKPIs(kind, records));
+    container.appendChild(renderCharts(kind, records));
+    container.appendChild(renderOpenResponses(kind, records));
+    container.appendChild(renderTable(kind, records));
+    applyI18n(container);
+  }
+  document.addEventListener('tamam:dataUpdated', () => {
+    if (state.currentRoute === routes['#/surveys/results'] && state.passwordUnlocked.results) {
+      const view = app.querySelector('.dashboard-grid');
+      if (view) renderResultsTab(view, state.results.tab);
+    }
+  });
+  </script>
+</body>
+</html>
