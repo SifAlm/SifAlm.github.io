@@ -915,6 +915,84 @@
       margin-bottom: 16px;
     }
 
+    .remote-tools {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(140deg, rgba(255,255,255,0.68), rgba(229,237,255,0.72));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.45), 0 18px 30px rgba(60,70,110,0.16);
+      position: relative;
+      overflow: hidden;
+    }
+    .remote-tools::after {
+      content: "";
+      position: absolute;
+      inset: -40% 30%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.55), transparent);
+      animation: shimmerSweep 7s linear infinite;
+      pointer-events: none;
+    }
+    [data-theme="dark"] .remote-tools {
+      background: linear-gradient(140deg, rgba(38,42,70,0.82), rgba(22,24,44,0.78));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 18px 30px rgba(6,8,18,0.6);
+    }
+
+    .remote-status {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      animation: fadeLift 260ms ease;
+    }
+    .remote-status strong {
+      font-weight: 600;
+      color: var(--fg-contrast);
+    }
+    .remote-status .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 0 4px rgba(87,102,255,0.18);
+    }
+    .remote-status[data-state="idle"] .status-dot {
+      background: rgba(120,130,160,0.8);
+      box-shadow: 0 0 0 4px rgba(120,130,160,0.16);
+    }
+    .remote-status[data-state="syncing"] .status-dot {
+      animation: pulseDot 1.6s ease infinite;
+    }
+    .remote-status[data-state="synced"] .status-dot {
+      background: #4ad395;
+      box-shadow: 0 0 0 4px rgba(74,211,149,0.2);
+    }
+    .remote-status[data-state="error"] .status-dot {
+      background: #ff7b7b;
+      box-shadow: 0 0 0 4px rgba(255,123,123,0.25);
+    }
+    @keyframes pulseDot {
+      0% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.3); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 0.9; }
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    .remote-config {
+      max-width: 420px;
+    }
+
     .debug-panel {
       position: fixed;
       bottom: 16px;
@@ -1092,6 +1170,31 @@
     public: 'tamam-public'
   };
 
+  const REMOTE_MULTI_FIELDS = {
+    vendor: ['value_expect'],
+    customer: ['cats', 'more'],
+    public: ['platforms']
+  };
+
+  function loadRemoteConfig() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.remoteConfig);
+      if (!raw) return { siteId: '', token: '' };
+      const parsed = JSON.parse(raw);
+      return {
+        siteId: parsed.siteId || '',
+        token: parsed.token || ''
+      };
+    } catch (e) {
+      logDebug('Remote config parse failed', e);
+      return { siteId: '', token: '' };
+    }
+  }
+
+  function saveRemoteConfig(config) {
+    localStorage.setItem(STORAGE_KEYS.remoteConfig, JSON.stringify(config));
+  }
+
   const I18N = {
     en: {
       headerTitle: 'Tamam Research Portal',
@@ -1238,6 +1341,22 @@
       backupReset: 'Backup & Reset',
       confirmReset: 'Export a backup and clear this device?',
       refreshData: 'Refresh data',
+      connectNetlify: 'Connect Netlify',
+      netlifyConfigTitle: 'Remote data sync',
+      netlifySiteId: 'Netlify Site ID',
+      netlifyToken: 'Netlify access token',
+      netlifyConfigNote: 'Stored locally on this device. Required to pull live submissions from Netlify Forms.',
+      saveConfig: 'Save',
+      cancel: 'Cancel',
+      remoteConfigSaved: 'Sync preferences saved.',
+      remoteConfigMissing: 'Add your Netlify Site ID and token first.',
+      syncingRemote: 'Syncing remote data…',
+      syncComplete: 'Remote responses synced.',
+      syncFailed: 'Unable to sync remote data.',
+      remoteStatusSyncing: 'Syncing remote data…',
+      remoteStatusIdle: 'Remote sync not configured.',
+      remoteStatusSynced: 'Remote sync: {time}',
+      remoteStatusReady: 'Remote sync ready.',
       resultsSummary: 'Performance snapshot',
       resultsCharts: 'Trends & distributions',
       chartsEmpty: 'Charts will appear once submissions arrive.',
@@ -1435,6 +1554,22 @@
       backupReset: 'نسخ احتياطي وإعادة ضبط',
       confirmReset: 'هل تريد حفظ نسخة احتياطية ثم مسح بيانات هذا الجهاز؟',
       refreshData: 'تحديث البيانات',
+      connectNetlify: 'ربط Netlify',
+      netlifyConfigTitle: 'مزامنة البيانات عن بُعد',
+      netlifySiteId: 'معرّف موقع Netlify',
+      netlifyToken: 'رمز الوصول لـ Netlify',
+      netlifyConfigNote: 'يُخزن هذا الرمز محليًا على هذا الجهاز فقط. يلزم لجلب الردود المباشرة من نماذج Netlify.',
+      saveConfig: 'حفظ',
+      cancel: 'إلغاء',
+      remoteConfigSaved: 'تم حفظ إعدادات المزامنة.',
+      remoteConfigMissing: 'أضف معرّف الموقع والرمز أولاً.',
+      syncingRemote: 'جاري مزامنة البيانات البعيدة…',
+      syncComplete: 'تمت مزامنة الردود البعيدة.',
+      syncFailed: 'تعذر مزامنة البيانات البعيدة.',
+      remoteStatusSyncing: 'جاري مزامنة البيانات البعيدة…',
+      remoteStatusIdle: 'المزامنة البعيدة غير مهيأة.',
+      remoteStatusSynced: 'آخر مزامنة: {time}',
+      remoteStatusReady: 'المزامنة البعيدة جاهزة.',
       resultsSummary: 'لمحة عن الأداء',
       resultsCharts: 'الاتجاهات والتوزيعات',
       chartsEmpty: 'ستظهر الرسوم البيانية عند وصول الردود.',
@@ -1509,7 +1644,8 @@
       public: 'completed_public'
     },
     theme: 'tmm_theme',
-    lang: 'tmm_lang'
+    lang: 'tmm_lang',
+    remoteConfig: 'tamam_remote_config'
   };
 
   const defaultDB = () => ({ vendor: [], customer: [], public: [] });
@@ -1543,7 +1679,15 @@
     charts: {},
     chartInstances: {},
     passwordUnlocked: {},
-    results: { tab: 'vendor' }
+    results: { tab: 'vendor' },
+    remote: {
+      netlify: loadRemoteConfig(),
+      records: { vendor: [], customer: [], public: [] },
+      lastSync: null,
+      syncing: false,
+      syncError: null,
+      statusEl: null
+    }
   };
 
   document.documentElement.setAttribute('lang', state.lang === 'ar' ? 'ar' : 'en');
@@ -1673,11 +1817,12 @@
   }
 
   function recordSubmission(kind, data) {
+    const record = { ...data, origin: 'local' };
     const db = getDB();
-    db[kind].push(data);
+    db[kind].push(record);
     saveDB(db);
     document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind } }));
-    logDebug('Submit', kind, data);
+    logDebug('Submit', kind, record);
     sendToNetlify(kind, data);
   }
 
@@ -2431,6 +2576,248 @@
       recordFields: ['name','email','phone','booked_before','platforms','platforms_other','barrier','barrier_other','top_factor','top_factor_other','first_cat','first_cat_other','premium','premium_other','why_tamam','ts','seconds']
     }
   };
+
+  function parseRemoteList(value) {
+    if (Array.isArray(value)) {
+      return value.map(v => String(v).trim()).filter(Boolean);
+    }
+    if (value === undefined || value === null) return [];
+    const str = String(value).trim();
+    if (!str) return [];
+    if ((str.startsWith('[') && str.endsWith(']')) || (str.startsWith('{') && str.endsWith('}'))) {
+      try {
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed)) {
+          return parsed.map(v => String(v).trim()).filter(Boolean);
+        }
+      } catch (e) {
+        logDebug('Remote list JSON parse failed', e, value);
+      }
+    }
+    return str.split(/[,;\n]+/).map(v => v.trim()).filter(Boolean);
+  }
+
+  function normalizeRemoteRecord(kind, submission) {
+    const data = submission?.data || {};
+    const config = SURVEY_CONFIGS[kind];
+    if (!config) return null;
+    const record = {};
+    config.recordFields.forEach(key => {
+      if (key === 'seconds') {
+        const raw = data[key] ?? submission.seconds ?? submission.data?.seconds;
+        record[key] = Number(raw) || 0;
+      } else if (key === 'ts') {
+        record[key] = data[key] || submission.created_at || submission.updated_at || '';
+      } else if (REMOTE_MULTI_FIELDS[kind]?.includes(key)) {
+        record[key] = parseRemoteList(data[key]);
+      } else {
+        let value = data[key];
+        if (Array.isArray(value)) value = value[0];
+        record[key] = value ?? '';
+      }
+    });
+    (REMOTE_MULTI_FIELDS[kind] || []).forEach(field => {
+      if (!Array.isArray(record[field])) record[field] = parseRemoteList(record[field]);
+    });
+    config.recordFields.forEach(key => {
+      if (!(key in record)) {
+        record[key] = REMOTE_MULTI_FIELDS[kind]?.includes(key) ? [] : '';
+      }
+    });
+    if (!record.ts) record.ts = submission.created_at || submission.updated_at || new Date().toISOString();
+    record.origin = 'remote';
+    record.remote_id = submission.id || submission.number || submission.uuid || null;
+    return record;
+  }
+
+  function getCombinedRecords(kind) {
+    const db = getDB();
+    const localRecords = Array.isArray(db[kind]) ? db[kind] : [];
+    const remoteRecords = state.remote.records[kind] || [];
+    const combined = [];
+    const seen = new Set();
+    const track = (rec) => {
+      const key = `${rec.ts || ''}|${rec.company || rec.name || rec.email || rec.phone || ''}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        combined.push(rec);
+      }
+    };
+    localRecords.forEach(track);
+    remoteRecords.forEach(track);
+    return combined;
+  }
+
+  function getCombinedDBRaw() {
+    const output = { vendor: [], customer: [], public: [] };
+    ['vendor','customer','public'].forEach(kind => {
+      output[kind] = getCombinedRecords(kind).map(rec => {
+        const copy = {};
+        SURVEY_CONFIGS[kind].recordFields.forEach(key => {
+          const value = rec[key];
+          copy[key] = Array.isArray(value) ? [...value] : value ?? '';
+        });
+        return copy;
+      });
+    });
+    return output;
+  }
+
+  function updateRemoteStatus() {
+    const statusEl = state.remote.statusEl;
+    if (!statusEl) return;
+    const { siteId, token } = state.remote.netlify;
+    let stateKey = 'idle';
+    let message = '';
+    if (state.remote.syncing) {
+      stateKey = 'syncing';
+      message = t('remoteStatusSyncing');
+    } else if (!siteId || !token) {
+      stateKey = 'idle';
+      message = t('remoteStatusIdle');
+    } else if (state.remote.syncError) {
+      stateKey = 'error';
+      message = t('syncFailed');
+    } else if (state.remote.lastSync) {
+      stateKey = 'synced';
+      message = t('remoteStatusSynced', { time: formatDate(state.remote.lastSync) });
+    } else {
+      stateKey = 'ready';
+      message = t('remoteStatusReady');
+    }
+    statusEl.dataset.state = stateKey;
+    statusEl.innerHTML = '';
+    const dot = document.createElement('span');
+    dot.className = 'status-dot';
+    const text = document.createElement('span');
+    text.textContent = message;
+    statusEl.appendChild(dot);
+    statusEl.appendChild(text);
+  }
+
+  function openNetlifyConfig() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'remote-config';
+    const title = document.createElement('h3');
+    title.className = 'section-title';
+    title.dataset.i18n = 'netlifyConfigTitle';
+    title.textContent = t('netlifyConfigTitle');
+    wrapper.appendChild(title);
+
+    const siteGroup = document.createElement('div');
+    siteGroup.className = 'field-group';
+    const siteLabel = document.createElement('label');
+    siteLabel.className = 'field-label';
+    siteLabel.dataset.i18n = 'netlifySiteId';
+    siteLabel.textContent = t('netlifySiteId');
+    const siteInput = createInput('netlify-site', 'text');
+    siteInput.dir = 'ltr';
+    siteInput.value = state.remote.netlify.siteId || '';
+    siteGroup.appendChild(siteLabel);
+    siteGroup.appendChild(siteInput);
+
+    const tokenGroup = document.createElement('div');
+    tokenGroup.className = 'field-group';
+    const tokenLabel = document.createElement('label');
+    tokenLabel.className = 'field-label';
+    tokenLabel.dataset.i18n = 'netlifyToken';
+    tokenLabel.textContent = t('netlifyToken');
+    const tokenInput = createInput('netlify-token', 'password', { autocomplete: 'off' });
+    tokenInput.dir = 'ltr';
+    tokenInput.value = state.remote.netlify.token || '';
+    tokenGroup.appendChild(tokenLabel);
+    tokenGroup.appendChild(tokenInput);
+
+    const note = document.createElement('p');
+    note.className = 'field-description';
+    note.dataset.i18n = 'netlifyConfigNote';
+    note.textContent = t('netlifyConfigNote');
+
+    const actions = document.createElement('div');
+    actions.className = 'modal-actions';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn';
+    cancelBtn.dataset.i18n = 'cancel';
+    cancelBtn.textContent = t('cancel');
+    cancelBtn.addEventListener('click', closeModal);
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'btn btn-primary';
+    saveBtn.dataset.i18n = 'saveConfig';
+    saveBtn.textContent = t('saveConfig');
+    saveBtn.addEventListener('click', () => {
+      state.remote.netlify = {
+        siteId: siteInput.value.trim(),
+        token: tokenInput.value.trim()
+      };
+      saveRemoteConfig(state.remote.netlify);
+      if (!state.remote.netlify.siteId || !state.remote.netlify.token) {
+        state.remote.records = { vendor: [], customer: [], public: [] };
+        state.remote.lastSync = null;
+        state.remote.syncError = null;
+        document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'remote' } }));
+      }
+      updateRemoteStatus();
+      closeModal();
+      showToast(t('remoteConfigSaved'));
+      if (state.remote.netlify.siteId && state.remote.netlify.token) {
+        syncNetlifyRecords(true);
+      }
+    });
+    actions.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+
+    wrapper.appendChild(siteGroup);
+    wrapper.appendChild(tokenGroup);
+    wrapper.appendChild(note);
+    wrapper.appendChild(actions);
+    applyI18n(wrapper);
+    openModal(wrapper);
+  }
+
+  async function syncNetlifyRecords(manual = false) {
+    const { siteId, token } = state.remote.netlify;
+    if (!siteId || !token) {
+      if (manual) showToast(t('remoteConfigMissing'));
+      return;
+    }
+    if (state.remote.syncing) return;
+    state.remote.syncing = true;
+    updateRemoteStatus();
+    if (manual) showToast(t('syncingRemote'));
+    try {
+      const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
+      const formsRes = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/forms`, { headers });
+      if (!formsRes.ok) throw new Error(`Forms ${formsRes.status}`);
+      const forms = await formsRes.json();
+      const nextRecords = { vendor: [], customer: [], public: [] };
+      await Promise.all(Object.keys(NETLIFY_FORM_NAMES).map(async kind => {
+        const form = forms.find(f => f.name === NETLIFY_FORM_NAMES[kind]);
+        if (!form) return;
+        const subsRes = await fetch(`https://api.netlify.com/api/v1/forms/${form.id}/submissions`, { headers });
+        if (!subsRes.ok) throw new Error(`Submissions ${subsRes.status}`);
+        const submissions = await subsRes.json();
+        submissions.forEach(sub => {
+          const record = normalizeRemoteRecord(kind, sub);
+          if (record) nextRecords[kind].push(record);
+        });
+      }));
+      state.remote.records = nextRecords;
+      state.remote.lastSync = new Date().toISOString();
+      state.remote.syncError = null;
+      logDebug('Remote sync success', nextRecords);
+      if (manual) showToast(t('syncComplete'));
+      document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'remote' } }));
+    } catch (error) {
+      state.remote.syncError = error;
+      logDebug('Remote sync failed', error);
+      if (manual) showToast(t('syncFailed'));
+    } finally {
+      state.remote.syncing = false;
+      updateRemoteStatus();
+    }
+  }
   function createField(config, surveyKind) {
     const wrapper = document.createElement('div');
     if (config.type !== 'note') {
@@ -2951,6 +3338,7 @@
             applyI18n(view);
             const content = view.querySelector('.dashboard-grid');
             if (content) renderResultsTab(content, state.results.tab);
+            updateRemoteStatus();
           }
         }
       }
@@ -3647,8 +4035,7 @@
     return section;
   }
   function prepareRecordsForExport(kind) {
-    const db = getDB();
-    return db[kind].map(rec => {
+    return getCombinedRecords(kind).map(rec => {
       const copy = {};
       SURVEY_CONFIGS[kind].recordFields.forEach(key => {
         let value = rec[key];
@@ -3682,7 +4069,7 @@
   }
 
   function exportJSON(download = true) {
-    const db = getDB();
+    const db = getCombinedDBRaw();
     const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
     if (download) {
       triggerDownload('tamam-research.json', blob);
@@ -3768,11 +4155,17 @@
     backupBtn.dataset.i18n = 'backupReset';
     backupBtn.textContent = t('backupReset');
     backupBtn.addEventListener('click', backupAndReset);
+    const connectBtn = document.createElement('button');
+    connectBtn.className = 'cta-link';
+    connectBtn.dataset.i18n = 'connectNetlify';
+    connectBtn.textContent = t('connectNetlify');
+    connectBtn.addEventListener('click', openNetlifyConfig);
     const refreshBtn = document.createElement('button');
     refreshBtn.className = 'cta-link';
     refreshBtn.dataset.i18n = 'refreshData';
     refreshBtn.textContent = t('refreshData');
     refreshBtn.addEventListener('click', () => {
+      syncNetlifyRecords(true);
       cardContent.innerHTML = '';
       renderResultsTab(cardContent, state.results.tab);
     });
@@ -3780,8 +4173,19 @@
     controls.appendChild(exportJsonBtn);
     controls.appendChild(importLabel);
     controls.appendChild(backupBtn);
+    controls.appendChild(connectBtn);
     controls.appendChild(refreshBtn);
-    card.appendChild(controls);
+
+    const remoteWrap = document.createElement('div');
+    remoteWrap.className = 'remote-tools';
+    remoteWrap.appendChild(controls);
+    const statusBar = document.createElement('div');
+    statusBar.className = 'remote-status';
+    statusBar.dataset.state = 'idle';
+    remoteWrap.appendChild(statusBar);
+    card.appendChild(remoteWrap);
+    state.remote.statusEl = statusBar;
+    updateRemoteStatus();
 
     const tabBar = document.createElement('div');
     tabBar.className = 'tab-bar';
@@ -3811,10 +4215,15 @@
 
     renderResultsTab(cardContent, state.results.tab);
     applyI18n(view);
+    if (state.remote.netlify.siteId && state.remote.netlify.token) {
+      syncNetlifyRecords(false);
+    } else {
+      updateRemoteStatus();
+    }
   }
 
   function renderResultsTab(container, kind) {
-    const records = getDB()[kind];
+    const records = getCombinedRecords(kind);
     container.innerHTML = '';
     container.appendChild(renderKPIs(kind, records));
     container.appendChild(renderCharts(kind, records));
@@ -3826,6 +4235,7 @@
     if (state.currentRoute === routes['#/surveys/results'] && state.passwordUnlocked.results) {
       const view = app.querySelector('.dashboard-grid');
       if (view) renderResultsTab(view, state.results.tab);
+      updateRemoteStatus();
     }
   });
   </script>
