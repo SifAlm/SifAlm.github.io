@@ -19,6 +19,8 @@
       --border: rgba(255,255,255,0.4);
       --text: #10121a;
       --text-muted: rgba(16,18,26,0.65);
+      --fg-contrast: #1f2348;
+      --fg-muted-contrast: rgba(31,35,72,0.7);
       --primary: #5766ff;
       --primary-soft: rgba(87,102,255,0.14);
       --shadow: 0 18px 45px rgba(45,55,85,0.16);
@@ -34,11 +36,13 @@
       --bg-gradient: linear-gradient(180deg, rgba(18,20,34,0.94), rgba(17,19,32,0.88));
       --surface: rgba(32,36,55,0.65);
       --surface-dark: rgba(18,20,34,0.85);
-      --border: rgba(255,255,255,0.08);
+      --border: rgba(255,255,255,0.12);
       --text: #f7f8fc;
       --text-muted: rgba(247,248,252,0.7);
+      --fg-contrast: #f2f3ff;
+      --fg-muted-contrast: rgba(242,243,255,0.7);
       --primary: #8a9bff;
-      --primary-soft: rgba(138,155,255,0.16);
+      --primary-soft: rgba(138,155,255,0.18);
       --shadow: 0 18px 45px rgba(6,7,12,0.6);
     }
     *, *::before, *::after { box-sizing: border-box; }
@@ -87,20 +91,7 @@
     .brand-group {
       display: flex;
       align-items: center;
-      gap: 16px;
-    }
-    .brand-logo {
-      width: clamp(32px, 6vw, 40px);
-      height: clamp(32px, 6vw, 40px);
-      border-radius: 12px;
-      background: linear-gradient(135deg, #6d7bff, #b388ff);
-      display: grid;
-      place-items: center;
-      color: white;
-      font-weight: 700;
-      font-size: 20px;
-      letter-spacing: 0.4px;
-      box-shadow: 0 12px 24px rgba(98,110,255,0.28);
+      gap: 12px;
     }
     .brand-title {
       font-size: clamp(24px, 3vw, 32px);
@@ -115,31 +106,55 @@
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      border: none;
-      background: var(--surface);
-      color: var(--text);
+      border: 1px solid transparent;
+      background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(232,236,255,0.86));
+      color: var(--fg-contrast);
       display: grid;
       place-items: center;
-      box-shadow: inset 0 0 0 1px var(--border), 0 6px 16px rgba(45,55,85,0.12);
-      transition: background var(--transition), transform var(--transition);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0 8px 18px rgba(45,55,85,0.16);
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+    [data-theme="dark"] .icon-button {
+      background: linear-gradient(145deg, rgba(40,44,70,0.95), rgba(26,28,46,0.9));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 10px 20px rgba(6,8,22,0.6);
     }
     .icon-button:focus-visible {
       outline: none;
       box-shadow: var(--focus);
     }
     .icon-button:hover {
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6), 0 12px 22px rgba(45,55,85,0.18);
+    }
+    .icon-button:active {
+      transform: translateY(0);
+      opacity: 0.9;
     }
     .lang-toggle {
-      min-width: 72px;
-      padding: 10px 14px;
+      min-width: 78px;
+      padding: 10px 18px;
       border-radius: 22px;
-      border: none;
-      background: var(--surface);
-      box-shadow: inset 0 0 0 1px var(--border), 0 6px 16px rgba(45,55,85,0.12);
-      font-weight: 500;
+      border: 1px solid transparent;
+      background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(232,236,255,0.86));
+      color: var(--fg-contrast);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0 10px 20px rgba(45,55,85,0.16);
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+    [data-theme="dark"] .lang-toggle {
+      background: linear-gradient(145deg, rgba(40,44,70,0.95), rgba(26,28,46,0.9));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14), 0 12px 24px rgba(6,8,22,0.6);
     }
     .lang-toggle:focus-visible { outline: none; box-shadow: var(--focus); }
+    .lang-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6), 0 14px 26px rgba(45,55,85,0.18);
+    }
+    .lang-toggle:active {
+      transform: translateY(0);
+      opacity: 0.92;
+    }
 
     nav {
       padding: 0 clamp(16px, 5vw, 48px) 16px;
@@ -221,6 +236,7 @@
       gap: 16px;
       overflow-x: auto;
       scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
       padding-bottom: 12px;
       -webkit-overflow-scrolling: touch;
     }
@@ -272,14 +288,24 @@
     .cta-grid {
       margin-top: 32px;
       display: grid;
-      gap: 16px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.78), rgba(235,238,255,0.9));
+      gap: 20px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(232,238,255,0.92));
       border-radius: var(--radius-lg);
       padding: clamp(20px, 3vw, 32px);
       box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
     }
+    .cta-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      align-items: center;
+    }
+    .cta-stack {
+      display: grid;
+      gap: 16px;
+    }
     [data-theme="dark"] .cta-grid {
-      background: linear-gradient(135deg, rgba(34,38,62,0.88), rgba(22,24,40,0.88));
+      background: linear-gradient(135deg, rgba(32,36,58,0.92), rgba(20,22,38,0.88));
     }
     .cta-buttons {
       display: flex;
@@ -287,6 +313,9 @@
       gap: 16px;
       align-items: center;
     }
+    .cta-buttons a { transition: transform var(--transition), box-shadow var(--transition); }
+    .cta-buttons a:hover { transform: translateY(-2px); box-shadow: 0 14px 24px rgba(45,55,85,0.22); }
+    .cta-buttons a:active { transform: translateY(0); }
     .store-badge {
       height: 44px;
       width: auto;
@@ -301,15 +330,77 @@
     }
     .cta-link {
       padding: 10px 18px;
-      background: var(--primary-soft);
+      background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(232,236,255,0.86));
       border-radius: 999px;
-      font-weight: 500;
-      color: var(--primary);
-      border: none;
+      font-weight: 600;
+      color: var(--fg-contrast);
+      border: 1px solid rgba(255,255,255,0.6);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 22px rgba(45,55,85,0.16);
+      transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+    [data-theme="dark"] .cta-link {
+      background: linear-gradient(145deg, rgba(40,44,70,0.95), rgba(26,28,46,0.9));
+      border: 1px solid rgba(255,255,255,0.18);
+      color: var(--fg-contrast);
+      box-shadow: 0 12px 26px rgba(6,8,22,0.6);
+    }
+    .cta-link svg {
+      width: 18px;
+      height: 18px;
+    }
+    .cta-link span { font-weight: 600; }
+    .cta-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(45,55,85,0.2);
+    }
+    .cta-link:active {
+      transform: translateY(0);
+      opacity: 0.95;
+    }
+    .portal-footer {
+      margin-top: 24px;
+      padding: 20px 24px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(228,235,255,0.9));
+      box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+      display: grid;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--fg-muted-contrast);
+    }
+    [data-theme="dark"] .portal-footer {
+      background: linear-gradient(135deg, rgba(34,38,60,0.92), rgba(22,24,40,0.88));
+      color: var(--fg-muted-contrast);
+    }
+    .footer-links {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .footer-link {
+      display: inline-flex;
+      align-items: center;
       gap: 6px;
+      color: var(--fg-contrast);
+      font-weight: 500;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.55);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .footer-link svg { width: 16px; height: 16px; }
+    [data-theme="dark"] .footer-link {
+      background: rgba(40,44,70,0.78);
+      color: var(--fg-contrast);
+    }
+    .footer-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 18px rgba(45,55,85,0.18);
     }
 
     form {
@@ -702,10 +793,11 @@
       position: fixed;
       bottom: 16px;
       right: 16px;
-      display: grid;
+      display: none;
       gap: 8px;
       z-index: 200;
     }
+    .debug-panel.active { display: grid; }
     [dir="rtl"] .debug-panel {
       right: auto;
       left: 16px;
@@ -744,7 +836,6 @@
   <div class="app-shell" id="app-shell">
     <header class="app-header">
       <div class="brand-group">
-        <img src="https://gettamam.com/wp-content/uploads/2024/07/Tamam-Logo-Icon.svg" alt="Tamam" class="brand-logo" />
         <div class="brand-title" data-i18n="headerTitle">Tamam Research Portal</div>
       </div>
       <div class="control-group">
@@ -766,10 +857,91 @@
 
   <div class="debug-panel" id="debug-panel"></div>
 
+  <form name="tamam-vendor" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="hidden" name="form-name" value="tamam-vendor" />
+    <p hidden><label>Do not fill this out <input name="bot-field" /></label></p>
+    <input name="company" />
+    <input name="email" />
+    <input name="phone" />
+    <input name="category" />
+    <input name="aov" />
+    <input name="avg_profit" />
+    <input name="orders_all" />
+    <input name="orders_all_other" />
+    <input name="orders_profitable" />
+    <input name="orders_profitable_other" />
+    <input name="min_orders_to_stay" />
+    <input name="min_orders_to_stay_other" />
+    <input name="accept_5_10k" />
+    <input name="accept_5_10k_other" />
+    <input name="accept_10_20k" />
+    <input name="accept_10_20k_other" />
+    <input name="accept_20k_plus" />
+    <input name="accept_20k_plus_other" />
+    <input name="value_expect" />
+    <input name="value_expect_other" />
+    <input name="leave_reason" />
+    <input name="leave_reason_other" />
+    <input name="recommend" />
+    <input name="recommend_other" />
+    <textarea name="notes"></textarea>
+    <input name="ts" />
+    <input name="seconds" />
+    <input name="lang" />
+  </form>
+
+  <form name="tamam-customer" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="hidden" name="form-name" value="tamam-customer" />
+    <p hidden><label>Do not fill this out <input name="bot-field" /></label></p>
+    <input name="name" />
+    <input name="email" />
+    <input name="phone" />
+    <input name="freq" />
+    <input name="freq_other" />
+    <input name="cats" />
+    <input name="cats_other" />
+    <input name="ease" />
+    <input name="nps" />
+    <input name="time_save" />
+    <input name="time_save_other" />
+    <input name="money_save" />
+    <input name="money_save_other" />
+    <textarea name="wants_services"></textarea>
+    <input name="more" />
+    <input name="more_other" />
+    <textarea name="notes"></textarea>
+    <input name="ts" />
+    <input name="seconds" />
+    <input name="lang" />
+  </form>
+
+  <form name="tamam-public" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="hidden" name="form-name" value="tamam-public" />
+    <p hidden><label>Do not fill this out <input name="bot-field" /></label></p>
+    <input name="name" />
+    <input name="email" />
+    <input name="phone" />
+    <input name="booked_before" />
+    <input name="platforms" />
+    <input name="platforms_other" />
+    <input name="barrier" />
+    <input name="barrier_other" />
+    <input name="top_factor" />
+    <input name="top_factor_other" />
+    <input name="first_cat" />
+    <input name="first_cat_other" />
+    <input name="premium" />
+    <input name="premium_other" />
+    <textarea name="why_tamam"></textarea>
+    <input name="ts" />
+    <input name="seconds" />
+    <input name="lang" />
+  </form>
+
   <script async src="https://www.instagram.com/embed.js"></script>
   <script>
-  window.TAMAM_BACKEND = 'none';
-  const DEBUG = true;
+  window.TAMAM_BACKEND = 'netlifyForms';
+  const DEBUG = false;
   const logDebug = (...args) => { if (DEBUG) console.log('[Tamam]', ...args); };
 
   const NAV_ITEMS = [
@@ -779,6 +951,11 @@
     { hash: '#/surveys/public', key: 'navPublic' },
     { hash: '#/surveys/results', key: 'navResults' }
   ];
+  const NETLIFY_FORM_NAMES = {
+    vendor: 'tamam-vendor',
+    customer: 'tamam-customer',
+    public: 'tamam-public'
+  };
 
   const I18N = {
     en: {
@@ -788,11 +965,13 @@
       navCustomers: 'Customer Survey',
       navPublic: 'Public Survey',
       navResults: 'Results Dashboard',
-      introTitle: "Why we're listening",
-      introBody: 'Tamam is the UAE\'s premium super-app for trusted Home, Health, Car, and Lifestyle services. We\'re gathering structured feedback to give investors a crisp view of our traction and to guide the next wave of product enhancements. Your perspective shapes how we prioritize features, markets, and growth.',
+      introTitle: "Why we're collecting data",
+      introBody: 'Tamam is the UAE\'s premium super-app for trusted Home, Health, Car, and Lifestyle services. We\'re collecting data to give investors a clear view of our traction and to steer the next wave of product enhancements. Your perspective directly shapes how we prioritize features, markets, and service quality.',
       exploreSocials: 'Explore Our Socials',
       socialsFallback: 'Play on Instagram',
       getTamam: 'Get Tamam & Follow Us',
+      ctaDownload: 'Download the Tamam app',
+      ctaFollow: 'Follow Tamam online',
       website: 'Website',
       instagram: 'Instagram',
       linktree: 'Linktree',
@@ -922,6 +1101,7 @@
       exportJSON: 'Export JSON',
       importJSON: 'Import JSON',
       backupReset: 'Backup & Reset',
+      confirmReset: 'Export a backup and clear this device?',
       refreshData: 'Refresh data',
       resultsSummary: 'Performance snapshot',
       resultsCharts: 'Trends & distributions',
@@ -962,6 +1142,7 @@
       durationLabel: 'Duration',
       timestampLabel: 'Submitted at',
       instagramAlt: 'Instagram icon',
+      privacyNotice: 'Privacy Notice: Your responses are used to improve Tamam and may be shared in aggregate with investors. We do not sell your personal information. Individual responses will not be publicly disclosed.',
       '0': '0',
       '1': '1',
       '2': '2',
@@ -981,11 +1162,13 @@
       navCustomers: 'استبيان العملاء',
       navPublic: 'استبيان الجمهور',
       navResults: 'لوحة النتائج',
-      introTitle: 'لماذا نصغي إليكم',
-      introBody: 'تمام هو التطبيق الفائق الموثوق في الإمارات لحجز خدمات المنزل والصحة والسيارات ونمط الحياة. نجمع آراءكم المنظمة لنمنح المستثمرين رؤية واضحة عن نمونا ولنوجّه المرحلة التالية من تطوير المنتج. وجهة نظركم تحدد أولوياتنا للميزات والأسواق والنمو.',
+      introTitle: 'لماذا نجمع البيانات',
+      introBody: 'تمام هو التطبيق الفائق الموثوق في الإمارات لحجز خدمات المنزل والصحة والسيارات ونمط الحياة. نجمع هذه البيانات لنقدم للمستثمرين رؤية أوضح عن نمونا ولنوجّه المرحلة التالية من تطوير المنتج. مشاركتكم تحدد أولويات الميزات والأسواق وجودة الخدمة.',
       exploreSocials: 'تعرّف على قنواتنا الاجتماعية',
       socialsFallback: 'مشاهدة على إنستغرام',
       getTamam: 'حمّل تمام وتابعنا',
+      ctaDownload: 'حمّل تطبيق تمام',
+      ctaFollow: 'تابع تمام عبر القنوات الرقمية',
       website: 'الموقع الإلكتروني',
       instagram: 'إنستغرام',
       linktree: 'لينكتري',
@@ -1115,6 +1298,7 @@
       exportJSON: 'تصدير JSON',
       importJSON: 'استيراد JSON',
       backupReset: 'نسخ احتياطي وإعادة ضبط',
+      confirmReset: 'هل تريد حفظ نسخة احتياطية ثم مسح بيانات هذا الجهاز؟',
       refreshData: 'تحديث البيانات',
       resultsSummary: 'لمحة عن الأداء',
       resultsCharts: 'الاتجاهات والتوزيعات',
@@ -1155,6 +1339,7 @@
       durationLabel: 'المدة',
       timestampLabel: 'وقت الإرسال',
       instagramAlt: 'أيقونة إنستغرام',
+      privacyNotice: 'إشعار الخصوصية: نستخدم إجاباتك لتحسين تمام وقد نشاركها بشكل مجمّع مع المستثمرين. لا نبيع معلوماتك الشخصية. لن يتم الكشف عن الردود الفردية علناً.',
       '0': '٠',
       '1': '١',
       '2': '٢',
@@ -1358,6 +1543,36 @@
     saveDB(db);
     document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind } }));
     logDebug('Submit', kind, data);
+    sendToNetlify(kind, data);
+  }
+
+  function toBackendValue(value) {
+    if (Array.isArray(value)) return value.join(', ');
+    if (value === undefined || value === null) return '';
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  }
+
+  function sendToNetlify(kind, record) {
+    if (window.TAMAM_BACKEND !== 'netlifyForms') return;
+    const formName = NETLIFY_FORM_NAMES[kind];
+    if (!formName) return;
+    const payload = new URLSearchParams();
+    payload.append('form-name', formName);
+    payload.append('bot-field', '');
+    payload.append('lang', state.lang);
+    Object.entries(record).forEach(([key, value]) => {
+      payload.append(key, toBackendValue(value));
+    });
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: payload.toString()
+    }).then(() => {
+      logDebug('Netlify sync ok', kind);
+    }).catch(err => {
+      logDebug('Netlify sync failed', kind, err);
+    });
   }
 
   function createInput(name, type = 'text', attrs = {}) {
@@ -1599,12 +1814,47 @@
     });
     socialsCard.appendChild(carousel);
 
+    const iconPaths = {
+      website: 'M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm0 17.25a7.48 7.48 0 0 1-3-.633 21.18 21.18 0 0 0 3.75-4.391 21.18 21.18 0 0 0 3.75 4.39A7.48 7.48 0 0 1 12 19.5zm4.615-1.262a22.648 22.648 0 0 1-3.865-4.58 22.648 22.648 0 0 1-3.865 4.58 7.5 7.5 0 1 1 7.73-12.119 22.64 22.64 0 0 1-7.64-.365 22.64 22.64 0 0 1 7.64.365A7.5 7.5 0 0 1 16.615 18.238z',
+      instagram: 'M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.9.2 2.4.4.6.2 1 .5 1.5 1s.8.9 1 1.5c.2.5.3 1.2.4 2.4.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.9-.4 2.4-.2.6-.5 1-1 1.5s-.9.8-1.5 1c-.5.2-1.2.3-2.4.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.9-.2-2.4-.4-.6-.2-1-.5-1.5-1s-.8-.9-1-1.5c-.2-.5-.3-1.2-.4-2.4C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.9.4-2.4.2-.6.5-1 1-1.5s.9-.8 1.5-1c.5-.2 1.2-.3 2.4-.4C8.4 2.2 8.8 2.2 12 2.2zm0 3.3A6.5 6.5 0 1 0 18.5 12 6.5 6.5 0 0 0 12 5.5zm0 10.7A4.2 4.2 0 1 1 16.2 12 4.2 4.2 0 0 1 12 16.2zm6.8-10.8a1.5 1.5 0 1 1-1.5-1.5 1.5 1.5 0 0 1 1.5 1.5z',
+      linktree: 'M9.813 15.904a4.501 4.501 0 0 1 0-6.364l1.06-1.06a.75.75 0 0 1 1.06 1.06l-1.06 1.06a3.001 3.001 0 0 0 4.243 4.243l2.122-2.122a3.001 3.001 0 0 0-4.243-4.243l-.53.53a.75.75 0 1 1-1.06-1.06l.53-.53a4.501 4.501 0 0 1 6.364 6.364l-2.122 2.122a4.501 4.501 0 0 1-6.364 0z'
+    };
+    const createIcon = (key) => {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('aria-hidden', 'true');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('fill', 'currentColor');
+      path.setAttribute('d', iconPaths[key]);
+      svg.appendChild(path);
+      return svg;
+    };
+
+    const linkData = [
+      { href: 'https://gettamam.com', key: 'website', icon: 'website' },
+      { href: 'https://www.instagram.com/tamam.uae', key: 'instagram', icon: 'instagram' },
+      { href: 'https://linktr.ee/TamamApp', key: 'linktree', icon: 'linktree' }
+    ];
+
     const ctaCard = document.createElement('div');
     ctaCard.className = 'cta-grid';
     const ctaTitle = document.createElement('h3');
     ctaTitle.className = 'section-title';
+    ctaTitle.dataset.i18n = 'getTamam';
     ctaTitle.textContent = t('getTamam');
     ctaCard.appendChild(ctaTitle);
+
+    const ctaContent = document.createElement('div');
+    ctaContent.className = 'cta-content';
+
+    const downloadStack = document.createElement('div');
+    downloadStack.className = 'cta-stack';
+    const downloadLabel = document.createElement('p');
+    downloadLabel.className = 'field-description';
+    downloadLabel.dataset.i18n = 'ctaDownload';
+    downloadLabel.textContent = t('ctaDownload');
+    downloadStack.appendChild(downloadLabel);
+
     const btnRow = document.createElement('div');
     btnRow.className = 'cta-buttons';
     const appStore = document.createElement('a');
@@ -1627,29 +1877,64 @@
     play.appendChild(playImg);
     btnRow.appendChild(appStore);
     btnRow.appendChild(play);
+    downloadStack.appendChild(btnRow);
+
+    const followStack = document.createElement('div');
+    followStack.className = 'cta-stack';
+    const followLabel = document.createElement('p');
+    followLabel.className = 'field-description';
+    followLabel.dataset.i18n = 'ctaFollow';
+    followLabel.textContent = t('ctaFollow');
+    followStack.appendChild(followLabel);
 
     const linkRow = document.createElement('div');
     linkRow.className = 'cta-links';
-    const links = [
-      { href: 'https://gettamam.com', key: 'website' },
-      { href: 'https://www.instagram.com/tamam.uae', key: 'instagram' },
-      { href: 'https://linktr.ee/TamamApp', key: 'linktree' }
-    ];
-    links.forEach(l => {
+    linkData.forEach(l => {
       const a = document.createElement('a');
       a.href = l.href;
       a.target = '_blank';
       a.rel = 'noopener';
       a.className = 'cta-link';
-      a.textContent = t(l.key);
+      a.appendChild(createIcon(l.icon));
+      const span = document.createElement('span');
+      span.dataset.i18n = l.key;
+      span.textContent = t(l.key);
+      a.appendChild(span);
       linkRow.appendChild(a);
     });
-    ctaCard.appendChild(btnRow);
-    ctaCard.appendChild(linkRow);
+    followStack.appendChild(linkRow);
+
+    ctaContent.appendChild(downloadStack);
+    ctaContent.appendChild(followStack);
+    ctaCard.appendChild(ctaContent);
+
+    const footer = document.createElement('footer');
+    footer.className = 'portal-footer';
+    const notice = document.createElement('p');
+    notice.dataset.i18n = 'privacyNotice';
+    notice.textContent = t('privacyNotice');
+    footer.appendChild(notice);
+    const footerLinks = document.createElement('div');
+    footerLinks.className = 'footer-links';
+    linkData.forEach(l => {
+      const a = document.createElement('a');
+      a.href = l.href;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.className = 'footer-link';
+      a.appendChild(createIcon(l.icon));
+      const span = document.createElement('span');
+      span.dataset.i18n = l.key;
+      span.textContent = t(l.key);
+      a.appendChild(span);
+      footerLinks.appendChild(a);
+    });
+    footer.appendChild(footerLinks);
 
     view.appendChild(intro);
     view.appendChild(socialsCard);
     view.appendChild(ctaCard);
+    view.appendChild(footer);
 
     requestAnimationFrame(() => window.instgrm?.Embeds?.process());
     applyI18n(view);
@@ -2578,9 +2863,11 @@
   function initDebug() {
     const panel = document.getElementById('debug-panel');
     if (!DEBUG) {
-      panel.style.display = 'none';
+      panel.classList.remove('active');
+      panel.innerHTML = '';
       return;
     }
+    panel.classList.add('active');
     panel.innerHTML = '';
     const clearBtn = document.createElement('button');
     clearBtn.dataset.i18n = 'clearData';
@@ -3298,6 +3585,7 @@
   }
 
   function backupAndReset() {
+    if (!confirm(t('confirmReset'))) return;
     exportJSON(true);
     setTimeout(() => {
       clearAllStorage();
