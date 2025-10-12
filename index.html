@@ -46,6 +46,7 @@
       --shadow: 0 18px 45px rgba(6,7,12,0.6);
     }
     *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       margin: 0;
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -360,19 +361,19 @@
     .hero-video-wrap {
       position: relative;
       z-index: 1;
-      width: min(100%, 1080px);
-      aspect-ratio: 16 / 9;
-      border-radius: 24px;
+      width: min(100%, 420px);
+      aspect-ratio: 9 / 16;
+      border-radius: 28px;
       overflow: hidden;
       box-shadow: 0 32px 70px rgba(32,44,96,0.28);
-      backdrop-filter: blur(12px);
-      margin-top: clamp(12px, 4vw, 28px);
+      backdrop-filter: blur(14px);
+      margin-top: clamp(18px, 5vw, 32px);
     }
     .hero-video-wrap::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: radial-gradient(80% 90% at 50% 10%, rgba(255,255,255,0.2), transparent 70%);
+      background: radial-gradient(90% 120% at 50% 12%, rgba(255,255,255,0.35), transparent 75%);
       opacity: 0.45;
       pointer-events: none;
     }
@@ -381,7 +382,8 @@
       height: 100%;
       object-fit: cover;
       display: block;
-      filter: saturate(1.12) brightness(1.04);
+      filter: saturate(1.08) brightness(1.02);
+      transform-origin: center;
     }
     .hero-unmute {
       position: absolute;
@@ -541,8 +543,7 @@
       display: grid;
       gap: 24px;
     }
-    form[hidden],
-    form[data-netlify] {
+    form[hidden] {
       display: none !important;
     }
     .field-group {
@@ -1018,9 +1019,9 @@
       background: #ff7b7b;
       box-shadow: 0 0 0 4px rgba(255,123,123,0.25);
     }
-    .remote-status[data-state="pending"] .status-dot {
-      background: #f5a524;
-      box-shadow: 0 0 0 4px rgba(245,165,36,0.25);
+    .remote-status[data-state="ready"] .status-dot {
+      background: #6d7bff;
+      box-shadow: 0 0 0 4px rgba(109,123,255,0.25);
     }
     .remote-banner {
       flex: 1 1 100%;
@@ -1103,27 +1104,6 @@
       font-size: 12px;
     }
 
-    .netlify-form {
-      position: fixed;
-      left: -9999px;
-      top: auto;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      opacity: 0;
-      pointer-events: none;
-    }
-    .netlify-form input,
-    .netlify-form textarea {
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      border: 0;
-      padding: 0;
-      margin: 0;
-    }
-    .netlify-trap { display: none; }
-
     ::-webkit-scrollbar {
       height: 10px;
       width: 10px;
@@ -1189,7 +1169,8 @@
 
   const REMOTE_ENDPOINTS = {
     submit: GOOGLE_APPS_SCRIPT_URL,
-    exportUrl: `${GOOGLE_APPS_SCRIPT_URL}?mode=list`
+    list: GOOGLE_APPS_SCRIPT_URL,
+    reset: `${GOOGLE_APPS_SCRIPT_URL}?mode=reset`
   };
 
   const NAV_ITEMS = [
@@ -1216,7 +1197,7 @@
       introTitle: "Why we're collecting data",
       introBody: 'To better understand how vendors, customers, and the public perceive Tamam\'s commission and subscription models, and to improve fairness and affordability for all.',
       heroTitle: 'Meet Tamam',
-      heroSub: 'A super-app connecting users to trusted Home, Car, Health, and Lifestyle services across the UAE.',
+      heroSub: 'Services on demand across Home, Health, Car, and Lifestyle.',
       heroUnmute: 'Tap to unmute',
       heroAudioHint: 'Video is playing muted. Tap to enable sound.',
       heroAudioPlaying: 'Sound on. Enjoy the full experience.',
@@ -1357,34 +1338,13 @@
       backupReset: 'Backup & Reset',
       confirmReset: 'Export a backup and clear all responses globally?',
       refreshData: 'Refresh data',
-      connectNetlify: 'Connect Netlify',
-      remoteConfigTitle: 'Remote data sync',
-      backendMode: 'Select backend',
-      backendNetlify: 'Netlify Forms',
-      backendHostinger: 'Hostinger endpoint',
-      netlifySiteId: 'Netlify Site ID',
-      netlifyToken: 'Netlify access token',
-      netlifyConfigNote: 'Stored locally on this device. Required to pull live submissions from Netlify Forms.',
-      hostingerSubmitEndpoint: 'Hostinger submit endpoint (POST)',
-      hostingerExportEndpoint: 'Hostinger export endpoint (GET JSON)',
-      hostingerConfigNote: 'Provide HTTPS endpoints that accept/return Tamam survey payloads.',
-      saveConfig: 'Save',
-      cancel: 'Cancel',
-      remoteConfigSaved: 'Sync preferences saved.',
-      remoteConfigMissing: 'Add your Netlify Site ID and token first.',
-      hostingerConfigMissing: 'Add your Hostinger submit and export endpoints first.',
-      syncingRemote: 'Syncing remote data…',
-      syncComplete: 'Remote responses synced.',
-      syncFailed: 'Unable to sync remote data.',
-      remoteStatusSyncing: 'Syncing remote data…',
-      remoteStatusIdle: 'Standby — awaiting secure data sync.',
-      hostingerStatusIdle: 'Add Hostinger endpoints to view live results.',
-      remoteStatusPending: '{count} submission(s) waiting to sync.',
-      remoteStatusSynced: 'Remote sync: {time}',
-      remoteStatusReady: 'Cloud sync ready.',
-      remoteConnectPrompt: 'Connect Netlify to view live results.',
-      hostingerConnectPrompt: 'Add Hostinger endpoints to sync results.',
-      openHostingerConfig: 'Configure Hostinger',
+      syncingRemote: 'Syncing live data…',
+      syncComplete: 'Live responses updated.',
+      syncFailed: 'Unable to sync live data.',
+      remoteStatusSyncing: 'Syncing live data…',
+      remoteStatusIdle: 'Live sync idle — waiting for updates.',
+      remoteStatusSynced: 'Last sync: {time}',
+      remoteStatusReady: 'Live data ready.',
       resultsSummary: 'Performance snapshot',
       resultsCharts: 'Trends & distributions',
       chartsEmpty: 'Charts will appear once submissions arrive.',
@@ -1424,7 +1384,7 @@
       durationLabel: 'Duration',
       timestampLabel: 'Submitted at',
       instagramAlt: 'Instagram icon',
-      legalNotice: 'All responses are confidential. Data collected through this portal will be used strictly for Tamam research and improvement purposes and will never be shared or sold to third parties.',
+      legalNotice: 'Disclaimer: All data is securely stored and used only for Tamam research. We never share or sell user information.',
       '0': '0',
       '1': '1',
       '2': '2',
@@ -1447,7 +1407,7 @@
       introTitle: 'لماذا نجمع البيانات',
       introBody: 'لفهم أفضل لكيفية رؤية الشركاء والعملاء والجمهور لعمولات تمام ورسوم الاشتراك، ولتحسين العدالة وتكلفة الخدمة للجميع.',
       heroTitle: 'تعرّف على تمام',
-      heroSub: 'تطبيق شامل يربطك بخدمات المنزل والسيارة والصحة ونمط الحياة الموثوقة في الإمارات.',
+      heroSub: 'خدمات حسب الطلب في مجالات المنزل والصحة والسيارات ونمط الحياة.',
       heroUnmute: 'اضغط لتفعيل الصوت',
       heroAudioHint: 'يتم تشغيل الفيديو دون صوت. اضغط لتفعيل الصوت.',
       heroAudioPlaying: 'تم تشغيل الصوت. استمتع بالتجربة.',
@@ -1588,34 +1548,13 @@
       backupReset: 'نسخ احتياطي وإعادة ضبط',
       confirmReset: 'هل تريد حفظ نسخة احتياطية ثم مسح جميع الردود على مستوى النظام؟',
       refreshData: 'تحديث البيانات',
-      connectNetlify: 'ربط Netlify',
-      remoteConfigTitle: 'مزامنة البيانات عن بُعد',
-      backendMode: 'اختر الجهة الخلفية',
-      backendNetlify: 'نماذج Netlify',
-      backendHostinger: 'نقطة Hostinger',
-      netlifySiteId: 'معرّف موقع Netlify',
-      netlifyToken: 'رمز الوصول لـ Netlify',
-      netlifyConfigNote: 'يُخزن هذا الرمز محليًا على هذا الجهاز فقط. يلزم لجلب الردود المباشرة من نماذج Netlify.',
-      hostingerSubmitEndpoint: 'رابط الإرسال في Hostinger (POST)',
-      hostingerExportEndpoint: 'رابط التصدير في Hostinger (JSON)',
-      hostingerConfigNote: 'يرجى توفير روابط HTTPS تستقبل وتعيد بيانات استبيانات تمام.',
-      saveConfig: 'حفظ',
-      cancel: 'إلغاء',
-      remoteConfigSaved: 'تم حفظ إعدادات المزامنة.',
-      remoteConfigMissing: 'أضف معرّف الموقع والرمز أولاً.',
-      hostingerConfigMissing: 'أضف روابط الإرسال والتصدير لـ Hostinger أولاً.',
-      syncingRemote: 'جاري مزامنة البيانات البعيدة…',
-      syncComplete: 'تمت مزامنة الردود البعيدة.',
-      syncFailed: 'تعذر مزامنة البيانات البعيدة.',
-      remoteStatusSyncing: 'جاري مزامنة البيانات البعيدة…',
-      remoteStatusIdle: 'في وضع الاستعداد بانتظار مزامنة البيانات.',
-      hostingerStatusIdle: 'أضف روابط Hostinger للاطلاع على النتائج المباشرة.',
-      remoteStatusPending: 'هناك {count} ردود تنتظر المزامنة.',
+      syncingRemote: 'جاري تحديث البيانات المباشرة…',
+      syncComplete: 'تم تحديث الردود المباشرة.',
+      syncFailed: 'تعذر تحديث البيانات المباشرة.',
+      remoteStatusSyncing: 'جاري تحديث البيانات المباشرة…',
+      remoteStatusIdle: 'المزامنة المباشرة في وضع الاستعداد.',
       remoteStatusSynced: 'آخر مزامنة: {time}',
-      remoteStatusReady: 'المزامنة السحابية جاهزة.',
-      remoteConnectPrompt: 'اربط نتليفاي للاطلاع على النتائج المباشرة.',
-      hostingerConnectPrompt: 'أضف روابط Hostinger لمزامنة النتائج.',
-      openHostingerConfig: 'إعداد Hostinger',
+      remoteStatusReady: 'البيانات المباشرة جاهزة.',
       resultsSummary: 'لمحة عن الأداء',
       resultsCharts: 'الاتجاهات والتوزيعات',
       chartsEmpty: 'ستظهر الرسوم البيانية عند وصول الردود.',
@@ -1655,7 +1594,7 @@
       durationLabel: 'المدة',
       timestampLabel: 'وقت الإرسال',
       instagramAlt: 'أيقونة إنستغرام',
-      legalNotice: 'جميع الردود سرّية. سيتم استخدام البيانات التي تُجمع عبر هذه البوابة لأغراض أبحاث وتحسين تمام فقط، ولن تُشارك أو تُباع لأي طرف ثالث.',
+      legalNotice: 'تنويه: تُحفظ جميع البيانات بأمان وتُستخدم فقط لأبحاث تمام. لا نشارك معلومات المستخدمين ولا نبيعها لأي طرف.',
       '0': '٠',
       '1': '١',
       '2': '٢',
@@ -1678,7 +1617,6 @@
   };
 
   const STORAGE_KEYS = {
-    db: 'tamam_research_db',
     drafts: {
       vendor: 'draft_vendor',
       customer: 'draft_customer',
@@ -1692,23 +1630,6 @@
     theme: 'tmm_theme',
     lang: 'tmm_lang',
   };
-
-  const defaultDB = () => ({ vendor: [], customer: [], public: [] });
-
-  function getDB() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.db);
-      if (!raw) return defaultDB();
-      const parsed = JSON.parse(raw);
-      return { vendor: parsed.vendor || [], customer: parsed.customer || [], public: parsed.public || [] };
-    } catch (e) {
-      logDebug('DB parse failed', e);
-      return defaultDB();
-    }
-  }
-  function saveDB(db) {
-    localStorage.setItem(STORAGE_KEYS.db, JSON.stringify(db));
-  }
 
   const state = {
     lang: localStorage.getItem(STORAGE_KEYS.lang) || 'en',
@@ -1899,8 +1820,7 @@
 
   function mergeAndPersist(kind, records) {
     if (!Array.isArray(records) || !records.length) return;
-    const db = getDB();
-    const existing = Array.isArray(db[kind]) ? db[kind] : [];
+    const existing = Array.isArray(state.remote.records[kind]) ? state.remote.records[kind] : [];
     const map = new Map();
     existing.forEach(rec => {
       const normalized = normalizeRecordForStorage(kind, rec);
@@ -1917,8 +1837,7 @@
       const bt = new Date(b.ts || 0).getTime();
       return bt - at;
     });
-    db[kind] = merged;
-    saveDB(db);
+    state.remote.records[kind] = merged;
     document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind } }));
   }
 
@@ -1943,16 +1862,15 @@
   }
 
   async function postToRemote(kind, record) {
-    const payload = {
-      kind,
-      lang: state.lang,
-      ts: record.ts,
-      seconds: record.seconds,
-      data: {}
-    };
+    const payload = { kind, ts: record.ts, seconds: record.seconds };
     SURVEY_CONFIGS[kind].recordFields.forEach(key => {
+      if (key === 'ts' || key === 'seconds') return;
       const value = record[key];
-      payload.data[key] = Array.isArray(value) ? [...value] : (value ?? '');
+      if (Array.isArray(value)) {
+        payload[key] = value.join(', ');
+      } else {
+        payload[key] = value ?? '';
+      }
     });
     const response = await fetch(REMOTE_ENDPOINTS.submit, {
       method: 'POST',
@@ -1975,14 +1893,34 @@
     return json;
   }
 
+  async function tryFetchRemote(url) {
+    try {
+      const response = await fetch(url, {
+        cache: 'no-store',
+        credentials: 'omit',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!response.ok) throw new Error(`Remote fetch failed: ${response.status}`);
+      const text = await response.text();
+      if (!text) return null;
+      return JSON.parse(text);
+    } catch (error) {
+      logDebug('Remote fetch attempt failed', url, error);
+      return null;
+    }
+  }
+
   async function fetchRemoteSnapshot(manual = false) {
     state.remote.syncing = true;
     updateRemoteStatus();
     if (manual) showToast(t('syncingRemote'));
     try {
-      const response = await fetch(REMOTE_ENDPOINTS.exportUrl, { cache: 'no-store', credentials: 'omit' });
-      if (!response.ok) throw new Error(`Remote fetch failed: ${response.status}`);
-      const snapshot = await response.json();
+      let snapshot = await tryFetchRemote(REMOTE_ENDPOINTS.list);
+      if (!snapshot) {
+        const joiner = REMOTE_ENDPOINTS.list.includes('?') ? '&' : '?';
+        snapshot = await tryFetchRemote(`${REMOTE_ENDPOINTS.list}${joiner}mode=list`);
+      }
+      if (!snapshot) throw new Error('Remote snapshot unavailable');
       applyRemoteSnapshot(snapshot);
       state.remote.lastSync = new Date().toISOString();
       state.remote.syncError = null;
@@ -2002,15 +1940,26 @@
     const vendorRecords = (snapshot.vendor || []).map(entry => normalizeRemoteEntry('vendor', entry)).filter(Boolean);
     const customerRecords = (snapshot.customer || []).map(entry => normalizeRemoteEntry('customer', entry)).filter(Boolean);
     const publicRecords = (snapshot.public || []).map(entry => normalizeRemoteEntry('public', entry)).filter(Boolean);
-    state.remote.records = {
-      vendor: vendorRecords,
-      customer: customerRecords,
-      public: publicRecords
+    const dedupe = (kind, list) => {
+      const map = new Map();
+      list.forEach(rec => {
+        const normalized = normalizeRecordForStorage(kind, rec);
+        if (normalized) {
+          map.set(recordSignature(kind, normalized), normalized);
+        }
+      });
+      return Array.from(map.values()).sort((a, b) => {
+        const at = new Date(a.ts || 0).getTime();
+        const bt = new Date(b.ts || 0).getTime();
+        return bt - at;
+      });
     };
-    saveDB(defaultDB());
-    mergeAndPersist('vendor', vendorRecords);
-    mergeAndPersist('customer', customerRecords);
-    mergeAndPersist('public', publicRecords);
+    state.remote.records = {
+      vendor: dedupe('vendor', vendorRecords),
+      customer: dedupe('customer', customerRecords),
+      public: dedupe('public', publicRecords)
+    };
+    document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'all' } }));
   }
 
   function createInput(name, type = 'text', attrs = {}) {
@@ -2223,7 +2172,7 @@
 
     const heroOverlay = document.createElement('div');
     heroOverlay.className = 'hero-overlay';
-    const heroTitle = document.createElement('h3');
+    const heroTitle = document.createElement('h2');
     heroTitle.className = 'hero-title';
     heroTitle.dataset.i18n = 'heroTitle';
     heroTitle.textContent = t('heroTitle');
@@ -2246,7 +2195,7 @@
     heroVideo.setAttribute('autoplay', '');
     heroVideo.setAttribute('loop', '');
     heroVideo.setAttribute('preload', 'auto');
-    heroVideo.src = 'High%20Quilty%20Animation.mp4';
+    heroVideo.src = encodeURI('High Quilty Animation.mp4');
     heroVideo.className = 'hero-video';
 
     const unmuteBtn = document.createElement('button');
@@ -2841,8 +2790,7 @@
   }
 
   function getCombinedRecords(kind) {
-    const db = getDB();
-    const records = Array.isArray(db[kind]) ? db[kind] : [];
+    const records = Array.isArray(state.remote.records[kind]) ? state.remote.records[kind] : [];
     return records.map(rec => {
       const copy = {};
       SURVEY_CONFIGS[kind].recordFields.forEach(key => {
@@ -2896,14 +2844,6 @@
     textEl.textContent = message;
     statusEl.appendChild(dot);
     statusEl.appendChild(textEl);
-    refreshRemoteBanner();
-  }
-
-  function refreshRemoteBanner() {
-    if (state.remote.bannerEl) {
-      state.remote.bannerEl.remove();
-      state.remote.bannerEl = null;
-    }
   }
 
   function createField(config, surveyKind) {
@@ -3481,7 +3421,6 @@
     if (state.currentRoute && state.currentRoute.onLang) state.currentRoute.onLang();
   });
   function clearAllStorage() {
-    saveDB(defaultDB());
     Object.values(STORAGE_KEYS.drafts).forEach(key => localStorage.removeItem(key));
     Object.values(STORAGE_KEYS.completed).forEach(key => localStorage.removeItem(key));
     state.passwordUnlocked = {};
@@ -3490,10 +3429,11 @@
     state.remote.syncError = null;
     showToast(t('resetDone'));
     document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'all' } }));
+    updateRemoteStatus();
   }
 
   function dumpDB() {
-    logDebug('DB snapshot', getDB());
+    logDebug('DB snapshot', state.remote.records);
     showToast(t('dumpData'));
   }
 
@@ -4223,7 +4163,7 @@
     if (!confirm(t('confirmReset'))) return;
     exportJSON(true);
     try {
-      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?mode=reset`, {
+      const response = await fetch(REMOTE_ENDPOINTS.reset, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reset' }),
