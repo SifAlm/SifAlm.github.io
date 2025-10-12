@@ -295,71 +295,86 @@
       background: linear-gradient(135deg, rgba(30,32,52,0.88), rgba(38,40,64,0.88));
     }
 
-    .social-carousel {
-      display: flex;
-      gap: 16px;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      scroll-behavior: smooth;
-      padding-bottom: 12px;
-      -webkit-overflow-scrolling: touch;
+    .hero-card {
+      width: 100%;
+      max-width: 1100px;
+      margin-bottom: 0;
+      text-align: center;
+      background: linear-gradient(135deg, rgba(255,255,255,0.88), rgba(228,235,255,0.92));
     }
-    .social-card {
-      flex: 0 0 280px;
-      scroll-snap-align: start;
-      border-radius: var(--radius-md);
+    [data-theme="dark"] .hero-card {
+      background: linear-gradient(135deg, rgba(24,26,44,0.92), rgba(36,38,64,0.9));
+    }
+    .hero-title {
+      font-size: clamp(32px, 4vw, 42px);
+      margin: 0 auto 6px;
+      font-weight: 600;
+    }
+    .hero-sub {
+      color: var(--text-muted);
+      margin: 0 auto clamp(16px, 2vw, 28px);
+      max-width: 640px;
+      font-size: clamp(18px, 2vw, 20px);
+    }
+    .hero,
+    .hero-card {
       position: relative;
-      aspect-ratio: 9 / 16;
-      background: var(--surface-dark);
+    }
+    .hero {
+      width: min(100%, 1100px);
+      margin: 0 auto clamp(20px, 4vw, 36px);
+    }
+    .hero-video-wrap {
+      position: relative;
+      padding: clamp(16px, 3vw, 28px);
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(120,132,255,0.35), rgba(187,132,255,0.28));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55), 0 22px 48px rgba(60,70,120,0.25);
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      box-shadow: inset 0 0 0 1px var(--border), 0 18px 32px rgba(60,70,120,0.18);
-      transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
-      animation: floatPulse 12s ease-in-out infinite;
-      will-change: transform;
     }
-    .social-card:nth-child(2n) { animation-delay: 0.8s; }
-    .social-card:nth-child(3n) { animation-delay: 1.6s; }
-    .social-card:hover,
-    .social-card:focus-within {
-      animation-play-state: paused;
-      transform: translateY(-10px) scale(1.01);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6), 0 32px 48px rgba(50,60,110,0.28);
+    [data-theme="dark"] .hero-video-wrap {
+      background: linear-gradient(135deg, rgba(82,96,210,0.28), rgba(164,120,255,0.22));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14), 0 24px 48px rgba(5,7,18,0.65);
     }
-    .social-card iframe,
-    .social-card blockquote {
-      width: 100% !important;
-      height: 100% !important;
-      margin: 0 !important;
+    .hero-video-wrap::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.35), transparent 55%),
+        radial-gradient(circle at 80% 35%, rgba(255,255,255,0.22), transparent 60%),
+        linear-gradient(120deg, rgba(87,102,255,0.32), rgba(187,132,255,0.25), rgba(120,210,255,0.28));
+      opacity: 0.75;
+      animation: heroGlow 18s ease-in-out infinite;
+      pointer-events: none;
     }
-    .social-fallback {
+    .hero-video-aspect {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 18px 36px rgba(45,55,85,0.28);
+      background: rgba(12,14,26,0.4);
+    }
+    .hero-video-aspect::before {
+      content: "";
+      display: block;
+      padding-top: 56.25%;
+    }
+    .hero-video-aspect iframe {
       position: absolute;
       inset: 0;
-      display: grid;
-      place-items: center;
-      text-align: center;
-      padding: 24px;
-      color: var(--text);
-      gap: 12px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(220,230,255,0.78));
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity var(--transition);
-      z-index: 2;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      border-radius: 18px;
     }
-    [data-theme="dark"] .social-fallback {
-      background: linear-gradient(180deg, rgba(20,22,40,0.92), rgba(32,36,60,0.88));
-      color: var(--text);
+    @keyframes heroGlow {
+      0% { transform: translate3d(-8%, -6%, 0); }
+      50% { transform: translate3d(8%, 6%, 0); }
+      100% { transform: translate3d(-8%, -6%, 0); }
     }
-    .social-card.no-embed .social-fallback {
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .social-fallback svg { width: 32px; height: 32px; }
-
     .cta-grid {
       margin-top: 32px;
       display: grid;
@@ -976,6 +991,52 @@
       background: #ff7b7b;
       box-shadow: 0 0 0 4px rgba(255,123,123,0.25);
     }
+    .remote-status[data-state="pending"] .status-dot {
+      background: #f5a524;
+      box-shadow: 0 0 0 4px rgba(245,165,36,0.25);
+    }
+    .remote-banner {
+      flex: 1 1 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 4px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(120deg, rgba(255,255,255,0.75), rgba(229,239,255,0.72));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6);
+    }
+    [data-theme="dark"] .remote-banner {
+      background: linear-gradient(120deg, rgba(38,44,74,0.85), rgba(28,30,52,0.8));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+    }
+    .remote-banner span {
+      font-weight: 600;
+      color: var(--fg-contrast);
+    }
+    .remote-banner button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-weight: 600;
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 12px 24px rgba(87,102,255,0.26);
+      transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
+    }
+    .remote-banner button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 32px rgba(87,102,255,0.32);
+    }
+    .remote-banner button:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+    .remote-banner button:active {
+      transform: translateY(0);
+      opacity: 0.9;
+    }
     @keyframes pulseDot {
       0% { transform: scale(1); opacity: 0.9; }
       50% { transform: scale(1.3); opacity: 0.7; }
@@ -1031,6 +1092,9 @@
         transition-duration: 0.001ms !important;
         scroll-behavior: auto !important;
       }
+      .hero-video-wrap::before {
+        animation: none !important;
+      }
     }
 
     @media (max-width: 720px) {
@@ -1070,7 +1134,7 @@
 
   <div class="debug-panel" id="debug-panel"></div>
 
-  <form name="vendor" method="POST" netlify netlify-honeypot="bot-field" hidden>
+  <form name="vendor" method="POST" netlify netlify-honeypot="bot-field" hidden onsubmit="return handleVendorSubmit(event)">
     <input type="hidden" name="form-name" value="vendor" />
     <p hidden><label>Do not fill this out <input name="bot-field" /></label></p>
     <input type="hidden" name="company" />
@@ -1103,7 +1167,7 @@
     <input type="hidden" name="lang" />
   </form>
 
-  <form name="customer" method="POST" netlify netlify-honeypot="bot-field" hidden>
+  <form name="customer" method="POST" netlify netlify-honeypot="bot-field" hidden onsubmit="return handleCustomerSubmit(event)">
     <input type="hidden" name="form-name" value="customer" />
     <p hidden><label>Do not fill this out <input name="bot-field" /></label></p>
     <input type="hidden" name="name" />
@@ -1128,7 +1192,7 @@
     <input type="hidden" name="lang" />
   </form>
 
-  <form name="public" method="POST" netlify netlify-honeypot="bot-field" hidden>
+  <form name="public" method="POST" netlify netlify-honeypot="bot-field" hidden onsubmit="return handlePublicSubmit(event)">
     <input type="hidden" name="form-name" value="public" />
     <p hidden><label>Do not fill this out <input name="bot-field" /></label></p>
     <input type="hidden" name="name" />
@@ -1151,9 +1215,13 @@
     <input type="hidden" name="lang" />
   </form>
 
-  <script async src="https://www.instagram.com/embed.js"></script>
   <script>
-  window.TAMAM_BACKEND = 'netlifyForms';
+  window.TAMAM_BACKEND = window.TAMAM_BACKEND || 'netlify';
+  window.TAMAM_HOSTINGER_ENDPOINT = window.TAMAM_HOSTINGER_ENDPOINT || '';
+  window.TAMAM_HOSTINGER_EXPORT = window.TAMAM_HOSTINGER_EXPORT || '';
+  window.handleVendorSubmit = (event) => { event?.preventDefault?.(); return false; };
+  window.handleCustomerSubmit = (event) => { event?.preventDefault?.(); return false; };
+  window.handlePublicSubmit = (event) => { event?.preventDefault?.(); return false; };
   const DEBUG = false;
   const logDebug = (...args) => { if (DEBUG) console.log('[Tamam]', ...args); };
 
@@ -1205,8 +1273,8 @@
       navResults: 'Results Dashboard',
       introTitle: "Why we're collecting data",
       introBody: 'Tamam is the UAE\'s premium super-app for trusted Home, Health, Car, and Lifestyle services. We\'re collecting data to give investors a clear view of our traction and to steer the next wave of product enhancements. Your perspective directly shapes how we prioritize features, markets, and service quality.',
-      exploreSocials: 'Explore Our Socials',
-      socialsFallback: 'Play on Instagram',
+      heroTitle: 'Meet Tamam.',
+      heroSub: 'Services on demand across Home, Health, Car, and Lifestyle.',
       getTamam: 'Get Tamam & Follow Us',
       ctaDownload: 'Download the Tamam app',
       ctaFollow: 'Follow Tamam online',
@@ -1221,6 +1289,8 @@
       restoredDraft: 'Draft restored.',
       alreadySubmitted: 'You already submitted this survey on this device.',
       submitted: 'Submitted',
+      submittedSynced: 'Submitted & synced.',
+      submittedOffline: 'Submitted (offline). We\'ll sync automatically.',
       timerLabel: 'Time spent',
       progressLabel: 'Progress',
       required: 'Required',
@@ -1353,12 +1423,12 @@
       syncingRemote: 'Syncing remote data…',
       syncComplete: 'Remote responses synced.',
       syncFailed: 'Unable to sync remote data.',
-      netlifySubmitQueued: 'Submitted. Remote sync may take a moment.',
-      netlifySubmitFailed: 'Saved locally. Refresh results later to retry remote sync.',
       remoteStatusSyncing: 'Syncing remote data…',
-      remoteStatusIdle: 'Remote sync not configured.',
+      remoteStatusIdle: 'Connect Netlify to view live results.',
+      remoteStatusPending: '{count} submission(s) waiting to sync.',
       remoteStatusSynced: 'Remote sync: {time}',
       remoteStatusReady: 'Remote sync ready.',
+      remoteConnectPrompt: 'Connect Netlify to view live results.',
       resultsSummary: 'Performance snapshot',
       resultsCharts: 'Trends & distributions',
       chartsEmpty: 'Charts will appear once submissions arrive.',
@@ -1420,8 +1490,8 @@
       navResults: 'لوحة النتائج',
       introTitle: 'لماذا نجمع البيانات',
       introBody: 'تمام هو التطبيق الفائق الموثوق في الإمارات لحجز خدمات المنزل والصحة والسيارات ونمط الحياة. نجمع هذه البيانات لنقدم للمستثمرين رؤية أوضح عن نمونا ولنوجّه المرحلة التالية من تطوير المنتج. مشاركتكم تحدد أولويات الميزات والأسواق وجودة الخدمة.',
-      exploreSocials: 'تعرّف على قنواتنا الاجتماعية',
-      socialsFallback: 'مشاهدة على إنستغرام',
+      heroTitle: 'تعرّف على تمام.',
+      heroSub: 'خدمات حسب الطلب عبر المنزل والصحة والسيارات ونمط الحياة.',
       getTamam: 'حمّل تمام وتابعنا',
       ctaDownload: 'حمّل تطبيق تمام',
       ctaFollow: 'تابع تمام عبر القنوات الرقمية',
@@ -1436,6 +1506,8 @@
       restoredDraft: 'تم استعادة المسودة.',
       alreadySubmitted: 'تم إرسال هذا الاستبيان مسبقاً من هذا الجهاز.',
       submitted: 'تم الإرسال',
+      submittedSynced: 'تم الإرسال والمزامنة.',
+      submittedOffline: 'تم الإرسال دون اتصال. سنزامنه تلقائياً.',
       timerLabel: 'الوقت المستغرق',
       progressLabel: 'التقدم',
       required: 'إلزامي',
@@ -1568,12 +1640,12 @@
       syncingRemote: 'جاري مزامنة البيانات البعيدة…',
       syncComplete: 'تمت مزامنة الردود البعيدة.',
       syncFailed: 'تعذر مزامنة البيانات البعيدة.',
-      netlifySubmitQueued: 'تم الإرسال. قد تستغرق المزامنة البعيدة لحظات.',
-      netlifySubmitFailed: 'تم حفظ الرد محليًا. أعد تحديث النتائج لإعادة المحاولة.',
       remoteStatusSyncing: 'جاري مزامنة البيانات البعيدة…',
-      remoteStatusIdle: 'المزامنة البعيدة غير مهيأة.',
+      remoteStatusIdle: 'اربط نتليفاي للاطلاع على النتائج المباشرة.',
+      remoteStatusPending: 'هناك {count} ردود تنتظر المزامنة.',
       remoteStatusSynced: 'آخر مزامنة: {time}',
-      remoteStatusReady: 'المزامنة البعيدة جاهزة.',
+      remoteStatusReady: 'المزامنة جاهزة.',
+      remoteConnectPrompt: 'اربط نتليفاي للاطلاع على النتائج المباشرة.',
       resultsSummary: 'لمحة عن الأداء',
       resultsCharts: 'الاتجاهات والتوزيعات',
       chartsEmpty: 'ستظهر الرسوم البيانية عند وصول الردود.',
@@ -1649,7 +1721,8 @@
     },
     theme: 'tmm_theme',
     lang: 'tmm_lang',
-    remoteConfig: 'tamam_remote_config'
+    remoteConfig: 'tamam_remote_config',
+    outbox: 'tmm_outbox'
   };
 
   const defaultDB = () => ({ vendor: [], customer: [], public: [] });
@@ -1667,6 +1740,26 @@
   }
   function saveDB(db) {
     localStorage.setItem(STORAGE_KEYS.db, JSON.stringify(db));
+  }
+
+  function getOutbox() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.outbox);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      logDebug('Outbox parse failed', e);
+      return [];
+    }
+  }
+
+  function saveOutbox(list) {
+    if (!Array.isArray(list) || !list.length) {
+      localStorage.removeItem(STORAGE_KEYS.outbox);
+    } else {
+      localStorage.setItem(STORAGE_KEYS.outbox, JSON.stringify(list));
+    }
   }
 
   const state = {
@@ -1691,9 +1784,14 @@
       syncing: false,
       syncError: null,
       statusEl: null,
-      syncInterval: null
+      syncInterval: null,
+      outboxPending: 0,
+      bannerHost: null,
+      bannerEl: null
     }
   };
+
+  state.remote.outboxPending = getOutbox().length;
 
   document.documentElement.setAttribute('lang', state.lang === 'ar' ? 'ar' : 'en');
   document.getElementById('app-shell').setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
@@ -1760,9 +1858,6 @@
     target.mount(app);
     state.currentRoute = target;
     updateNav();
-    if (hash === '#/surveys') {
-      setTimeout(() => window.instgrm?.Embeds?.process(), 0);
-    }
   }
 
   window.addEventListener('hashchange', () => {
@@ -1888,7 +1983,19 @@
     const record = { ...data, origin: 'local' };
     mergeAndPersist(kind, [record]);
     logDebug('Submit', kind, record);
-    submitNetlifyForm(kind, record);
+    sendToBackend(kind, record, state.lang).then(() => {
+      state.remote.outboxPending = getOutbox().length;
+      updateRemoteStatus();
+      showToast(t('submittedSynced'));
+      if (window.TAMAM_BACKEND === 'netlify' && state.remote.netlify.siteId && state.remote.netlify.token) {
+        syncNetlify(false);
+      }
+    }).catch(error => {
+      logDebug('Remote sync failed', kind, error);
+      queueOutbox(kind, record, state.lang);
+      showToast(t('submittedOffline'));
+      updateRemoteStatus();
+    });
   }
 
   function toBackendValue(value) {
@@ -1897,34 +2004,110 @@
     if (typeof value === 'object') return JSON.stringify(value);
     return String(value);
   }
+  function queueOutbox(kind, record, lang, backendOverride) {
+    const normalized = normalizeRecordForStorage(kind, record);
+    if (!normalized) return;
+    const entry = {
+      signature: recordSignature(kind, normalized),
+      kind,
+      record: normalized,
+      lang: lang || state.lang,
+      backend: backendOverride || window.TAMAM_BACKEND || 'netlify',
+      created: new Date().toISOString(),
+      retries: 0
+    };
+    const outbox = getOutbox();
+    if (!outbox.some(item => item.signature === entry.signature)) {
+      outbox.push(entry);
+      saveOutbox(outbox);
+    }
+    state.remote.outboxPending = outbox.length;
+  }
 
-  function submitNetlifyForm(kind, record) {
-    if (window.TAMAM_BACKEND !== 'netlifyForms') return;
+  function encodeFormBody(kind, record, lang) {
     const formName = NETLIFY_FORM_NAMES[kind];
-    if (!formName) return;
+    if (!formName) throw new Error('Missing form name');
     const payload = new URLSearchParams();
     payload.append('form-name', formName);
     payload.append('bot-field', '');
-    payload.append('lang', state.lang);
+    payload.append('lang', lang || state.lang);
     SURVEY_CONFIGS[kind].recordFields.forEach(key => {
       payload.append(key, toBackendValue(record[key]));
     });
-    fetch('/', {
+    return payload.toString();
+  }
+
+  async function postToNetlify(kind, record, lang) {
+    const body = encodeFormBody(kind, record, lang);
+    const response = await fetch('/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: payload.toString(),
+      body,
       credentials: 'omit'
-    }).then(res => {
-      if (!res.ok) throw new Error(res.statusText);
-      logDebug('Netlify sync ok', kind);
-      if (state.remote.netlify.siteId && state.remote.netlify.token) {
-        showToast(t('netlifySubmitQueued'));
-        setTimeout(() => syncNetlify(false), 2200);
-      }
-    }).catch(err => {
-      logDebug('Netlify sync failed', kind, err);
-      showToast(t('netlifySubmitFailed'));
     });
+    if (!response.ok) {
+      throw new Error(`Netlify post failed: ${response.status}`);
+    }
+  }
+
+  async function postToHostinger(kind, record, lang) {
+    const endpoint = window.TAMAM_HOSTINGER_ENDPOINT || '';
+    if (!endpoint) throw new Error('Hostinger endpoint missing');
+    const payload = {
+      kind,
+      lang: lang || state.lang,
+      ts: record.ts,
+      seconds: record.seconds,
+      data: {}
+    };
+    SURVEY_CONFIGS[kind].recordFields.forEach(key => {
+      const value = record[key];
+      payload.data[key] = Array.isArray(value) ? [...value] : (value ?? '');
+    });
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      credentials: 'omit'
+    });
+    if (!response.ok) {
+      throw new Error(`Hostinger post failed: ${response.status}`);
+    }
+  }
+
+  function sendToBackend(kind, record, lang, backendOverride) {
+    const backend = (backendOverride || window.TAMAM_BACKEND || 'netlify').toLowerCase();
+    if (backend === 'hostinger') {
+      return postToHostinger(kind, record, lang);
+    }
+    return postToNetlify(kind, record, lang);
+  }
+
+  async function flushOutbox(manual = false) {
+    const entries = getOutbox();
+    if (!entries.length) {
+      state.remote.outboxPending = 0;
+      updateRemoteStatus();
+      return true;
+    }
+    let success = 0;
+    const remaining = [];
+    for (const entry of entries) {
+      try {
+        await sendToBackend(entry.kind, entry.record, entry.lang || state.lang, entry.backend);
+        success++;
+      } catch (error) {
+        entry.retries = (entry.retries || 0) + 1;
+        entry.error = error.message;
+        remaining.push(entry);
+        logDebug('Outbox retry failed', entry, error);
+      }
+    }
+    saveOutbox(remaining);
+    state.remote.outboxPending = remaining.length;
+    updateRemoteStatus();
+    if (manual && remaining.length) showToast(t('submittedOffline'));
+    return remaining.length === 0;
   }
 
   function createInput(name, type = 'text', attrs = {}) {
@@ -2088,83 +2271,46 @@
     const view = document.createElement('section');
     view.className = 'view active home-view';
 
+    const hero = document.createElement('section');
+    hero.id = 'hero';
+    hero.className = 'hero card hero-card';
+    const heroTitle = document.createElement('h2');
+    heroTitle.className = 'hero-title';
+    heroTitle.dataset.i18n = 'heroTitle';
+    heroTitle.textContent = t('heroTitle');
+    const heroSub = document.createElement('p');
+    heroSub.className = 'hero-sub';
+    heroSub.dataset.i18n = 'heroSub';
+    heroSub.textContent = t('heroSub');
+    const heroWrap = document.createElement('div');
+    heroWrap.className = 'hero-video-wrap';
+    const heroAspect = document.createElement('div');
+    heroAspect.className = 'hero-video-aspect';
+    const heroFrame = document.createElement('iframe');
+    heroFrame.src = 'https://drive.google.com/file/d/1HhoecxoyeZM1_y3xly0B1dipK7bqQJKP/preview';
+    heroFrame.loading = 'lazy';
+    heroFrame.allow = 'autoplay';
+    heroFrame.title = 'Tamam motion graphic';
+    heroFrame.setAttribute('frameborder', '0');
+    heroFrame.setAttribute('allowfullscreen', '');
+    heroAspect.appendChild(heroFrame);
+    heroWrap.appendChild(heroAspect);
+    hero.appendChild(heroTitle);
+    hero.appendChild(heroSub);
+    hero.appendChild(heroWrap);
+
     const intro = document.createElement('div');
     intro.className = 'intro card';
     const title = document.createElement('h2');
     title.className = 'section-title';
+    title.dataset.i18n = 'introTitle';
     title.textContent = t('introTitle');
     const body = document.createElement('p');
     body.className = 'section-subtitle';
+    body.dataset.i18n = 'introBody';
     body.textContent = t('introBody');
     intro.appendChild(title);
     intro.appendChild(body);
-
-    const socialsCard = document.createElement('div');
-    socialsCard.className = 'card';
-    const socialTitle = document.createElement('h3');
-    socialTitle.className = 'section-title';
-    socialTitle.textContent = t('exploreSocials');
-    socialsCard.appendChild(socialTitle);
-    const carousel = document.createElement('div');
-    carousel.className = 'social-carousel';
-    const reels = [
-      'https://www.instagram.com/reel/DLjucH-ydKX/?igsh=dTV5ZHM5Y2NocHRw',
-      'https://www.instagram.com/reel/DLNhwL9yw8o/?igsh=MWgxc285ZGo1bTA3Mw==',
-      'https://www.instagram.com/reel/DKT-dtDSIb4/?igsh=dzV0NjRnanQ5N2tu',
-      'https://www.instagram.com/reel/DMQHNltSns9/?igsh=ODRrZ3VjeHo5amVl',
-      'https://www.instagram.com/reel/DMaLyjXy2bH/?igsh=NHh4cXFvYjB2aGVw'
-    ];
-    reels.forEach(url => {
-      const card = document.createElement('div');
-      card.className = 'social-card';
-      const block = document.createElement('blockquote');
-      block.className = 'instagram-media';
-      block.dataset.instgrmCaptioned = 'false';
-      block.dataset.instgrmPermalink = url;
-      block.dataset.instgrmVersion = '14';
-      block.style.background = 'transparent';
-      const link = document.createElement('a');
-      link.href = url;
-      link.target = '_blank';
-      link.rel = 'noopener';
-      block.appendChild(link);
-      card.appendChild(block);
-      const fallback = document.createElement('a');
-      fallback.href = url;
-      fallback.target = '_blank';
-      fallback.rel = 'noopener';
-      fallback.className = 'social-fallback';
-      fallback.setAttribute('aria-hidden', 'true');
-      const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      icon.setAttribute('viewBox', '0 0 24 24');
-      icon.setAttribute('fill', 'currentColor');
-      icon.setAttribute('aria-hidden', 'true');
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', 'M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.9.2 2.4.4.6.2 1 .5 1.5 1s.8.9 1 1.5c.2.5.3 1.2.4 2.4.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.9-.4 2.4-.2.6-.5 1-1 1.5s-.9.8-1.5 1c-.5.2-1.2.3-2.4.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.9-.2-2.4-.4-.6-.2-1-.5-1.5-1s-.8-.9-1-1.5c-.2-.5-.3-1.2-.4-2.4C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.9.4-2.4.2-.6.5-1 1-1.5s.9-.8 1.5-1c.5-.2 1.2-.3 2.4-.4C8.4 2.2 8.8 2.2 12 2.2zm0-2.2C8.7 0 8.3 0 7.1.1 5.9.2 5 .4 4.2.7c-.8.3-1.5.7-2.2 1.4S1.1 3.6.7 4.4c-.3.8-.5 1.7-.6 2.9C0 8.3 0 8.7 0 12s0 3.7.1 4.9c.1 1.2.3 2.1.6 2.9.3.8.7 1.5 1.4 2.2.7.7 1.4 1.1 2.2 1.4.8.3 1.7.5 2.9.6 1.2.1 1.6.1 4.9.1s3.7 0 4.9-.1c1.2-.1 2.1-.3 2.9-.6.8-.3 1.5-.7 2.2-1.4.7-.7 1.1-1.4 1.4-2.2.3-.8.5-1.7.6-2.9.1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.1-1.2-.3-2.1-.6-2.9-.3-.8-.7-1.5-1.4-2.2C21.1.7 20.4.3 19.6 0c-.8-.3-1.7-.5-2.9-.6C15.3 0 14.9 0 12 0z');
-      icon.appendChild(path);
-      const span = document.createElement('span');
-      span.dataset.i18n = 'socialsFallback';
-      span.textContent = t('socialsFallback');
-      fallback.appendChild(icon);
-      fallback.appendChild(span);
-      card.appendChild(fallback);
-      const observer = new MutationObserver(() => {
-        if (card.querySelector('iframe')) {
-          card.classList.remove('no-embed');
-          fallback.setAttribute('aria-hidden', 'true');
-          observer.disconnect();
-        }
-      });
-      observer.observe(card, { childList: true, subtree: true });
-      setTimeout(() => {
-        if (!card.querySelector('iframe')) {
-          card.classList.add('no-embed');
-          fallback.setAttribute('aria-hidden', 'false');
-        }
-      }, 3500);
-      carousel.appendChild(card);
-    });
-    socialsCard.appendChild(carousel);
 
     const iconPaths = {
       website: 'M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm0 17.25a7.48 7.48 0 0 1-3-.633 21.18 21.18 0 0 0 3.75-4.391 21.18 21.18 0 0 0 3.75 4.39A7.48 7.48 0 0 1 12 19.5zm4.615-1.262a22.648 22.648 0 0 1-3.865-4.58 22.648 22.648 0 0 1-3.865 4.58 7.5 7.5 0 1 1 7.73-12.119 22.64 22.64 0 0 1-7.64-.365 22.64 22.64 0 0 1 7.64.365A7.5 7.5 0 0 1 16.615 18.238z',
@@ -2283,12 +2429,11 @@
     });
     footer.appendChild(footerLinks);
 
+    view.appendChild(hero);
     view.appendChild(intro);
-    view.appendChild(socialsCard);
     view.appendChild(ctaCard);
     view.appendChild(footer);
 
-    requestAnimationFrame(() => window.instgrm?.Embeds?.process());
     applyI18n(view);
     container.appendChild(view);
   }
@@ -2669,6 +2814,19 @@
     return str.split(/[,;\n]+/).map(v => v.trim()).filter(Boolean);
   }
 
+  function normalizeHostinger(kind, entry) {
+    if (!entry) return null;
+    const base = entry.data ? { ...entry.data } : { ...entry };
+    base.ts = base.ts || entry.ts || entry.timestamp || '';
+    base.seconds = base.seconds ?? entry.seconds ?? 0;
+    const multi = REMOTE_MULTI_FIELDS[kind] || [];
+    multi.forEach(field => {
+      base[field] = parseRemoteList(base[field]);
+    });
+    base.origin = 'remote';
+    return normalizeRecordForStorage(kind, base);
+  }
+
   function normalizeNetlify(kind, submission) {
     const data = submission?.data || {};
     const config = SURVEY_CONFIGS[kind];
@@ -2726,18 +2884,23 @@
   function updateRemoteStatus() {
     const statusEl = state.remote.statusEl;
     if (!statusEl) return;
+    const backend = (window.TAMAM_BACKEND || 'netlify').toLowerCase();
     const { siteId, token } = state.remote.netlify;
+    const pending = state.remote.outboxPending || getOutbox().length;
     let stateKey = 'idle';
     let message = '';
-    if (state.remote.syncing) {
+    if (pending > 0) {
+      stateKey = 'pending';
+      message = t('remoteStatusPending', { count: numberLabel(pending) });
+    } else if (state.remote.syncing) {
       stateKey = 'syncing';
       message = t('remoteStatusSyncing');
-    } else if (!siteId || !token) {
-      stateKey = 'idle';
-      message = t('remoteStatusIdle');
     } else if (state.remote.syncError) {
       stateKey = 'error';
       message = t('syncFailed');
+    } else if (backend === 'netlify' && (!siteId || !token)) {
+      stateKey = 'idle';
+      message = t('remoteStatusIdle');
     } else if (state.remote.lastSync) {
       stateKey = 'synced';
       message = t('remoteStatusSynced', { time: formatDate(state.remote.lastSync) });
@@ -2753,6 +2916,37 @@
     text.textContent = message;
     statusEl.appendChild(dot);
     statusEl.appendChild(text);
+    refreshRemoteBanner();
+  }
+
+  function refreshRemoteBanner() {
+    const host = state.remote.bannerHost;
+    if (!host) return;
+    const backend = (window.TAMAM_BACKEND || 'netlify').toLowerCase();
+    const needsNetlifyConfig = backend === 'netlify' && (!state.remote.netlify.siteId || !state.remote.netlify.token);
+    if (needsNetlifyConfig) {
+      if (!state.remote.bannerEl) {
+        const banner = document.createElement('div');
+        banner.className = 'remote-banner';
+        const label = document.createElement('span');
+        label.dataset.i18n = 'remoteConnectPrompt';
+        label.textContent = t('remoteConnectPrompt');
+        const btn = document.createElement('button');
+        btn.dataset.i18n = 'connectNetlify';
+        btn.textContent = t('connectNetlify');
+        btn.addEventListener('click', openNetlifyConfig);
+        banner.appendChild(label);
+        banner.appendChild(btn);
+        host.appendChild(banner);
+        applyI18n(banner);
+        state.remote.bannerEl = banner;
+      } else {
+        applyI18n(state.remote.bannerEl);
+      }
+    } else if (state.remote.bannerEl) {
+      state.remote.bannerEl.remove();
+      state.remote.bannerEl = null;
+    }
   }
 
   function openNetlifyConfig() {
@@ -2849,32 +3043,46 @@
   }
 
   async function syncNetlify(manual = false) {
+    if (state.remote.syncing) return;
+    await flushOutbox(false);
+    const backend = (window.TAMAM_BACKEND || 'netlify').toLowerCase();
     const { siteId, token } = state.remote.netlify;
-    if (!siteId || !token) {
+    if (backend === 'netlify' && (!siteId || !token)) {
       if (manual) showToast(t('remoteConfigMissing'));
       return;
     }
-    if (state.remote.syncing) return;
     state.remote.syncing = true;
     updateRemoteStatus();
     if (manual) showToast(t('syncingRemote'));
     try {
-      const forms = await fetchJSON(`https://api.netlify.com/api/v1/sites/${siteId}/forms?access_token=${token}`);
-      const idMap = forms.reduce((acc, form) => {
-        acc[(form.name || '').toLowerCase()] = form.id;
-        return acc;
-      }, {});
-      const loadForm = async (kind) => {
-        const formId = idMap[NETLIFY_FORM_NAMES[kind]];
-        if (!formId) return [];
-        const submissions = await fetchJSON(`https://api.netlify.com/api/v1/forms/${formId}/submissions?access_token=${token}`);
-        return submissions.map(sub => normalizeNetlify(kind, sub)).filter(Boolean);
-      };
-      const [vendorRecords, customerRecords, publicRecords] = await Promise.all([
-        loadForm('vendor'),
-        loadForm('customer'),
-        loadForm('public')
-      ]);
+      let vendorRecords = [];
+      let customerRecords = [];
+      let publicRecords = [];
+      if (backend === 'hostinger') {
+        const exportUrl = window.TAMAM_HOSTINGER_EXPORT || '';
+        if (!exportUrl) throw new Error('Hostinger export missing');
+        const remote = await fetchJSON(exportUrl);
+        vendorRecords = (remote?.vendor || []).map(entry => normalizeHostinger('vendor', entry)).filter(Boolean);
+        customerRecords = (remote?.customer || []).map(entry => normalizeHostinger('customer', entry)).filter(Boolean);
+        publicRecords = (remote?.public || []).map(entry => normalizeHostinger('public', entry)).filter(Boolean);
+      } else {
+        const forms = await fetchJSON(`https://api.netlify.com/api/v1/sites/${siteId}/forms?access_token=${token}`);
+        const idMap = forms.reduce((acc, form) => {
+          acc[(form.name || '').toLowerCase()] = form.id;
+          return acc;
+        }, {});
+        const loadForm = async (kind) => {
+          const formId = idMap[NETLIFY_FORM_NAMES[kind]];
+          if (!formId) return [];
+          const submissions = await fetchJSON(`https://api.netlify.com/api/v1/forms/${formId}/submissions?access_token=${token}`);
+          return submissions.map(sub => normalizeNetlify(kind, sub)).filter(Boolean);
+        };
+        [vendorRecords, customerRecords, publicRecords] = await Promise.all([
+          loadForm('vendor'),
+          loadForm('customer'),
+          loadForm('public')
+        ]);
+      }
       state.remote.records = {
         vendor: vendorRecords,
         customer: customerRecords,
@@ -3177,7 +3385,6 @@
       resetDraft(kind);
       handleCompletion(kind);
       state.surveys[kind].data = {};
-      showToast(t('submitted'));
       location.hash = '#/surveys/thanks';
     });
 
@@ -3409,6 +3616,9 @@
           clearInterval(state.remote.syncInterval);
           state.remote.syncInterval = null;
         }
+        state.remote.statusEl = null;
+        state.remote.bannerHost = null;
+        state.remote.bannerEl = null;
       },
       onLang() {
         if (!state.passwordUnlocked.results) {
@@ -3491,6 +3701,8 @@
   updateThemeToggle();
   updateNav();
   ensureHash();
+  flushOutbox(false);
+  window.addEventListener('online', () => flushOutbox(false));
   const modalBackdrop = document.getElementById('modal-backdrop');
   const modalContent = document.getElementById('modal-content');
   const modalClose = document.getElementById('modal-close');
@@ -4244,10 +4456,16 @@
     refreshBtn.className = 'cta-link';
     refreshBtn.dataset.i18n = 'refreshData';
     refreshBtn.textContent = t('refreshData');
-    refreshBtn.addEventListener('click', () => {
-      syncNetlify(true);
-      cardContent.innerHTML = '';
-      renderResultsTab(cardContent, state.results.tab);
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.disabled = true;
+      try {
+        await flushOutbox(true);
+        await syncNetlify(true);
+        cardContent.innerHTML = '';
+        renderResultsTab(cardContent, state.results.tab);
+      } finally {
+        refreshBtn.disabled = false;
+      }
     });
     controls.appendChild(exportExcelBtn);
     controls.appendChild(exportJsonBtn);
@@ -4265,6 +4483,7 @@
     remoteWrap.appendChild(statusBar);
     card.appendChild(remoteWrap);
     state.remote.statusEl = statusBar;
+    state.remote.bannerHost = remoteWrap;
     updateRemoteStatus();
 
     const tabBar = document.createElement('div');
@@ -4295,7 +4514,12 @@
 
     renderResultsTab(cardContent, state.results.tab);
     applyI18n(view);
-    if (state.remote.netlify.siteId && state.remote.netlify.token) {
+    const backend = (window.TAMAM_BACKEND || 'netlify').toLowerCase();
+    if (backend === 'hostinger') {
+      syncNetlify(false);
+      if (state.remote.syncInterval) clearInterval(state.remote.syncInterval);
+      state.remote.syncInterval = setInterval(() => syncNetlify(false), 120000);
+    } else if (state.remote.netlify.siteId && state.remote.netlify.token) {
       syncNetlify(false);
       if (state.remote.syncInterval) clearInterval(state.remote.syncInterval);
       state.remote.syncInterval = setInterval(() => syncNetlify(false), 120000);
