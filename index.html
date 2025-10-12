@@ -1,0 +1,3109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tamam Research Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg-gradient-light: radial-gradient(120% 120% at 50% 0%, rgba(114,149,255,0.25), rgba(238,242,255,0.9));
+      --bg-gradient-dark: radial-gradient(120% 120% at 50% 0%, rgba(86,109,200,0.45), rgba(10,16,35,0.95));
+      --card-glass-light: rgba(255,255,255,0.75);
+      --card-glass-dark: rgba(20,26,45,0.6);
+      --text-light: #0c1330;
+      --text-dark: #f2f5ff;
+      --accent: linear-gradient(135deg, #7b8cff, #b39bff);
+      --accent-strong: #7b8cff;
+      --border-light: rgba(255,255,255,0.45);
+      --border-dark: rgba(255,255,255,0.08);
+      --focus: rgba(123,140,255,0.45);
+      --shadow-light: 0 16px 40px rgba(110,130,255,0.18);
+      --shadow-dark: 0 16px 40px rgba(9,11,30,0.55);
+      --transition: cubic-bezier(0.4, 0, 0.2, 1);
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --header-height: 80px;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-gradient-light);
+      color: var(--text-light);
+      transition: background 300ms var(--transition), color 300ms var(--transition);
+    }
+    body[data-theme="dark"] {
+      background: var(--bg-gradient-dark);
+      color: var(--text-dark);
+    }
+    body[data-theme="dark"] .card {
+      background: var(--card-glass-dark);
+      border-color: var(--border-dark);
+      box-shadow: var(--shadow-dark);
+    }
+    body[data-theme="light"] .card {
+      background: var(--card-glass-light);
+      border-color: var(--border-light);
+      box-shadow: var(--shadow-light);
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+    }
+    header.app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-radius: var(--radius-lg);
+      position: sticky;
+      top: 16px;
+      z-index: 50;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-light);
+      transition: background 300ms var(--transition), box-shadow 300ms var(--transition), border 300ms var(--transition);
+    }
+    body[data-theme="dark"] header.app-header {
+      background: rgba(18,24,44,0.7);
+      border-color: var(--border-dark);
+      box-shadow: var(--shadow-dark);
+    }
+    header .branding {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .branding img {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      object-fit: contain;
+    }
+    .branding h1 {
+      font-size: 1.8rem;
+      margin: 0;
+      font-weight: 600;
+    }
+    .control-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .icon-button, .pill-button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: rgba(255,255,255,0.6);
+      color: inherit;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 200ms var(--transition), box-shadow 200ms var(--transition), background 200ms var(--transition);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+    }
+    .icon-button svg {
+      width: 20px;
+      height: 20px;
+    }
+    .icon-button:focus-visible, .pill-button:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+    body[data-theme="dark"] .icon-button, body[data-theme="dark"] .pill-button {
+      background: rgba(20,26,45,0.85);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+    .icon-button:hover, .pill-button:hover {
+      transform: translateY(-1px);
+    }
+    main {
+      flex: 1;
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .card {
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      border: 1px solid var(--border-light);
+      background: var(--card-glass-light);
+      backdrop-filter: blur(22px);
+      transition: transform 200ms var(--transition);
+    }
+    .card:hover {
+      transform: translateY(-2px);
+    }
+    .section-title {
+      font-size: 1.5rem;
+      margin: 0 0 16px;
+    }
+    p {
+      line-height: 1.6;
+      margin: 0 0 16px;
+      font-size: 1.05rem;
+    }
+    .home-intro {
+      display: grid;
+      gap: 24px;
+    }
+    .reel-carousel {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .reel-embed {
+      flex: 0 0 280px;
+      scroll-snap-align: start;
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      aspect-ratio: 9 / 16;
+      background: rgba(255,255,255,0.4);
+      border: 1px solid rgba(255,255,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .reel-embed blockquote {
+      margin: 0 !important;
+      height: 100%;
+    }
+    .reel-fallback {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 12px;
+      padding: 24px;
+    }
+    .reel-fallback svg {
+      width: 48px;
+      height: 48px;
+    }
+    .socials-card {
+      display: grid;
+      gap: 16px;
+    }
+    .store-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+    .store-links img {
+      height: 44px;
+      width: auto;
+      object-fit: contain;
+    }
+    .link-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .link-grid a {
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.4);
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 180ms var(--transition);
+    }
+    body[data-theme="dark"] .link-grid a {
+      background: rgba(22,30,55,0.85);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .link-grid a:hover {
+      transform: translateY(-1px);
+    }
+    .survey-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .password-gate {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .password-gate input {
+      width: 240px;
+    }
+    form.survey-form {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .form-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .form-section h3 {
+      margin: 0;
+      font-size: 1.3rem;
+    }
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    label {
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+    input, select, textarea {
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(120,130,200,0.35);
+      background: rgba(255,255,255,0.8);
+      font-size: 1rem;
+      transition: border 160ms var(--transition), box-shadow 160ms var(--transition);
+    }
+    body[data-theme="dark"] input, body[data-theme="dark"] select, body[data-theme="dark"] textarea {
+      background: rgba(18,22,45,0.85);
+      color: inherit;
+      border-color: rgba(255,255,255,0.1);
+    }
+    input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: none;
+      border-color: rgba(123,140,255,0.65);
+      box-shadow: 0 0 0 3px rgba(123,140,255,0.25);
+    }
+    .helper-text {
+      font-size: 0.9rem;
+      color: rgba(80,90,130,0.9);
+    }
+    body[data-theme="dark"] .helper-text {
+      color: rgba(210,220,255,0.7);
+    }
+    .option-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(255,255,255,0.35);
+    }
+    .option-item input {
+      width: 20px;
+      height: 20px;
+      margin: 0;
+    }
+    body[data-theme="dark"] .option-item {
+      background: rgba(22,30,55,0.85);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .progress-bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.4);
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-bar span {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(135deg, #7b8cff, #9f8bff);
+      width: 0%;
+      transition: width 200ms var(--transition);
+    }
+    .sticky-banner {
+      position: sticky;
+      top: 112px;
+      z-index: 20;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(255,255,255,0.4);
+      font-weight: 500;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    body[data-theme="dark"] .sticky-banner {
+      background: rgba(20,26,45,0.9);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .submit-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .primary-btn, .secondary-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 180ms var(--transition), box-shadow 180ms var(--transition);
+    }
+    .primary-btn {
+      background: linear-gradient(135deg, #7b8cff, #9f8bff);
+      color: white;
+      box-shadow: 0 10px 25px rgba(123,140,255,0.4);
+    }
+    .primary-btn:hover {
+      transform: translateY(-1px);
+    }
+    .secondary-btn {
+      background: rgba(255,255,255,0.6);
+      color: inherit;
+    }
+    body[data-theme="dark"] .secondary-btn {
+      background: rgba(30,38,70,0.85);
+    }
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .toast {
+      min-width: 220px;
+      padding: 14px 18px;
+      border-radius: var(--radius-md);
+      background: rgba(12,19,48,0.9);
+      color: white;
+      box-shadow: 0 10px 30px rgba(10,18,45,0.35);
+      animation: toast-in 200ms var(--transition);
+    }
+    @keyframes toast-in {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .thanks-card {
+      text-align: center;
+      padding: 48px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+    }
+    .tab-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.6);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 200ms var(--transition), transform 200ms var(--transition);
+    }
+    body[data-theme="dark"] .tab-btn {
+      background: rgba(20,26,45,0.85);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #7b8cff, #9f8bff);
+      color: white;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .kpi-card {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    body[data-theme="dark"] .kpi-card {
+      background: rgba(22,30,55,0.85);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .chart-grid {
+      display: grid;
+      gap: 24px;
+    }
+    .chart-card {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.6);
+    }
+    body[data-theme="dark"] .chart-card {
+      background: rgba(20,26,45,0.85);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .open-text-list {
+      display: grid;
+      gap: 12px;
+    }
+    .text-item {
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(255,255,255,0.4);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+    body[data-theme="dark"] .text-item {
+      background: rgba(18,24,44,0.85);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .text-item button {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: none;
+      background: rgba(123,140,255,0.15);
+      color: inherit;
+      cursor: pointer;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.55);
+    }
+    body[data-theme="dark"] .table-wrap {
+      background: rgba(20,26,45,0.85);
+      border-color: rgba(255,255,255,0.08);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(120,130,180,0.2);
+    }
+    th {
+      cursor: pointer;
+    }
+    tr:hover {
+      background: rgba(123,140,255,0.1);
+    }
+    .search-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(12,18,38,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+    }
+    .modal-backdrop.active {
+      display: flex;
+    }
+    .modal {
+      width: min(640px, 90vw);
+      max-height: 80vh;
+      overflow-y: auto;
+      background: rgba(255,255,255,0.9);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255,255,255,0.4);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    body[data-theme="dark"] .modal {
+      background: rgba(18,24,44,0.95);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .modal .close-btn {
+      align-self: flex-end;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .debug-panel {
+      position: fixed;
+      left: 24px;
+      bottom: 24px;
+      z-index: 250;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .debug-panel button {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: none;
+      background: rgba(255,255,255,0.65);
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    body[data-theme="dark"] .debug-panel button {
+      background: rgba(30,36,70,0.9);
+      color: inherit;
+    }
+    @media (max-width: 768px) {
+      .app-shell {
+        padding: 16px;
+      }
+      header.app-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .branding img {
+        width: 32px;
+        height: 32px;
+      }
+      .branding h1 {
+        font-size: 1.6rem;
+      }
+      .control-bar {
+        align-self: stretch;
+      }
+    }
+    [dir="rtl"] {
+      font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans Arabic', sans-serif;
+    }
+    [dir="rtl"] table {
+      direction: rtl;
+    }
+    [dir="rtl"] .option-item {
+      flex-direction: row-reverse;
+      text-align: right;
+    }
+    [dir="rtl"] .search-row {
+      flex-direction: row-reverse;
+    }
+    [dir="rtl"] .store-links {
+      justify-content: flex-end;
+    }
+    input[type="email"], input[type="tel"], input[type="number"] {
+      direction: ltr;
+      text-align: left;
+    }
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <div class="app-shell" id="app" data-init="false">
+    <header class="app-header" aria-live="polite">
+      <div class="branding">
+        <img src="https://gettamam.com/wp-content/uploads/2023/09/Tamam-Icon.png" alt="Tamam logo" id="tamam-logo" />
+        <h1 id="header-title">Tamam Research Portal</h1>
+      </div>
+      <div class="control-bar">
+        <button class="icon-button" id="theme-toggle" aria-label="Toggle theme">
+          <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v2" />
+            <path d="M12 19v2" />
+            <path d="M5.22 5.22l1.42 1.42" />
+            <path d="M17.36 17.36l1.42 1.42" />
+            <path d="M3 12h2" />
+            <path d="M19 12h2" />
+            <path d="M5.22 18.78l1.42-1.42" />
+            <path d="M17.36 6.64l1.42-1.42" />
+            <circle cx="12" cy="12" r="4" />
+          </svg>
+        </button>
+        <button class="pill-button" id="language-toggle" aria-label="Switch language">
+          <span id="language-label">EN</span>
+        </button>
+      </div>
+    </header>
+    <main id="route-outlet"></main>
+  </div>
+  <div class="toast-container" id="toast-container" aria-live="assertive"></div>
+  <div class="modal-backdrop" id="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+    <div class="modal" role="document">
+      <button class="icon-button close-btn" data-close-modal>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+      <div id="detail-content"></div>
+    </div>
+  </div>
+  <div class="debug-panel" id="debug-panel" hidden>
+    <button id="debug-clear">Clear Local Data</button>
+    <button id="debug-dump">Dump DB</button>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-sb7yRbTT1Vkx3lmwbBfVUMo0GNnxpv2Zz1Ah1zAiJttRb02jyMi17bp3TQSAU4R8" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-Ytf8l8GHmdA0iQF6imRiXb/vmHzXKiW1jrCHbn2n+D9TKty+O+kO5OVwOB1p5MN3" crossorigin="anonymous"></script>
+  <script async src="https://www.instagram.com/embed.js"></script>
+  <script>
+    const DEBUG = true;
+    const log = (...args) => { if (DEBUG) console.log('[Tamam]', ...args); };
+
+    const INSTAGRAM_REELS = [
+      'https://www.instagram.com/reel/DLjucH-ydKX/?igsh=dTV5ZHM5Y2NocHRw',
+      'https://www.instagram.com/reel/DLNhwL9yw8o/?igsh=MWgxc285ZGo1bTA3Mw==',
+      'https://www.instagram.com/reel/DKT-dtDSIb4/?igsh=dzV0NjRnanQ5N2tu',
+      'https://www.instagram.com/reel/DMQHNltSns9/?igsh=ODRrZ3VjeHo5amVl',
+      'https://www.instagram.com/reel/DMaLyjXy2bH/?igsh=NHh4cXFvYjB2aGVw'
+    ];
+
+    const PASSWORDS = {
+      vendors: '00994',
+      customers: '11636',
+      results: '@Tamam@3469-@'
+    };
+
+    const STORAGE_KEYS = {
+      db: 'tamam_research_db',
+      drafts: {
+        vendor: 'draft_vendor',
+        customer: 'draft_customer',
+        public: 'draft_public'
+      },
+      completed: {
+        vendor: 'completed_vendor',
+        customer: 'completed_customer',
+        public: 'completed_public'
+      },
+      theme: 'tmm_theme'
+    };
+
+    const DEFAULT_DB = { vendor: [], customer: [], public: [] };
+
+    const i18n = {
+      en: {
+        headerTitle: 'Tamam Research Portal',
+        intro: 'Tamam is the UAE\'s premium super-app for booking vetted Home, Health, Car, and Lifestyle services. This research portal helps our product and investor teams understand needs, validate pricing, and co-create with our community.',
+        exploreSocials: 'Explore Our Socials',
+        getTamam: 'Get Tamam / Socials',
+        website: 'Official Website',
+        instagram: 'Instagram',
+        linktree: 'Linktree',
+        appStore: 'Download on the App Store',
+        playStore: 'Get it on Google Play',
+        vendorsSurvey: 'Vendor Survey',
+        customersSurvey: 'Customer Survey',
+        publicSurvey: 'Public Survey',
+        resultsDashboard: 'Results Dashboard',
+        enterPassword: 'Enter password to continue',
+        passwordPlaceholder: 'Password',
+        accessGranted: 'Access granted.',
+        invalidPassword: 'Invalid password.',
+        draftRestored: 'Draft restored.',
+        draftSaved: 'Draft saved.',
+        alreadySubmitted: 'You\'ve already submitted this survey on this device.',
+        resumeLater: 'Your progress is automatically saved.',
+        submit: 'Submit',
+        reset: 'Reset',
+        thanksTitle: 'Thank you for sharing.',
+        thanksBody: 'We\'ll review every insight carefully. Explore other surveys or the dashboard for more.',
+        backHome: 'Back to overview',
+        progress: 'Progress',
+        required: 'Required',
+        optional: 'Optional',
+        commissionTitle: 'Tamam commission model for your category',
+        commissionHome: 'Home: 15–20% commission per order + AED 75/month subscription',
+        commissionCar: 'Car: 15–20% commission per order + AED 75/month subscription',
+        commissionHealth: 'Health: 25–30% commission per order + AED 75/month subscription',
+        commissionLifestyle: 'Lifestyle/Wellness: 20–25% commission per order + AED 75/month subscription',
+        commissionHelper: 'Assume the commission band above plus AED 75/month for the following questions.',
+        timerLabel: 'Time on page',
+        minutes: 'minutes',
+        seconds: 'seconds',
+        clearDraft: 'Clear draft',
+        confirmClearDraft: 'Clear draft?',
+        surveyUnavailable: 'Survey unavailable',
+        otherSpecify: 'Please specify',
+        selectPlaceholder: 'Select an option',
+        addOther: 'Other',
+        accept: 'Acceptable',
+        neutral: 'Neutral',
+        notAcceptable: 'Not acceptable',
+        playOnInstagram: 'Play on Instagram',
+        openInstagram: 'Open in Instagram',
+        vendor_sections: {
+          sectionA: 'A. Lead & Baseline',
+          sectionB: 'B. Acceptance of Model',
+          sectionC: 'C. Revenue Scenarios',
+          sectionD: 'D. Value & Retention'
+        },
+        vendor_fields: {
+          company: 'Company Name',
+          email: 'Business Email',
+          phone: 'Phone Number',
+          category: 'Primary Service Category',
+          aov: 'Average Order Value (AED)',
+          avg_profit: 'Average Profit Margin (%)',
+          orders_all: 'Typical Monthly Orders (across all channels)',
+          orders_profitable: 'At what monthly order volume from Tamam would the above model be profitable for you?',
+          min_orders_to_stay: 'What is the minimum number of Tamam orders per month you need to justify staying subscribed?',
+          accept_5_10k: 'If Tamam generates AED 5,000–10,000 per month for your business, is the model acceptable?',
+          accept_10_20k: 'If Tamam generates AED 10,000–20,000 per month for your business, is the model acceptable?',
+          accept_20k_plus: 'If Tamam generates AED 20,000+ per month for your business, is the model acceptable?',
+          value_expect: 'What would you expect from Tamam to justify these fees?',
+          leave_reason: 'What is the biggest reason you would leave the platform even if you have orders?',
+          recommend: 'Would you recommend Tamam to other businesses?',
+          notes: 'Anything else we should consider?'
+        },
+        vendor_options: {
+          home: 'Home',
+          health: 'Health',
+          car: 'Car',
+          lifestyle: 'Lifestyle/Wellness',
+          orders_0_10: '0–10',
+          orders_10_20: '10–20',
+          orders_20_40: '20–40',
+          orders_40_80: '40–80',
+          orders_80_plus: '80+',
+          orders_profitable_5_10: '5–10 orders',
+          orders_profitable_10_20: '10–20 orders',
+          orders_profitable_20_40: '20–40 orders',
+          orders_profitable_40_plus: '40+ orders',
+          min_orders_1_5: '1–5 orders',
+          min_orders_5_10: '5–10 orders',
+          min_orders_10_20: '10–20 orders',
+          min_orders_20_plus: '20+ orders',
+          expect_volume: 'Guaranteed customer volume',
+          expect_marketing: 'Better marketing & visibility',
+          expect_premium: 'Access to premium customers',
+          expect_tools: 'Business tools (analytics, scheduling, payments)',
+          expect_payouts: 'Faster payouts',
+          leave_commission: 'High commission',
+          leave_volume: 'Low customer volume',
+          leave_support: 'Poor vendor support',
+          leave_competitor: 'Better competitor offers',
+          recommend_yes: 'Yes',
+          recommend_no: 'No'
+        },
+        customer_sections: {
+          usage: 'Usage & Experience',
+          loyalty: 'Loyalty & Trust',
+          future: 'Future Demand'
+        },
+        customer_fields: {
+          name: 'Your Name',
+          email: 'Email',
+          phone: 'Phone Number',
+          freq: 'How often do you use Tamam?',
+          cats: 'Which service categories have you used most?',
+          ease: 'How easy was your last booking?',
+          nps: 'How likely are you to recommend Tamam to a friend or colleague?',
+          time_save: 'Compared to calling vendors, Tamam saves you time:',
+          money_save: 'Compared to alternatives, Tamam saves you money:',
+          wants_services: 'Which additional services would you like Tamam to offer?',
+          more: 'What would make you use Tamam more frequently?'
+        },
+        customer_options: {
+          weekly: 'Weekly',
+          monthly: 'Monthly',
+          rarely: 'Rarely',
+          cat_home: 'Home',
+          cat_health: 'Health',
+          cat_car: 'Car',
+          cat_lifestyle: 'Lifestyle',
+          ease_1: '1 (Very difficult)',
+          ease_2: '2',
+          ease_3: '3',
+          ease_4: '4',
+          ease_5: '5 (Very easy)',
+          time_much_more: 'Much more',
+          time_slightly_more: 'Slightly more',
+          time_same: 'Same',
+          time_less: 'Less',
+          money_much_more: 'Much more',
+          money_slightly_more: 'Slightly more',
+          money_same: 'Same',
+          money_less: 'Less',
+          more_cost: 'Lower cost',
+          more_variety: 'More variety',
+          more_fast: 'Faster booking',
+          more_support: 'Better customer support',
+          more_loyalty: 'Loyalty rewards/discounts'
+        },
+        public_sections: {
+          awareness: 'Awareness & Adoption',
+          preferences: 'Preferences',
+          willingness: 'Willingness'
+        },
+        public_fields: {
+          name: 'Your Name',
+          email: 'Email',
+          phone: 'Phone Number',
+          booked_before: 'Have you booked services online before (home, car, health, lifestyle)?',
+          platforms: 'If Yes, which platforms have you used?',
+          barrier: 'If No, why haven\'t you used apps for services?',
+          top_factor: 'When booking services, what factors matter most to you?',
+          first_cat: 'If you were to try Tamam, which category would you try first?',
+          premium: 'Would you pay a small fee (AED 5–10) for the convenience of booking via Tamam?',
+          why_tamam: 'What would make you choose Tamam over other options?'
+        },
+        public_options: {
+          yes: 'Yes',
+          no: 'No',
+          tamam: 'Tamam',
+          urban: 'Urban Company',
+          cafu: 'cafu',
+          justlife: 'justlife',
+          barrier_expensive: 'Too expensive',
+          barrier_trust: 'Don’t trust apps',
+          barrier_call: 'Prefer calling vendors directly',
+          barrier_aware: 'Didn’t know about them',
+          factor_price: 'Price',
+          factor_speed: 'Speed of service',
+          factor_quality: 'Quality of vendor',
+          factor_trust: 'Trust & safety',
+          factor_ease: 'Ease of use',
+          first_home: 'Home',
+          first_health: 'Health',
+          first_car: 'Car',
+          first_life: 'Lifestyle',
+          premium_yes: 'Yes',
+          premium_no: 'No',
+          premium_maybe: 'Maybe'
+        },
+        toastSubmitted: 'Submitted',
+        toastRefreshed: 'Data refreshed',
+        toastImported: 'Data imported',
+        toastExported: 'Export ready',
+        toastReset: 'Data cleared',
+        toastCopied: 'Copied',
+        refreshData: 'Refresh Data',
+        exportExcel: 'Export Excel',
+        exportJson: 'Export JSON',
+        importJson: 'Import JSON',
+        backupReset: 'Backup & Reset',
+        download: 'Download',
+        timestamp: 'Timestamp',
+        searchPlaceholder: 'Search name, email, phone, or category',
+        emptyState: 'No submissions yet.',
+        totalSubmissions: 'Total submissions',
+        avgAOV: 'Average AOV',
+        avgProfit: 'Average profit margin',
+        avgSeconds: 'Average completion time',
+        npsAverage: 'Average NPS',
+        percentBooked: '% booked before',
+        tabVendors: 'Vendors',
+        tabCustomers: 'Customers',
+        tabPublic: 'Public',
+        copy: 'Copy',
+        close: 'Close',
+        modalDetails: 'Submission details',
+        timerMinutes: 'min',
+        timerSeconds: 'sec',
+        vendorTimerLabel: 'Time spent',
+        blockedToast: 'Duplicate submissions are blocked.',
+        downloadBackup: 'Download backup now?'
+      },
+      ar: {
+        headerTitle: 'بوابة بحوث تمام',
+        intro: 'تمام هو التطبيق الشامل الفاخر في الإمارات لحجز الخدمات المنزلية والصحية وخدمات السيارات ونمط الحياة مع موردين موثوقين. هذه البوابة البحثية تساعد فرق المنتج والمستثمرين لدينا على فهم الاحتياجات وتأكيد التسعير والتعاون مع مجتمعنا.',
+        exploreSocials: 'تصفح شبكاتنا الاجتماعية',
+        getTamam: 'حمّل تمام / الشبكات',
+        website: 'الموقع الرسمي',
+        instagram: 'إنستغرام',
+        linktree: 'لينك تري',
+        appStore: 'حمّل من متجر التطبيقات',
+        playStore: 'احصل عليه من جوجل بلاي',
+        vendorsSurvey: 'استبيان الشركاء',
+        customersSurvey: 'استبيان العملاء',
+        publicSurvey: 'استبيان الجمهور',
+        resultsDashboard: 'لوحة النتائج',
+        enterPassword: 'أدخل كلمة المرور للمتابعة',
+        passwordPlaceholder: 'كلمة المرور',
+        accessGranted: 'تم السماح بالدخول.',
+        invalidPassword: 'كلمة المرور غير صحيحة.',
+        draftRestored: 'تم استعادة المسودة.',
+        draftSaved: 'تم حفظ المسودة.',
+        alreadySubmitted: 'لقد أرسلت هذا الاستبيان مسبقاً على هذا الجهاز.',
+        resumeLater: 'يتم حفظ تقدمك تلقائياً.',
+        submit: 'إرسال',
+        reset: 'إعادة ضبط',
+        thanksTitle: 'شكراً لمشاركتك.',
+        thanksBody: 'سنراجع كل مشاركة بعناية. يمكنك استكشاف الاستبيانات الأخرى أو لوحة النتائج.',
+        backHome: 'العودة إلى النظرة العامة',
+        progress: 'التقدم',
+        required: 'إلزامي',
+        optional: 'اختياري',
+        commissionTitle: 'نموذج عمولة تمام لفئتك',
+        commissionHome: 'الخدمات المنزلية: عمولة 15–20٪ على كل طلب + اشتراك 75 درهم شهرياً',
+        commissionCar: 'خدمات السيارات: عمولة 15–20٪ على كل طلب + اشتراك 75 درهم شهرياً',
+        commissionHealth: 'الخدمات الصحية: عمولة 25–30٪ على كل طلب + اشتراك 75 درهم شهرياً',
+        commissionLifestyle: 'نمط الحياة/العافية: عمولة 20–25٪ على كل طلب + اشتراك 75 درهم شهرياً',
+        commissionHelper: 'يرجى افتراض نطاق العمولة أعلاه مع 75 درهم شهرياً للأسئلة التالية.',
+        timerLabel: 'الوقت على الصفحة',
+        minutes: 'دقائق',
+        seconds: 'ثوانٍ',
+        clearDraft: 'مسح المسودة',
+        confirmClearDraft: 'هل تريد مسح المسودة؟',
+        surveyUnavailable: 'الاستبيان غير متاح',
+        otherSpecify: 'يرجى التحديد',
+        selectPlaceholder: 'اختر خياراً',
+        addOther: 'أخرى',
+        accept: 'مقبول',
+        neutral: 'محايد',
+        notAcceptable: 'غير مقبول',
+        playOnInstagram: 'المشاهدة على إنستغرام',
+        openInstagram: 'افتح في إنستغرام',
+        vendor_sections: {
+          sectionA: 'أ. المعلومات الأساسية',
+          sectionB: 'ب. قبول النموذج',
+          sectionC: 'ج. سيناريوهات الإيرادات',
+          sectionD: 'د. القيمة والاحتفاظ'
+        },
+        vendor_fields: {
+          company: 'اسم الشركة',
+          email: 'البريد الإلكتروني للعمل',
+          phone: 'رقم الهاتف',
+          category: 'الفئة الرئيسية للخدمة',
+          aov: 'متوسط قيمة الطلب (درهم)',
+          avg_profit: 'متوسط هامش الربح (%)',
+          orders_all: 'عدد الطلبات الشهري عبر جميع القنوات',
+          orders_profitable: 'عند أي عدد طلبات شهري من تمام يصبح النموذج مربحاً لكم؟',
+          min_orders_to_stay: 'ما الحد الأدنى لطلبات تمام شهرياً للبقاء مشتركين؟',
+          accept_5_10k: 'إذا ولّد تمام 5,000–10,000 درهم شهرياً لشركتكم، هل النموذج مقبول؟',
+          accept_10_20k: 'إذا ولّد تمام 10,000–20,000 درهم شهرياً لشركتكم، هل النموذج مقبول؟',
+          accept_20k_plus: 'إذا ولّد تمام أكثر من 20,000 درهم شهرياً لشركتكم، هل النموذج مقبول؟',
+          value_expect: 'ما الذي تتوقعه من تمام لتبرير هذه الرسوم؟',
+          leave_reason: 'ما أبرز سبب لمغادرة المنصة حتى مع وجود طلبات؟',
+          recommend: 'هل توصي بتمام لشركات أخرى؟',
+          notes: 'أي أمور أخرى يجب أن نأخذها بالاعتبار؟'
+        },
+        vendor_options: {
+          home: 'الخدمات المنزلية',
+          health: 'الخدمات الصحية',
+          car: 'خدمات السيارات',
+          lifestyle: 'نمط الحياة/العافية',
+          orders_0_10: '0–10',
+          orders_10_20: '10–20',
+          orders_20_40: '20–40',
+          orders_40_80: '40–80',
+          orders_80_plus: '80+',
+          orders_profitable_5_10: '5–10 طلبات',
+          orders_profitable_10_20: '10–20 طلباً',
+          orders_profitable_20_40: '20–40 طلباً',
+          orders_profitable_40_plus: '40+ طلباً',
+          min_orders_1_5: '1–5 طلبات',
+          min_orders_5_10: '5–10 طلبات',
+          min_orders_10_20: '10–20 طلباً',
+          min_orders_20_plus: '20+ طلباً',
+          expect_volume: 'ضمان حجم عملاء',
+          expect_marketing: 'تسويق ورؤية أفضل',
+          expect_premium: 'الوصول إلى عملاء مميزين',
+          expect_tools: 'أدوات أعمال (تحليلات، جدولة، مدفوعات)',
+          expect_payouts: 'مدفوعات أسرع',
+          leave_commission: 'عمولة مرتفعة',
+          leave_volume: 'حجم عملاء منخفض',
+          leave_support: 'دعم سيئ للشركاء',
+          leave_competitor: 'عروض منافسين أفضل',
+          recommend_yes: 'نعم',
+          recommend_no: 'لا'
+        },
+        customer_sections: {
+          usage: 'الاستخدام والتجربة',
+          loyalty: 'الولاء والثقة',
+          future: 'الطلب المستقبلي'
+        },
+        customer_fields: {
+          name: 'اسمك',
+          email: 'البريد الإلكتروني',
+          phone: 'رقم الهاتف',
+          freq: 'كم مرة تستخدم تمام؟',
+          cats: 'ما فئات الخدمات التي استخدمتها أكثر؟',
+          ease: 'ما مدى سهولة آخر حجز قمت به؟',
+          nps: 'ما احتمال أن توصي بتمام لصديق أو زميل؟',
+          time_save: 'مقارنة بالاتصال بالموردين، يوفر تمام لك الوقت:',
+          money_save: 'مقارنة بالبدائل، يوفر تمام لك المال:',
+          wants_services: 'ما الخدمات الإضافية التي تود أن يقدمها تمام؟',
+          more: 'ما الذي يجعلك تستخدم تمام بشكل أكثر تكراراً؟'
+        },
+        customer_options: {
+          weekly: 'أسبوعياً',
+          monthly: 'شهرياً',
+          rarely: 'نادراً',
+          cat_home: 'الخدمات المنزلية',
+          cat_health: 'الخدمات الصحية',
+          cat_car: 'خدمات السيارات',
+          cat_lifestyle: 'نمط الحياة',
+          ease_1: '1 (صعب جداً)',
+          ease_2: '2',
+          ease_3: '3',
+          ease_4: '4',
+          ease_5: '5 (سهل جداً)',
+          time_much_more: 'أكثر بكثير',
+          time_slightly_more: 'أكثر قليلاً',
+          time_same: 'نفس الشيء',
+          time_less: 'أقل',
+          money_much_more: 'أوفر بكثير',
+          money_slightly_more: 'أوفر قليلاً',
+          money_same: 'نفس التكلفة',
+          money_less: 'أغلى',
+          more_cost: 'خفض التكلفة',
+          more_variety: 'تنوع أكبر',
+          more_fast: 'حجز أسرع',
+          more_support: 'دعم عملاء أفضل',
+          more_loyalty: 'مكافآت/خصومات ولاء'
+        },
+        public_sections: {
+          awareness: 'الوعي والتبني',
+          preferences: 'التفضيلات',
+          willingness: 'الاستعداد'
+        },
+        public_fields: {
+          name: 'اسمك',
+          email: 'البريد الإلكتروني',
+          phone: 'رقم الهاتف',
+          booked_before: 'هل حجزت خدمات عبر الإنترنت من قبل (منزل، سيارة، صحة، نمط حياة)؟',
+          platforms: 'إذا كانت الإجابة نعم، ما المنصات التي استخدمتها؟',
+          barrier: 'إذا كانت الإجابة لا، لماذا لم تستخدم التطبيقات للخدمات؟',
+          top_factor: 'عند حجز الخدمات، ما العوامل الأهم بالنسبة لك؟',
+          first_cat: 'إذا جربت تمام، أي فئة تختار أولاً؟',
+          premium: 'هل تدفع رسماً بسيطاً (5–10 دراهم) مقابل راحة الحجز عبر تمام؟',
+          why_tamam: 'ما الذي يجعلك تختار تمام بدلاً من الخيارات الأخرى؟'
+        },
+        public_options: {
+          yes: 'نعم',
+          no: 'لا',
+          tamam: 'تمام',
+          urban: 'أوربان كومباني',
+          cafu: 'كفو',
+          justlife: 'جست لايف',
+          barrier_expensive: 'مكلف للغاية',
+          barrier_trust: 'لا أثق بالتطبيقات',
+          barrier_call: 'أفضل الاتصال بالموردين مباشرة',
+          barrier_aware: 'لم أكن أعلم عنها',
+          factor_price: 'السعر',
+          factor_speed: 'سرعة الخدمة',
+          factor_quality: 'جودة المزود',
+          factor_trust: 'الثقة والسلامة',
+          factor_ease: 'سهولة الاستخدام',
+          first_home: 'الخدمات المنزلية',
+          first_health: 'الخدمات الصحية',
+          first_car: 'خدمات السيارات',
+          first_life: 'نمط الحياة',
+          premium_yes: 'نعم',
+          premium_no: 'لا',
+          premium_maybe: 'ربما'
+        },
+        toastSubmitted: 'تم الإرسال',
+        toastRefreshed: 'تم تحديث البيانات',
+        toastImported: 'تم استيراد البيانات',
+        toastExported: 'تم تجهيز التصدير',
+        toastReset: 'تم مسح البيانات',
+        toastCopied: 'تم النسخ',
+        refreshData: 'تحديث البيانات',
+        exportExcel: 'تصدير Excel',
+        exportJson: 'تصدير JSON',
+        importJson: 'استيراد JSON',
+        backupReset: 'نسخ احتياطي وإعادة ضبط',
+        download: 'تنزيل',
+        timestamp: 'الطابع الزمني',
+        searchPlaceholder: 'ابحث بالاسم أو البريد أو الهاتف أو الفئة',
+        emptyState: 'لا توجد مشاركات بعد.',
+        totalSubmissions: 'إجمالي المشاركات',
+        avgAOV: 'متوسط قيمة الطلب',
+        avgProfit: 'متوسط هامش الربح',
+        avgSeconds: 'متوسط وقت الإكمال',
+        npsAverage: 'متوسط NPS',
+        percentBooked: 'نسبة من حجز مسبقاً',
+        tabVendors: 'الشركاء',
+        tabCustomers: 'العملاء',
+        tabPublic: 'الجمهور',
+        copy: 'نسخ',
+        close: 'إغلاق',
+        modalDetails: 'تفاصيل المشاركة',
+        timerMinutes: 'دقيقة',
+        timerSeconds: 'ثانية',
+        vendorTimerLabel: 'الوقت المستغرق',
+        blockedToast: 'يتم حظر المشاركات المكررة.',
+        downloadBackup: 'هل تريد تنزيل النسخة الاحتياطية الآن؟'
+      }
+    };
+    const state = {
+      lang: 'en',
+      theme: 'light',
+      db: JSON.parse(localStorage.getItem(STORAGE_KEYS.db) || JSON.stringify(DEFAULT_DB)),
+      currentRoute: '',
+      timers: {},
+      charts: {},
+      routeInstances: {},
+      passwordGrants: new Map()
+    };
+
+    window.TAMAM_BACKEND = 'none';
+
+    const updateThemeIcon = (theme) => {
+      const svg = document.getElementById('theme-icon');
+      if (!svg) return;
+      const sun = `
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 3v2" />
+        <path d="M12 19v2" />
+        <path d="M5.22 5.22l1.42 1.42" />
+        <path d="M17.36 17.36l1.42 1.42" />
+        <path d="M3 12h2" />
+        <path d="M19 12h2" />
+        <path d="M5.22 18.78l1.42-1.42" />
+        <path d="M17.36 6.64l1.42-1.42" />
+      `;
+      const moon = `
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+      `;
+      svg.innerHTML = theme === 'dark' ? moon : sun;
+    };
+
+    const applyTheme = (theme) => {
+      document.body.dataset.theme = theme;
+      localStorage.setItem(STORAGE_KEYS.theme, theme);
+      updateThemeIcon(theme);
+    };
+
+    const applyLanguage = (lang) => {
+      state.lang = lang;
+      const dict = i18n[lang];
+      document.documentElement.lang = lang === 'en' ? 'en' : 'ar';
+      document.getElementById('language-label').textContent = lang === 'en' ? 'EN' : 'AR';
+      document.getElementById('header-title').textContent = dict.headerTitle;
+      document.getElementById('app').setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+      if (state.currentRoute) {
+        navigate(state.currentRoute, true);
+      }
+    };
+
+    const showToast = (message) => {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = 0;
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 200);
+      }, 3200);
+    };
+
+    const getDict = () => i18n[state.lang];
+
+    const ensureDB = () => {
+      if (!state.db || !state.db.vendor || !state.db.customer || !state.db.public) {
+        state.db = JSON.parse(JSON.stringify(DEFAULT_DB));
+        localStorage.setItem(STORAGE_KEYS.db, JSON.stringify(state.db));
+      }
+      return state.db;
+    };
+
+    const saveDB = () => {
+      localStorage.setItem(STORAGE_KEYS.db, JSON.stringify(state.db));
+      document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'all' } }));
+    };
+
+    const startTimer = (route) => {
+      state.timers[route] = { start: Date.now(), elapsed: 0 };
+    };
+
+    const stopTimer = (route) => {
+      const timer = state.timers[route];
+      if (!timer) return 0;
+      timer.elapsed += (Date.now() - timer.start) / 1000;
+      const seconds = Math.round(timer.elapsed);
+      delete state.timers[route];
+      return seconds;
+    };
+
+    const router = {
+      routes: {},
+      init() {
+        window.addEventListener('hashchange', () => navigate(location.hash || '#/surveys'));
+        navigate(location.hash || '#/surveys');
+      }
+    };
+
+    const navigate = (hash, force = false) => {
+      if (!hash.startsWith('#')) hash = '#/surveys';
+      if (!force && state.currentRoute === hash) return;
+      log('navigate', hash);
+      const outlet = document.getElementById('route-outlet');
+      const prevRoute = state.currentRoute;
+      state.currentRoute = hash;
+      if (prevRoute && router.routes[prevRoute]?.unmount) {
+        router.routes[prevRoute].unmount();
+      }
+      outlet.innerHTML = '';
+      const route = router.routes[hash];
+      if (!route) {
+        outlet.textContent = 'Not found';
+        return;
+      }
+      if (!route._inited && route.initOnce) {
+        route.initOnce();
+        route._inited = true;
+      }
+      route.mount(outlet);
+    };
+
+    const createPasswordGate = (kind, onSuccess) => {
+      const dict = getDict();
+      const card = document.createElement('div');
+      card.className = 'card';
+      const gate = document.createElement('div');
+      gate.className = 'password-gate';
+      const label = document.createElement('p');
+      label.textContent = dict.enterPassword;
+      const input = document.createElement('input');
+      input.type = 'password';
+      input.placeholder = dict.passwordPlaceholder;
+      input.setAttribute('aria-label', dict.passwordPlaceholder);
+      const btn = document.createElement('button');
+      btn.className = 'primary-btn';
+      btn.type = 'submit';
+      btn.textContent = dict.submit;
+      const form = document.createElement('form');
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const expected = PASSWORDS[kind];
+        if (input.value === expected) {
+          showToast(dict.accessGranted);
+          log('password ok', kind);
+          onSuccess();
+        } else {
+          log('password fail', kind);
+          showToast(dict.invalidPassword);
+          input.focus();
+        }
+      });
+      form.appendChild(label);
+      form.appendChild(input);
+      form.appendChild(btn);
+      gate.appendChild(form);
+      card.appendChild(gate);
+      return { card, input, btn };
+    };
+    const translate = (key) => {
+      if (!key) return '';
+      return key.split('.').reduce((acc, part) => acc && acc[part] !== undefined ? acc[part] : undefined, getDict()) ?? key;
+    };
+
+    const createHomeRoute = () => ({
+      mount(outlet) {
+        const dict = getDict();
+        const wrapper = document.createElement('div');
+        wrapper.className = 'home-intro';
+
+        const introCard = document.createElement('div');
+        introCard.className = 'card';
+        const introTitle = document.createElement('h2');
+        introTitle.className = 'section-title';
+        introTitle.textContent = `${dict.vendorsSurvey} · ${dict.customersSurvey} · ${dict.publicSurvey}`;
+        const introText = document.createElement('p');
+        introText.textContent = dict.intro;
+        introCard.appendChild(introTitle);
+        introCard.appendChild(introText);
+
+        const reelCard = document.createElement('div');
+        reelCard.className = 'card';
+        const reelTitle = document.createElement('h2');
+        reelTitle.className = 'section-title';
+        reelTitle.textContent = dict.exploreSocials;
+        const carousel = document.createElement('div');
+        carousel.className = 'reel-carousel';
+        INSTAGRAM_REELS.forEach((url) => {
+          const container = document.createElement('div');
+          container.className = 'reel-embed';
+          const blockquote = document.createElement('blockquote');
+          blockquote.className = 'instagram-media';
+          blockquote.dataset.instgrmCaptioned = 'false';
+          blockquote.dataset.instgrmPermalink = url;
+          blockquote.style = 'background:#fff; border-radius:16px; margin:0; min-width:280px;';
+          container.appendChild(blockquote);
+          const fallback = document.createElement('div');
+          fallback.className = 'reel-fallback hidden';
+          fallback.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 4h-2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><rect x="7" y="2" width="15" height="15" rx="2"/><path d="M11 7h5"/><path d="M14 5v4"/></svg><a href="${url}" target="_blank" rel="noopener">${dict.playOnInstagram}</a>`;
+          container.appendChild(fallback);
+          setTimeout(() => {
+            if (!container.querySelector('iframe')) {
+              fallback.classList.remove('hidden');
+            }
+          }, 3500);
+          carousel.appendChild(container);
+        });
+        reelCard.appendChild(reelTitle);
+        reelCard.appendChild(carousel);
+
+        const socialCard = document.createElement('div');
+        socialCard.className = 'card socials-card';
+        const socialTitle = document.createElement('h2');
+        socialTitle.className = 'section-title';
+        socialTitle.textContent = dict.getTamam;
+        const storeLinks = document.createElement('div');
+        storeLinks.className = 'store-links';
+        const appStoreLink = document.createElement('a');
+        appStoreLink.href = 'https://apps.apple.com/ae/app/tamam-services-on-demand/id6740270481';
+        appStoreLink.target = '_blank';
+        appStoreLink.rel = 'noopener';
+        const appImg = document.createElement('img');
+        appImg.src = 'https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg';
+        appImg.alt = dict.appStore;
+        appStoreLink.appendChild(appImg);
+        const playLink = document.createElement('a');
+        playLink.href = 'https://play.google.com/store/apps/details?id=com.tamam.customer&pcampaignid=web_share';
+        playLink.target = '_blank';
+        playLink.rel = 'noopener';
+        const playImg = document.createElement('img');
+        playImg.src = 'https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg';
+        playImg.alt = dict.playStore;
+        playLink.appendChild(playImg);
+        storeLinks.appendChild(appStoreLink);
+        storeLinks.appendChild(playLink);
+        const linkGrid = document.createElement('div');
+        linkGrid.className = 'link-grid';
+        [
+          { href: 'https://gettamam.com', label: dict.website },
+          { href: 'https://www.instagram.com/tamam.uae', label: dict.instagram },
+          { href: 'https://linktr.ee/TamamApp', label: dict.linktree }
+        ].forEach(({ href, label }) => {
+          const link = document.createElement('a');
+          link.href = href;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.textContent = label;
+          linkGrid.appendChild(link);
+        });
+        socialCard.appendChild(socialTitle);
+        socialCard.appendChild(storeLinks);
+        socialCard.appendChild(linkGrid);
+
+        wrapper.appendChild(introCard);
+        wrapper.appendChild(reelCard);
+        wrapper.appendChild(socialCard);
+
+        outlet.appendChild(wrapper);
+
+        requestAnimationFrame(() => {
+          if (window.instgrm?.Embeds?.process) {
+            window.instgrm.Embeds.process();
+          }
+        });
+      },
+      unmount() {}
+    });
+    const surveyConfigs = {
+      vendor: {
+        route: '#/surveys/vendors',
+        passwordKey: 'vendors',
+        storageKey: 'vendor',
+        draftKey: STORAGE_KEYS.drafts.vendor,
+        completionKey: STORAGE_KEYS.completed.vendor,
+        sections: [
+          {
+            key: 'vendor_sections.sectionA',
+            fields: [
+              { type: 'input', inputType: 'text', name: 'company', label: 'vendor_fields.company', required: true },
+              { type: 'input', inputType: 'email', name: 'email', label: 'vendor_fields.email', required: false },
+              { type: 'input', inputType: 'tel', name: 'phone', label: 'vendor_fields.phone', required: false },
+              {
+                type: 'single',
+                name: 'category',
+                label: 'vendor_fields.category',
+                required: true,
+                options: [
+                  { value: 'home', label: 'vendor_options.home' },
+                  { value: 'health', label: 'vendor_options.health' },
+                  { value: 'car', label: 'vendor_options.car' },
+                  { value: 'lifestyle', label: 'vendor_options.lifestyle' }
+                ]
+              },
+              { type: 'input', inputType: 'number', name: 'aov', label: 'vendor_fields.aov', required: true },
+              { type: 'input', inputType: 'number', name: 'avg_profit', label: 'vendor_fields.avg_profit', required: true },
+              {
+                type: 'single',
+                name: 'orders_all',
+                label: 'vendor_fields.orders_all',
+                required: true,
+                options: [
+                  { value: '0-10', label: 'vendor_options.orders_0_10' },
+                  { value: '10-20', label: 'vendor_options.orders_10_20' },
+                  { value: '20-40', label: 'vendor_options.orders_20_40' },
+                  { value: '40-80', label: 'vendor_options.orders_40_80' },
+                  { value: '80+', label: 'vendor_options.orders_80_plus' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'orders_all_other', otherRequired: true }
+                ]
+              }
+            ]
+          },
+          {
+            key: 'vendor_sections.sectionB',
+            helper: 'commissionHelper',
+            fields: [
+              {
+                type: 'single',
+                name: 'orders_profitable',
+                label: 'vendor_fields.orders_profitable',
+                required: true,
+                options: [
+                  { value: '5-10', label: 'vendor_options.orders_profitable_5_10' },
+                  { value: '10-20', label: 'vendor_options.orders_profitable_10_20' },
+                  { value: '20-40', label: 'vendor_options.orders_profitable_20_40' },
+                  { value: '40+', label: 'vendor_options.orders_profitable_40_plus' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'orders_profitable_other', otherRequired: true }
+                ]
+              },
+              {
+                type: 'single',
+                name: 'min_orders_to_stay',
+                label: 'vendor_fields.min_orders_to_stay',
+                required: true,
+                options: [
+                  { value: '1-5', label: 'vendor_options.min_orders_1_5' },
+                  { value: '5-10', label: 'vendor_options.min_orders_5_10' },
+                  { value: '10-20', label: 'vendor_options.min_orders_10_20' },
+                  { value: '20+', label: 'vendor_options.min_orders_20_plus' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'min_orders_to_stay_other', otherRequired: true }
+                ]
+              }
+            ]
+          },
+          {
+            key: 'vendor_sections.sectionC',
+            fields: [
+              {
+                type: 'single',
+                name: 'accept_5_10k',
+                label: 'vendor_fields.accept_5_10k',
+                required: true,
+                options: [
+                  { value: 'acceptable', label: 'accept' },
+                  { value: 'neutral', label: 'neutral' },
+                  { value: 'not', label: 'notAcceptable' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'accept_5_10k_other', otherRequired: true }
+                ]
+              },
+              {
+                type: 'single',
+                name: 'accept_10_20k',
+                label: 'vendor_fields.accept_10_20k',
+                required: true,
+                options: [
+                  { value: 'acceptable', label: 'accept' },
+                  { value: 'neutral', label: 'neutral' },
+                  { value: 'not', label: 'notAcceptable' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'accept_10_20k_other', otherRequired: true }
+                ]
+              },
+              {
+                type: 'single',
+                name: 'accept_20k_plus',
+                label: 'vendor_fields.accept_20k_plus',
+                required: true,
+                options: [
+                  { value: 'acceptable', label: 'accept' },
+                  { value: 'neutral', label: 'neutral' },
+                  { value: 'not', label: 'notAcceptable' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'accept_20k_plus_other', otherRequired: true }
+                ]
+              }
+            ]
+          },
+          {
+            key: 'vendor_sections.sectionD',
+            fields: [
+              {
+                type: 'multi',
+                name: 'value_expect',
+                label: 'vendor_fields.value_expect',
+                required: true,
+                options: [
+                  { value: 'volume', label: 'vendor_options.expect_volume' },
+                  { value: 'marketing', label: 'vendor_options.expect_marketing' },
+                  { value: 'premium', label: 'vendor_options.expect_premium' },
+                  { value: 'tools', label: 'vendor_options.expect_tools' },
+                  { value: 'payouts', label: 'vendor_options.expect_payouts' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'value_expect_other', otherRequired: true }
+                ]
+              },
+              {
+                type: 'single',
+                name: 'leave_reason',
+                label: 'vendor_fields.leave_reason',
+                required: true,
+                options: [
+                  { value: 'commission', label: 'vendor_options.leave_commission' },
+                  { value: 'volume', label: 'vendor_options.leave_volume' },
+                  { value: 'support', label: 'vendor_options.leave_support' },
+                  { value: 'competitor', label: 'vendor_options.leave_competitor' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'leave_reason_other', otherRequired: true }
+                ]
+              },
+              {
+                type: 'single',
+                name: 'recommend',
+                label: 'vendor_fields.recommend',
+                required: true,
+                options: [
+                  { value: 'yes', label: 'vendor_options.recommend_yes' },
+                  { value: 'no', label: 'vendor_options.recommend_no' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'recommend_other', otherRequired: true }
+                ]
+              },
+              { type: 'textarea', name: 'notes', label: 'vendor_fields.notes', required: false }
+            ]
+          }
+        ]
+      },
+      customer: {
+        route: '#/surveys/customers',
+        passwordKey: 'customers',
+        storageKey: 'customer',
+        draftKey: STORAGE_KEYS.drafts.customer,
+        completionKey: STORAGE_KEYS.completed.customer,
+        sections: [
+          {
+            key: 'customer_sections.usage',
+            fields: [
+              { type: 'input', inputType: 'text', name: 'name', label: 'customer_fields.name', required: true },
+              { type: 'input', inputType: 'email', name: 'email', label: 'customer_fields.email', required: false },
+              { type: 'input', inputType: 'tel', name: 'phone', label: 'customer_fields.phone', required: false },
+              {
+                type: 'single',
+                name: 'freq',
+                label: 'customer_fields.freq',
+                required: true,
+                options: [
+                  { value: 'weekly', label: 'customer_options.weekly' },
+                  { value: 'monthly', label: 'customer_options.monthly' },
+                  { value: 'rarely', label: 'customer_options.rarely' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'freq_other', otherRequired: true }
+                ]
+              },
+              {
+                type: 'multi',
+                name: 'cats',
+                label: 'customer_fields.cats',
+                required: true,
+                options: [
+                  { value: 'home', label: 'customer_options.cat_home' },
+                  { value: 'health', label: 'customer_options.cat_health' },
+                  { value: 'car', label: 'customer_options.cat_car' },
+                  { value: 'lifestyle', label: 'customer_options.cat_lifestyle' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'cats_other', otherRequired: true }
+                ]
+              },
+              {
+                type: 'single',
+                name: 'ease',
+                label: 'customer_fields.ease',
+                required: true,
+                options: [
+                  { value: '1', label: 'customer_options.ease_1' },
+                  { value: '2', label: 'customer_options.ease_2' },
+                  { value: '3', label: 'customer_options.ease_3' },
+                  { value: '4', label: 'customer_options.ease_4' },
+                  { value: '5', label: 'customer_options.ease_5' }
+                ]
+              }
+            ]
+          },
+          {
+            key: 'customer_sections.loyalty',
+            fields: [
+              {
+                type: 'single',
+                name: 'nps',
+                label: 'customer_fields.nps',
+                required: true,
+                options: Array.from({ length: 11 }, (_, i) => ({ value: String(i), label: String(i) }))
+              },
+              {
+                type: 'single',
+                name: 'time_save',
+                label: 'customer_fields.time_save',
+                required: true,
+                options: [
+                  { value: 'much_more', label: 'customer_options.time_much_more' },
+                  { value: 'slightly_more', label: 'customer_options.time_slightly_more' },
+                  { value: 'same', label: 'customer_options.time_same' },
+                  { value: 'less', label: 'customer_options.time_less' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'time_save_other', otherRequired: true }
+                ]
+              },
+              {
+                type: 'single',
+                name: 'money_save',
+                label: 'customer_fields.money_save',
+                required: true,
+                options: [
+                  { value: 'much_more', label: 'customer_options.money_much_more' },
+                  { value: 'slightly_more', label: 'customer_options.money_slightly_more' },
+                  { value: 'same', label: 'customer_options.money_same' },
+                  { value: 'less', label: 'customer_options.money_less' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'money_save_other', otherRequired: true }
+                ]
+              }
+            ]
+          },
+          {
+            key: 'customer_sections.future',
+            fields: [
+              { type: 'textarea', name: 'wants_services', label: 'customer_fields.wants_services', required: false },
+              {
+                type: 'multi',
+                name: 'more',
+                label: 'customer_fields.more',
+                required: true,
+                options: [
+                  { value: 'cost', label: 'customer_options.more_cost' },
+                  { value: 'variety', label: 'customer_options.more_variety' },
+                  { value: 'speed', label: 'customer_options.more_fast' },
+                  { value: 'support', label: 'customer_options.more_support' },
+                  { value: 'loyalty', label: 'customer_options.more_loyalty' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'more_other', otherRequired: true }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      public: {
+        route: '#/surveys/public',
+        passwordKey: null,
+        storageKey: 'public',
+        draftKey: STORAGE_KEYS.drafts.public,
+        completionKey: STORAGE_KEYS.completed.public,
+        sections: [
+          {
+            key: 'public_sections.awareness',
+            fields: [
+              { type: 'input', inputType: 'text', name: 'name', label: 'public_fields.name', required: true },
+              { type: 'input', inputType: 'email', name: 'email', label: 'public_fields.email', required: false },
+              { type: 'input', inputType: 'tel', name: 'phone', label: 'public_fields.phone', required: false },
+              {
+                type: 'single',
+                name: 'booked_before',
+                label: 'public_fields.booked_before',
+                required: true,
+                options: [
+                  { value: 'yes', label: 'public_options.yes' },
+                  { value: 'no', label: 'public_options.no' }
+                ]
+              },
+              {
+                type: 'multi',
+                name: 'platforms',
+                label: 'public_fields.platforms',
+                required: true,
+                showIf: (state) => state.booked_before === 'yes',
+                options: [
+                  { value: 'tamam', label: 'public_options.tamam' },
+                  { value: 'urban', label: 'public_options.urban' },
+                  { value: 'cafu', label: 'public_options.cafu' },
+                  { value: 'justlife', label: 'public_options.justlife' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'platforms_other', otherRequired: true }
+                ]
+              },
+              {
+                type: 'single',
+                name: 'barrier',
+                label: 'public_fields.barrier',
+                required: true,
+                showIf: (state) => state.booked_before === 'no',
+                options: [
+                  { value: 'expensive', label: 'public_options.barrier_expensive' },
+                  { value: 'trust', label: 'public_options.barrier_trust' },
+                  { value: 'call', label: 'public_options.barrier_call' },
+                  { value: 'aware', label: 'public_options.barrier_aware' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'barrier_other', otherRequired: true }
+                ]
+              }
+            ]
+          },
+          {
+            key: 'public_sections.preferences',
+            fields: [
+              {
+                type: 'single',
+                name: 'top_factor',
+                label: 'public_fields.top_factor',
+                required: true,
+                options: [
+                  { value: 'price', label: 'public_options.factor_price' },
+                  { value: 'speed', label: 'public_options.factor_speed' },
+                  { value: 'quality', label: 'public_options.factor_quality' },
+                  { value: 'trust', label: 'public_options.factor_trust' },
+                  { value: 'ease', label: 'public_options.factor_ease' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'top_factor_other', otherRequired: true }
+                ]
+              },
+              {
+                type: 'single',
+                name: 'first_cat',
+                label: 'public_fields.first_cat',
+                required: true,
+                options: [
+                  { value: 'home', label: 'public_options.first_home' },
+                  { value: 'health', label: 'public_options.first_health' },
+                  { value: 'car', label: 'public_options.first_car' },
+                  { value: 'lifestyle', label: 'public_options.first_life' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'first_cat_other', otherRequired: true }
+                ]
+              }
+            ]
+          },
+          {
+            key: 'public_sections.willingness',
+            fields: [
+              {
+                type: 'single',
+                name: 'premium',
+                label: 'public_fields.premium',
+                required: true,
+                options: [
+                  { value: 'yes', label: 'public_options.premium_yes' },
+                  { value: 'no', label: 'public_options.premium_no' },
+                  { value: 'maybe', label: 'public_options.premium_maybe' },
+                  { value: 'other', label: 'addOther', isOther: true, otherField: 'premium_other', otherRequired: true }
+                ]
+              },
+              { type: 'textarea', name: 'why_tamam', label: 'public_fields.why_tamam', required: true }
+            ]
+          }
+        ]
+      }
+    };
+    const createInitialState = (config) => {
+      const state = {};
+      config.sections.forEach(section => {
+        section.fields.forEach(field => {
+          state[field.name] = field.type === 'multi' ? [] : '';
+          if (field.options) {
+            field.options.forEach(opt => {
+              if (opt.isOther && opt.otherField) {
+                state[opt.otherField] = '';
+              }
+            });
+          }
+        });
+      });
+      return state;
+    };
+
+    const loadDraft = (key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const saveDraft = (key, data) => {
+      localStorage.setItem(key, JSON.stringify(data));
+      log('draft saved', key);
+    };
+
+    const clearDraft = (key) => localStorage.removeItem(key);
+
+    const setCompletion = (key) => localStorage.setItem(key, 'true');
+    const isCompleted = (key) => localStorage.getItem(key) === 'true';
+
+    const updateProgressUI = (progressEl, percent, answered, total) => {
+      progressEl.querySelector('.progress-bar span').style.width = `${percent}%`;
+      progressEl.querySelector('[data-progress-label]').textContent = `${answered}/${total}`;
+    };
+
+    
+    const buildSurveyRoute = (kind) => {
+      const config = surveyConfigs[kind];
+      const route = {
+        timerInterval: null,
+        mount(outlet) {
+          const dict = getDict();
+          const wrapper = document.createElement('div');
+          wrapper.className = 'survey-shell';
+          const routeObj = this;
+
+          const renderForm = () => {
+            wrapper.innerHTML = '';
+            ensureDB();
+            const hasCompleted = isCompleted(config.completionKey);
+
+            const topCard = document.createElement('div');
+            topCard.className = 'card';
+            const heading = document.createElement('h2');
+            heading.className = 'section-title';
+            heading.textContent = translate(kind === 'vendor' ? 'vendorsSurvey' : kind === 'customer' ? 'customersSurvey' : 'publicSurvey');
+            const progressWrapper = document.createElement('div');
+            progressWrapper.innerHTML = `
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;">
+                <div>
+                  <strong>${dict.progress}</strong> <span data-progress-label>0/0</span>
+                  <div class="progress-bar" aria-hidden="true"><span></span></div>
+                </div>
+                <div><span data-timer>${dict.timerLabel}: 0 ${dict.timerSeconds}</span></div>
+              </div>
+            `;
+            topCard.appendChild(heading);
+            topCard.appendChild(progressWrapper);
+            wrapper.appendChild(topCard);
+
+            if (hasCompleted) {
+              const info = document.createElement('div');
+              info.className = 'card';
+              const text = document.createElement('p');
+              text.textContent = dict.alreadySubmitted;
+              info.appendChild(text);
+              wrapper.appendChild(info);
+              if (!outlet.contains(wrapper)) outlet.appendChild(wrapper);
+              showToast(dict.blockedToast);
+              return;
+            }
+
+            const formCard = document.createElement('div');
+            formCard.className = 'card';
+            const form = document.createElement('form');
+            form.className = 'survey-form';
+            form.noValidate = true;
+
+            let formState = createInitialState(config);
+            const draft = loadDraft(config.draftKey);
+            if (draft) {
+              formState = { ...formState, ...draft };
+              showToast(dict.draftRestored);
+            }
+
+            const fieldRefs = new Map();
+            const errorRefs = new Map();
+
+            startTimer(kind);
+            const timerLabel = progressWrapper.querySelector('[data-timer]');
+            const updateTimer = () => {
+              const timer = state.timers[kind];
+              if (!timer) return;
+              const elapsed = ((Date.now() - timer.start) / 1000);
+              const totalSeconds = Math.round((timer.elapsed || 0) + elapsed);
+              const minutes = Math.floor(totalSeconds / 60);
+              const seconds = totalSeconds % 60;
+              timerLabel.textContent = `${dict.timerLabel}: ${minutes} ${dict.timerMinutes} ${seconds} ${dict.timerSeconds}`;
+            };
+            updateTimer();
+            routeObj.timerInterval = setInterval(updateTimer, 1000);
+
+            const evaluateVisibility = () => {
+              config.sections.forEach(section => {
+                section.fields.forEach(field => {
+                  const ref = fieldRefs.get(field.name);
+                  if (!ref) return;
+                  const visible = typeof field.showIf === 'function' ? !!field.showIf(formState) : true;
+                  ref.visible = visible;
+                  ref.wrapper.classList.toggle('hidden', !visible);
+                });
+              });
+            };
+
+            const computeProgress = () => {
+              let total = 0;
+              let answered = 0;
+              config.sections.forEach(section => {
+                section.fields.forEach(field => {
+                  const ref = fieldRefs.get(field.name);
+                  const visible = ref?.visible ?? true;
+                  if (!visible) return;
+                  if (field.required) {
+                    total += 1;
+                    const value = formState[field.name];
+                    if (field.type === 'multi') {
+                      if (Array.isArray(value) && value.length > 0) answered += 1;
+                    } else if (String(value ?? '').trim() !== '') {
+                      answered += 1;
+                    }
+                  }
+                  if (field.options) {
+                    field.options.forEach(opt => {
+                      if (opt.isOther && opt.otherField) {
+                        const active = ref?.otherVisible?.get(opt.otherField);
+                        if (active && opt.otherRequired) {
+                          total += 1;
+                          if (String(formState[opt.otherField] ?? '').trim() !== '') answered += 1;
+                        }
+                      }
+                    });
+                  }
+                });
+              });
+              const percent = total === 0 ? 0 : Math.round((answered / total) * 100);
+              updateProgressUI(progressWrapper, percent, answered, total);
+            };
+
+            const createError = () => {
+              const error = document.createElement('div');
+              error.className = 'helper-text hidden';
+              error.setAttribute('data-error', '');
+              return error;
+            };
+
+            const renderField = (field, sectionWrapper) => {
+              const fieldWrapper = document.createElement('div');
+              fieldWrapper.className = 'form-field';
+              const label = document.createElement('label');
+              label.textContent = translate(field.label);
+              const row = document.createElement('div');
+              row.style.display = 'flex';
+              row.style.justifyContent = 'space-between';
+              row.style.alignItems = 'center';
+              row.appendChild(label);
+              if (!field.required) {
+                const optional = document.createElement('span');
+                optional.className = 'helper-text';
+                optional.textContent = translate('optional');
+                row.appendChild(optional);
+              }
+              fieldWrapper.appendChild(row);
+              const error = createError();
+              errorRefs.set(field.name, error);
+              const group = { wrapper: fieldWrapper, visible: true, error, otherVisible: new Map() };
+              fieldRefs.set(field.name, group);
+
+              if (field.type === 'input' || field.type === 'textarea') {
+                const input = field.type === 'textarea' ? document.createElement('textarea') : document.createElement('input');
+                if (field.type === 'input') input.type = field.inputType || 'text';
+                input.value = formState[field.name] ?? '';
+                const id = `${kind}-${field.name}`;
+                input.id = id;
+                label.setAttribute('for', id);
+                input.addEventListener('input', (e) => {
+                  formState[field.name] = e.target.value;
+                  saveDraft(config.draftKey, formState);
+                  evaluateVisibility();
+                  computeProgress();
+                });
+                fieldWrapper.appendChild(input);
+                fieldWrapper.appendChild(error);
+              } else if (field.type === 'single') {
+                const optionsWrap = document.createElement('div');
+                optionsWrap.className = 'option-group';
+                field.options.forEach(opt => {
+                  const optionItem = document.createElement('label');
+                  optionItem.className = 'option-item';
+                  const input = document.createElement('input');
+                  input.type = 'radio';
+                  input.name = `${kind}-${field.name}`;
+                  input.value = opt.value;
+                  input.checked = formState[field.name] === opt.value;
+                  input.addEventListener('change', () => {
+                    formState[field.name] = opt.value;
+                    if (!opt.isOther && opt.otherField) formState[opt.otherField] = '';
+                    saveDraft(config.draftKey, formState);
+                    evaluateVisibility();
+                    computeProgress();
+                  });
+                  const span = document.createElement('span');
+                  span.textContent = translate(opt.label);
+                  optionItem.appendChild(input);
+                  optionItem.appendChild(span);
+                  optionsWrap.appendChild(optionItem);
+                  if (opt.isOther && opt.otherField) {
+                    const otherInput = document.createElement('input');
+                    otherInput.type = 'text';
+                    otherInput.placeholder = translate('otherSpecify');
+                    otherInput.value = formState[opt.otherField] ?? '';
+                    const otherError = createError();
+                    const toggle = () => {
+                      const active = formState[field.name] === opt.value;
+                      otherInput.classList.toggle('hidden', !active);
+                      group.otherVisible.set(opt.otherField, active);
+                      if (!active) formState[opt.otherField] = '';
+                      computeProgress();
+                    };
+                    otherInput.addEventListener('input', (e) => {
+                      formState[opt.otherField] = e.target.value;
+                      saveDraft(config.draftKey, formState);
+                      computeProgress();
+                    });
+                    optionItem.appendChild(otherInput);
+                    optionItem.appendChild(otherError);
+                    fieldRefs.set(opt.otherField, { wrapper: optionItem, visible: true, error: otherError });
+                    toggle();
+                    input.addEventListener('change', toggle);
+                  }
+                });
+                fieldWrapper.appendChild(optionsWrap);
+                fieldWrapper.appendChild(error);
+              } else if (field.type === 'multi') {
+                const optionsWrap = document.createElement('div');
+                optionsWrap.className = 'option-group';
+                field.options.forEach(opt => {
+                  const optionItem = document.createElement('label');
+                  optionItem.className = 'option-item';
+                  const input = document.createElement('input');
+                  input.type = 'checkbox';
+                  input.value = opt.value;
+                  input.checked = Array.isArray(formState[field.name]) && formState[field.name].includes(opt.value);
+                  input.addEventListener('change', () => {
+                    const set = new Set(formState[field.name] || []);
+                    if (input.checked) set.add(opt.value); else set.delete(opt.value);
+                    formState[field.name] = Array.from(set);
+                    if (!input.checked && opt.isOther && opt.otherField) formState[opt.otherField] = '';
+                    saveDraft(config.draftKey, formState);
+                    evaluateVisibility();
+                    computeProgress();
+                  });
+                  const span = document.createElement('span');
+                  span.textContent = translate(opt.label);
+                  optionItem.appendChild(input);
+                  optionItem.appendChild(span);
+                  optionsWrap.appendChild(optionItem);
+                  if (opt.isOther && opt.otherField) {
+                    const otherInput = document.createElement('input');
+                    otherInput.type = 'text';
+                    otherInput.placeholder = translate('otherSpecify');
+                    otherInput.value = formState[opt.otherField] ?? '';
+                    const err = createError();
+                    const toggle = () => {
+                      const active = Array.isArray(formState[field.name]) && formState[field.name].includes(opt.value);
+                      otherInput.classList.toggle('hidden', !active);
+                      group.otherVisible.set(opt.otherField, active);
+                      if (!active) formState[opt.otherField] = '';
+                      computeProgress();
+                    };
+                    otherInput.addEventListener('input', (e) => {
+                      formState[opt.otherField] = e.target.value;
+                      saveDraft(config.draftKey, formState);
+                      computeProgress();
+                    });
+                    optionItem.appendChild(otherInput);
+                    optionItem.appendChild(err);
+                    fieldRefs.set(opt.otherField, { wrapper: optionItem, visible: true, error: err });
+                    toggle();
+                    input.addEventListener('change', toggle);
+                  }
+                });
+                fieldWrapper.appendChild(optionsWrap);
+                fieldWrapper.appendChild(error);
+              }
+              sectionWrapper.appendChild(fieldWrapper);
+            };
+
+            config.sections.forEach(section => {
+              const sectionWrapper = document.createElement('section');
+              sectionWrapper.className = 'form-section';
+              const title = document.createElement('h3');
+              title.textContent = translate(section.key);
+              sectionWrapper.appendChild(title);
+              if (section.helper) {
+                const helper = document.createElement('div');
+                helper.className = 'helper-text';
+                helper.textContent = translate(section.helper);
+                sectionWrapper.appendChild(helper);
+              }
+              section.fields.forEach(field => renderField(field, sectionWrapper));
+              form.appendChild(sectionWrapper);
+            });
+
+            if (kind === 'vendor') {
+              const banner = document.createElement('div');
+              banner.className = 'sticky-banner';
+              const title = document.createElement('strong');
+              title.textContent = translate('commissionTitle');
+              const detail = document.createElement('span');
+              banner.appendChild(title);
+              banner.appendChild(detail);
+              const catRef = fieldRefs.get('category');
+              if (catRef?.wrapper?.parentNode) {
+                catRef.wrapper.parentNode.insertBefore(banner, catRef.wrapper.nextSibling);
+              } else {
+                form.prepend(banner);
+              }
+              const updateCommission = () => {
+                const category = formState.category || 'home';
+                const key = category === 'health' ? 'commissionHealth' : category === 'car' ? 'commissionCar' : category === 'lifestyle' ? 'commissionLifestyle' : 'commissionHome';
+                detail.textContent = translate(key);
+              };
+              updateCommission();
+              catRef?.wrapper.querySelectorAll('input[type="radio"]').forEach(radio => radio.addEventListener('change', updateCommission));
+            }
+
+            const actions = document.createElement('div');
+            actions.className = 'submit-row';
+            const clearBtn = document.createElement('button');
+            clearBtn.type = 'button';
+            clearBtn.className = 'secondary-btn';
+            clearBtn.textContent = dict.clearDraft;
+            clearBtn.addEventListener('click', () => {
+              if (confirm(translate('confirmClearDraft'))) {
+                formState = createInitialState(config);
+                clearDraft(config.draftKey);
+                navigate(config.route, true);
+              }
+            });
+            const submitBtn = document.createElement('button');
+            submitBtn.type = 'submit';
+            submitBtn.className = 'primary-btn';
+            submitBtn.textContent = dict.submit;
+            actions.appendChild(clearBtn);
+            actions.appendChild(submitBtn);
+            form.appendChild(actions);
+            const autosave = document.createElement('p');
+            autosave.className = 'helper-text';
+            autosave.textContent = dict.resumeLater;
+            form.appendChild(autosave);
+
+            form.addEventListener('submit', (e) => {
+              e.preventDefault();
+              evaluateVisibility();
+              computeProgress();
+              const firstInvalid = validateForm();
+              if (firstInvalid) {
+                firstInvalid.focus();
+                return;
+              }
+              if (routeObj.timerInterval) {
+                clearInterval(routeObj.timerInterval);
+                routeObj.timerInterval = null;
+              }
+              const seconds = stopTimer(kind);
+              const record = { ...formState, ts: new Date().toISOString(), seconds };
+              config.sections.forEach(section => {
+                section.fields.forEach(field => {
+                  if (field.type === 'multi') {
+                    record[field.name] = Array.isArray(record[field.name]) ? record[field.name] : [];
+                  }
+                  if (field.options) {
+                    field.options.forEach(opt => {
+                      if (opt.isOther && opt.otherField) {
+                        record[opt.otherField] = record[opt.otherField] || '';
+                      }
+                    });
+                  }
+                });
+              });
+              ensureDB();
+              state.db[config.storageKey].push(record);
+              saveDB();
+              clearDraft(config.draftKey);
+              setCompletion(config.completionKey);
+              document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind } }));
+              showToast(dict.toastSubmitted);
+              location.hash = '#/surveys/thanks';
+            });
+
+            const validateForm = () => {
+              let firstInvalid = null;
+              config.sections.forEach(section => {
+                section.fields.forEach(field => {
+                  const ref = fieldRefs.get(field.name);
+                  const visible = ref?.visible ?? true;
+                  const error = errorRefs.get(field.name);
+                  if (error) {
+                    error.textContent = '';
+                    error.classList.add('hidden');
+                  }
+                  if (!visible) return;
+                  const value = formState[field.name];
+                  if (field.required) {
+                    if (field.type === 'multi') {
+                      if (!Array.isArray(value) || value.length === 0) {
+                        if (error) {
+                          error.textContent = translate('required');
+                          error.classList.remove('hidden');
+                        }
+                        firstInvalid = firstInvalid || ref.wrapper.querySelector('input, textarea');
+                      }
+                    } else if (String(value ?? '').trim() === '') {
+                      if (error) {
+                        error.textContent = translate('required');
+                        error.classList.remove('hidden');
+                      }
+                      firstInvalid = firstInvalid || ref.wrapper.querySelector('input, textarea');
+                    }
+                  }
+                  if (field.options) {
+                    field.options.forEach(opt => {
+                      if (opt.isOther && opt.otherField) {
+                        const active = ref?.otherVisible?.get(opt.otherField);
+                        if (active && opt.otherRequired && String(formState[opt.otherField] ?? '').trim() === '') {
+                          const otherRef = fieldRefs.get(opt.otherField);
+                          const otherError = otherRef?.error;
+                          if (otherError) {
+                            otherError.textContent = translate('otherSpecify');
+                            otherError.classList.remove('hidden');
+                          }
+                          const focusEl = otherRef?.wrapper.querySelector('input[type="text"]');
+                          firstInvalid = firstInvalid || focusEl;
+                        }
+                      }
+                    });
+                  }
+                });
+              });
+              return firstInvalid;
+            };
+
+            evaluateVisibility();
+            computeProgress();
+
+            formCard.appendChild(form);
+            wrapper.appendChild(formCard);
+            if (!outlet.contains(wrapper)) outlet.appendChild(wrapper);
+          };
+
+          if (config.passwordKey) {
+            const { card, input } = createPasswordGate(config.passwordKey, () => {
+              wrapper.innerHTML = '';
+              renderForm();
+            });
+            wrapper.appendChild(card);
+            outlet.appendChild(wrapper);
+            setTimeout(() => input.focus(), 80);
+          } else {
+            renderForm();
+          }
+        },
+        unmount() {
+          if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+          }
+          stopTimer(kind);
+        }
+      };
+      return route;
+    };
+
+    const thanksRoute = {
+      mount(outlet) {
+        const dict = getDict();
+        const card = document.createElement('div');
+        card.className = 'card thanks-card';
+        const title = document.createElement('h2');
+        title.textContent = dict.thanksTitle;
+        const body = document.createElement('p');
+        body.textContent = dict.thanksBody;
+        const btn = document.createElement('button');
+        btn.className = 'primary-btn';
+        btn.type = 'button';
+        btn.textContent = dict.backHome;
+        btn.addEventListener('click', () => navigate('#/surveys'));
+        card.appendChild(title);
+        card.appendChild(body);
+        card.appendChild(btn);
+        outlet.appendChild(card);
+      },
+      unmount() {}
+    };
+
+    const countValues = (records, key) => {
+      const map = new Map();
+      records.forEach(r => {
+        const value = r[key];
+        if (Array.isArray(value)) {
+          value.forEach(v => {
+            const current = map.get(v) || 0;
+            map.set(v, current + 1);
+          });
+        } else if (value !== undefined && value !== null && value !== '') {
+          const current = map.get(value) || 0;
+          map.set(value, current + 1);
+        }
+      });
+      return map;
+    };
+
+    const average = (records, key) => {
+      if (!records.length) return 0;
+      const sum = records.reduce((acc, r) => acc + (Number(r[key]) || 0), 0);
+      return sum / records.length;
+    };
+
+    const averageSeconds = (records) => {
+      if (!records.length) return 0;
+      const sum = records.reduce((acc, r) => acc + (Number(r.seconds) || 0), 0);
+      return sum / records.length;
+    };
+
+    const secondsToLabel = (seconds) => {
+      const dict = getDict();
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.round(seconds % 60);
+      return `${mins} ${dict.timerMinutes} ${secs} ${dict.timerSeconds}`;
+    };
+
+    const formatNumber = (num) => new Intl.NumberFormat(state.lang === 'ar' ? 'ar' : 'en').format(Number(num || 0));
+
+    const renderTextItems = (container, items) => {
+      container.innerHTML = '';
+      const dict = getDict();
+      if (!items.length) {
+        const empty = document.createElement('p');
+        empty.textContent = dict.emptyState;
+        container.appendChild(empty);
+        return;
+      }
+      items.forEach(({ label, value }) => {
+        const item = document.createElement('div');
+        item.className = 'text-item';
+        const span = document.createElement('span');
+        span.textContent = `${label}: ${value}`;
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.textContent = dict.copy;
+        copyBtn.addEventListener('click', async () => {
+          await navigator.clipboard.writeText(value);
+          showToast(dict.toastCopied);
+        });
+        item.appendChild(span);
+        item.appendChild(copyBtn);
+        container.appendChild(item);
+      });
+    };
+
+    const prepareOpenTexts = (kind, records) => {
+      const dict = getDict();
+      const items = [];
+      const push = (label, value) => {
+        if (value && String(value).trim()) {
+          items.push({ label, value: String(value).trim() });
+        }
+      };
+      if (kind === 'vendor') {
+        records.forEach(r => {
+          push(translate('vendor_fields.orders_all'), r.orders_all_other);
+          push(translate('vendor_fields.orders_profitable'), r.orders_profitable_other);
+          push(translate('vendor_fields.min_orders_to_stay'), r.min_orders_to_stay_other);
+          push(translate('vendor_fields.accept_5_10k'), r.accept_5_10k_other);
+          push(translate('vendor_fields.accept_10_20k'), r.accept_10_20k_other);
+          push(translate('vendor_fields.accept_20k_plus'), r.accept_20k_plus_other);
+          push(translate('vendor_fields.value_expect'), r.value_expect_other);
+          push(translate('vendor_fields.leave_reason'), r.leave_reason_other);
+          push(translate('vendor_fields.recommend'), r.recommend_other);
+          push(translate('vendor_fields.notes'), r.notes);
+        });
+      } else if (kind === 'customer') {
+        records.forEach(r => {
+          push(translate('customer_fields.freq'), r.freq_other);
+          push(translate('customer_fields.cats'), r.cats_other);
+          push(translate('customer_fields.time_save'), r.time_save_other);
+          push(translate('customer_fields.money_save'), r.money_save_other);
+          push(translate('customer_fields.more'), r.more_other);
+          push(translate('customer_fields.wants_services'), r.wants_services);
+        });
+      } else if (kind === 'public') {
+        records.forEach(r => {
+          push(translate('public_fields.platforms'), r.platforms_other);
+          push(translate('public_fields.barrier'), r.barrier_other);
+          push(translate('public_fields.top_factor'), r.top_factor_other);
+          push(translate('public_fields.first_cat'), r.first_cat_other);
+          push(translate('public_fields.premium'), r.premium_other);
+          push(translate('public_fields.why_tamam'), r.why_tamam);
+        });
+      }
+      return items;
+    };
+
+    const chartConfigs = {
+      vendor: [
+        { id: 'vendor-orders_all', type: 'bar', key: 'orders_all', title: 'vendor_fields.orders_all' },
+        { id: 'vendor-orders_profitable', type: 'bar', key: 'orders_profitable', title: 'vendor_fields.orders_profitable' },
+        { id: 'vendor-min_orders', type: 'bar', key: 'min_orders_to_stay', title: 'vendor_fields.min_orders_to_stay' },
+        { id: 'vendor-acceptance', type: 'bar', stacked: true, title: 'vendor_sections.sectionC' },
+        { id: 'vendor-value_expect', type: 'bar', key: 'value_expect', title: 'vendor_fields.value_expect', multi: true },
+        { id: 'vendor-leave', type: 'bar', key: 'leave_reason', title: 'vendor_fields.leave_reason' },
+        { id: 'vendor-recommend', type: 'bar', key: 'recommend', title: 'vendor_fields.recommend' }
+      ],
+      customer: [
+        { id: 'customer-freq', type: 'bar', key: 'freq', title: 'customer_fields.freq' },
+        { id: 'customer-cats', type: 'bar', key: 'cats', title: 'customer_fields.cats', multi: true },
+        { id: 'customer-ease', type: 'bar', key: 'ease', title: 'customer_fields.ease' },
+        { id: 'customer-nps', type: 'bar', key: 'nps', title: 'customer_fields.nps' },
+        { id: 'customer-time', type: 'bar', key: 'time_save', title: 'customer_fields.time_save' },
+        { id: 'customer-money', type: 'bar', key: 'money_save', title: 'customer_fields.money_save' },
+        { id: 'customer-more', type: 'bar', key: 'more', title: 'customer_fields.more', multi: true }
+      ],
+      public: [
+        { id: 'public-booked', type: 'bar', key: 'booked_before', title: 'public_fields.booked_before' },
+        { id: 'public-platforms', type: 'bar', key: 'platforms', title: 'public_fields.platforms', multi: true },
+        { id: 'public-barrier', type: 'bar', key: 'barrier', title: 'public_fields.barrier' },
+        { id: 'public-factor', type: 'bar', key: 'top_factor', title: 'public_fields.top_factor' },
+        { id: 'public-first', type: 'bar', key: 'first_cat', title: 'public_fields.first_cat' },
+        { id: 'public-premium', type: 'bar', key: 'premium', title: 'public_fields.premium' }
+      ]
+    };
+
+    const chartColors = ['#7b8cff', '#9f8bff', '#b2a9ff', '#5e6bcc'];
+
+    const destroyCharts = () => {
+      Object.values(state.charts).forEach(chart => chart?.destroy());
+      state.charts = {};
+    };
+
+    const createBarChart = (ctx, labels, datasets, rtl = false) => {
+      return new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: 'y',
+          plugins: {
+            legend: { position: 'top', labels: { usePointStyle: true, rtl } },
+            tooltip: { rtl }
+          },
+          scales: {
+            x: { stacked: datasets.length > 1, ticks: { rtl } },
+            y: { stacked: datasets.length > 1, ticks: { rtl } }
+          }
+        }
+      });
+    };
+
+    const renderCharts = (kind, container, records) => {
+      const dict = getDict();
+      const configs = chartConfigs[kind];
+      container.innerHTML = '';
+      configs.forEach((cfg, idx) => {
+        const card = document.createElement('div');
+        card.className = 'chart-card';
+        const title = document.createElement('h4');
+        title.textContent = translate(cfg.title);
+        const canvas = document.createElement('canvas');
+        canvas.height = 260;
+        card.appendChild(title);
+        card.appendChild(canvas);
+        container.appendChild(card);
+        let chart;
+        if (cfg.id === 'vendor-acceptance') {
+          const scenarios = [
+            { key: 'accept_5_10k', label: translate('vendor_fields.accept_5_10k') },
+            { key: 'accept_10_20k', label: translate('vendor_fields.accept_10_20k') },
+            { key: 'accept_20k_plus', label: translate('vendor_fields.accept_20k_plus') }
+          ];
+          const status = ['acceptable', 'neutral', 'not', 'other'];
+          const datasets = status.map((statusKey, sIdx) => ({
+            label: translate(statusKey === 'acceptable' ? 'accept' : statusKey === 'neutral' ? 'neutral' : statusKey === 'not' ? 'notAcceptable' : 'addOther'),
+            data: scenarios.map(s => records.filter(r => r[s.key] === statusKey).length),
+            backgroundColor: chartColors[sIdx % chartColors.length]
+          }));
+          chart = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: { labels: scenarios.map(s => s.label), datasets },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'top', labels: { rtl: state.lang === 'ar' } }, tooltip: { rtl: state.lang === 'ar' } },
+              scales: {
+                x: { stacked: true, ticks: { rtl: state.lang === 'ar' } },
+                y: { stacked: true, ticks: { rtl: state.lang === 'ar' } }
+              }
+            }
+          });
+        } else {
+          const map = new Map();
+          records.forEach(r => {
+            if (cfg.multi && Array.isArray(r[cfg.key])) {
+              r[cfg.key].forEach(v => {
+                const value = v;
+                map.set(value, (map.get(value) || 0) + 1);
+              });
+            } else {
+              const value = r[cfg.key];
+              if (value !== undefined && value !== null && value !== '') {
+                map.set(value, (map.get(value) || 0) + 1);
+              }
+            }
+          });
+          const labels = Array.from(map.keys()).map(value => translateLabel(kind, cfg.key, value));
+          const data = Array.from(map.values());
+          chart = new Chart(canvas.getContext('2d'), {
+            type: cfg.type,
+            data: {
+              labels,
+              datasets: [{
+                label: translate(cfg.title),
+                data,
+                backgroundColor: chartColors[idx % chartColors.length]
+              }]
+            },
+            options: {
+              indexAxis: 'y',
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: { rtl: state.lang === 'ar' }
+              },
+              scales: {
+                x: { ticks: { rtl: state.lang === 'ar' } },
+                y: { ticks: { rtl: state.lang === 'ar' } }
+              }
+            }
+          });
+        }
+        state.charts[cfg.id] = chart;
+      });
+    };
+
+    const translateLabel = (kind, key, value) => {
+      const dict = getDict();
+      const map = {
+        vendor: {
+          category: 'vendor_options',
+          orders_all: 'vendor_options',
+          orders_profitable: 'vendor_options',
+          min_orders_to_stay: 'vendor_options',
+          accept_5_10k: null,
+          value_expect: 'vendor_options',
+          leave_reason: 'vendor_options',
+          recommend: 'vendor_options'
+        },
+        customer: {
+          freq: 'customer_options',
+          cats: 'customer_options',
+          ease: 'customer_options',
+          time_save: 'customer_options',
+          money_save: 'customer_options',
+          more: 'customer_options'
+        },
+        public: {
+          booked_before: 'public_options',
+          platforms: 'public_options',
+          barrier: 'public_options',
+          top_factor: 'public_options',
+          first_cat: 'public_options',
+          premium: 'public_options'
+        }
+      };
+      if (value === 'other') return translate('addOther');
+      const scope = map[kind]?.[key];
+      if (scope) {
+        const scopedKey = `${scope}.${value}`;
+        const translated = translate(scopedKey);
+        if (translated !== scopedKey) return translated;
+      }
+      if (['acceptable', 'neutral', 'not'].includes(value)) {
+        return translate(value === 'acceptable' ? 'accept' : value === 'neutral' ? 'neutral' : 'notAcceptable');
+      }
+      return String(value);
+    };
+
+    const resultsRoute = {
+      mount(outlet) {
+        const dict = getDict();
+        const wrapper = document.createElement('div');
+        wrapper.className = 'survey-shell';
+        const askPassword = () => {
+          const { card, input } = createPasswordGate('results', () => {
+            wrapper.innerHTML = '';
+            this.renderDashboard(wrapper);
+          });
+          wrapper.appendChild(card);
+          outlet.appendChild(wrapper);
+          setTimeout(() => input.focus(), 100);
+        };
+        askPassword();
+      },
+      renderDashboard(wrapper) {
+        const dict = getDict();
+        ensureDB();
+        destroyCharts();
+        wrapper.innerHTML = '';
+        const controlsCard = document.createElement('div');
+        controlsCard.className = 'card';
+        const actions = document.createElement('div');
+        actions.className = 'search-row';
+        const refreshBtn = document.createElement('button');
+        refreshBtn.className = 'secondary-btn';
+        refreshBtn.type = 'button';
+        refreshBtn.textContent = dict.refreshData;
+        refreshBtn.addEventListener('click', () => {
+          ensureDB();
+          this.renderDashboard(wrapper);
+          showToast(dict.toastRefreshed);
+        });
+        const exportExcelBtn = document.createElement('button');
+        exportExcelBtn.className = 'secondary-btn';
+        exportExcelBtn.type = 'button';
+        exportExcelBtn.textContent = dict.exportExcel;
+        exportExcelBtn.addEventListener('click', exportExcel);
+        const exportJsonBtn = document.createElement('button');
+        exportJsonBtn.className = 'secondary-btn';
+        exportJsonBtn.type = 'button';
+        exportJsonBtn.textContent = dict.exportJson;
+        exportJsonBtn.addEventListener('click', () => exportJson());
+        const importLabel = document.createElement('label');
+        importLabel.className = 'secondary-btn';
+        importLabel.textContent = dict.importJson;
+        importLabel.style.cursor = 'pointer';
+        const importInput = document.createElement('input');
+        importInput.type = 'file';
+        importInput.accept = 'application/json';
+        importInput.style.display = 'none';
+        importInput.addEventListener('change', handleImport);
+        importLabel.appendChild(importInput);
+        const backupBtn = document.createElement('button');
+        backupBtn.className = 'secondary-btn';
+        backupBtn.type = 'button';
+        backupBtn.textContent = dict.backupReset;
+        backupBtn.addEventListener('click', () => backupAndReset(wrapper));
+        actions.appendChild(refreshBtn);
+        actions.appendChild(exportExcelBtn);
+        actions.appendChild(exportJsonBtn);
+        actions.appendChild(importLabel);
+        actions.appendChild(backupBtn);
+        controlsCard.appendChild(actions);
+        wrapper.appendChild(controlsCard);
+
+        const tabsCard = document.createElement('div');
+        tabsCard.className = 'card';
+        const tabBar = document.createElement('div');
+        tabBar.className = 'tab-bar';
+        const tabContent = document.createElement('div');
+        const tabs = [
+          { id: 'vendor', label: dict.tabVendors },
+          { id: 'customer', label: dict.tabCustomers },
+          { id: 'public', label: dict.tabPublic }
+        ];
+        tabs.forEach((tab, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'tab-btn' + (idx === 0 ? ' active' : '');
+          btn.textContent = tab.label;
+          btn.addEventListener('click', () => {
+            tabBar.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderTab(tab.id);
+          });
+          tabBar.appendChild(btn);
+        });
+        tabsCard.appendChild(tabBar);
+        tabsCard.appendChild(tabContent);
+        wrapper.appendChild(tabsCard);
+
+        const renderTab = (kind) => {
+          const dict = getDict();
+          const records = ensureDB()[kind];
+          tabContent.innerHTML = '';
+          destroyCharts();
+          const kpiCard = document.createElement('div');
+          kpiCard.className = 'card';
+          const kpiGrid = document.createElement('div');
+          kpiGrid.className = 'kpi-grid';
+          const addKpi = (label, value) => {
+            const item = document.createElement('div');
+            item.className = 'kpi-card';
+            const title = document.createElement('span');
+            title.textContent = label;
+            const val = document.createElement('strong');
+            val.textContent = value;
+            item.appendChild(title);
+            item.appendChild(val);
+            kpiGrid.appendChild(item);
+          };
+          addKpi(dict.totalSubmissions, formatNumber(records.length));
+          addKpi(dict.avgSeconds, secondsToLabel(averageSeconds(records)));
+          if (kind === 'vendor') {
+            addKpi(dict.avgAOV, formatNumber(average(records, 'aov').toFixed(1)));
+            addKpi(dict.avgProfit, `${formatNumber(average(records, 'avg_profit').toFixed(1))}%`);
+          }
+          if (kind === 'customer') {
+            addKpi(dict.npsAverage, formatNumber(average(records, 'nps').toFixed(1)));
+          }
+          if (kind === 'public') {
+            const yes = records.filter(r => r.booked_before === 'yes').length;
+            const percent = records.length ? Math.round((yes / records.length) * 100) : 0;
+            addKpi(dict.percentBooked, `${percent}%`);
+          }
+          kpiCard.appendChild(kpiGrid);
+          tabContent.appendChild(kpiCard);
+
+          const chartWrap = document.createElement('div');
+          chartWrap.className = 'card';
+          const chartGrid = document.createElement('div');
+          chartGrid.className = 'chart-grid';
+          chartWrap.appendChild(chartGrid);
+          tabContent.appendChild(chartWrap);
+          renderCharts(kind, chartGrid, records);
+
+          const openCard = document.createElement('div');
+          openCard.className = 'card';
+          const openList = document.createElement('div');
+          openList.className = 'open-text-list';
+          renderTextItems(openList, prepareOpenTexts(kind, records));
+          openCard.appendChild(openList);
+          tabContent.appendChild(openCard);
+
+          const tableCard = document.createElement('div');
+          tableCard.className = 'card';
+          const searchRow = document.createElement('div');
+          searchRow.className = 'search-row';
+          const searchInput = document.createElement('input');
+          searchInput.type = 'search';
+          searchInput.placeholder = dict.searchPlaceholder;
+          const tableWrap = document.createElement('div');
+          tableWrap.className = 'table-wrap';
+          const table = document.createElement('table');
+          const thead = document.createElement('thead');
+          const tbody = document.createElement('tbody');
+          const columns = getColumns(kind);
+          const headerRow = document.createElement('tr');
+          columns.forEach(col => {
+            const th = document.createElement('th');
+            th.textContent = col.label;
+            th.addEventListener('click', () => {
+              currentSort = currentSort?.key === col.key ? { key: col.key, dir: currentSort.dir === 'asc' ? 'desc' : 'asc' } : { key: col.key, dir: 'asc' };
+              renderRows();
+            });
+            headerRow.appendChild(th);
+          });
+          thead.appendChild(headerRow);
+          table.appendChild(thead);
+          table.appendChild(tbody);
+          tableWrap.appendChild(table);
+          tableCard.appendChild(searchRow);
+          searchRow.appendChild(searchInput);
+          tableCard.appendChild(tableWrap);
+          tabContent.appendChild(tableCard);
+
+          let currentSort = null;
+          const filterRecords = () => {
+            const q = searchInput.value.trim().toLowerCase();
+            if (!q) return [...records];
+            return records.filter(r => {
+              const fields = [r.name, r.company, r.email, r.phone, r.category];
+              return fields.some(f => f && String(f).toLowerCase().includes(q));
+            });
+          };
+
+          const renderRows = () => {
+            tbody.innerHTML = '';
+            let filtered = filterRecords();
+            if (currentSort) {
+              filtered.sort((a, b) => {
+                const av = a[currentSort.key];
+                const bv = b[currentSort.key];
+                if (Array.isArray(av) && Array.isArray(bv)) {
+                  return currentSort.dir === 'asc' ? av.length - bv.length : bv.length - av.length;
+                }
+                return currentSort.dir === 'asc'
+                  ? String(av ?? '').localeCompare(String(bv ?? ''), state.lang === 'ar' ? 'ar' : 'en', { numeric: true })
+                  : String(bv ?? '').localeCompare(String(av ?? ''), state.lang === 'ar' ? 'ar' : 'en', { numeric: true });
+              });
+            }
+            if (!filtered.length) {
+              const row = document.createElement('tr');
+              const cell = document.createElement('td');
+              cell.colSpan = columns.length;
+              cell.textContent = dict.emptyState;
+              row.appendChild(cell);
+              tbody.appendChild(row);
+              return;
+            }
+            filtered.forEach(record => {
+              const row = document.createElement('tr');
+              columns.forEach(col => {
+                const td = document.createElement('td');
+                const value = record[col.key];
+                if (Array.isArray(value)) {
+                  td.textContent = value.join(', ');
+                } else {
+                  td.textContent = value ?? '';
+                }
+                row.appendChild(td);
+              });
+              row.addEventListener('click', () => openDetail(kind, record));
+              tbody.appendChild(row);
+            });
+          };
+
+          searchInput.addEventListener('input', renderRows);
+          renderRows();
+        };
+
+        const openDetail = (kind, record) => {
+          const modal = document.getElementById('detail-modal');
+          const content = document.getElementById('detail-content');
+          content.innerHTML = '';
+          const title = document.createElement('h3');
+          title.id = 'detail-title';
+          title.textContent = getDict().modalDetails;
+          content.appendChild(title);
+          const list = document.createElement('dl');
+          list.style.display = 'grid';
+          list.style.gridTemplateColumns = 'repeat(auto-fit,minmax(160px,1fr))';
+          list.style.gap = '12px';
+          getColumns(kind).forEach(col => {
+            const dt = document.createElement('dt');
+            dt.textContent = col.label;
+            const dd = document.createElement('dd');
+            const value = record[col.key];
+            dd.textContent = Array.isArray(value) ? value.join(', ') : value ?? '';
+            list.appendChild(dt);
+            list.appendChild(dd);
+          });
+          const time = document.createElement('p');
+          time.textContent = `${translate('timerLabel')}: ${secondsToLabel(record.seconds || 0)} · ${new Date(record.ts).toLocaleString(state.lang === 'ar' ? 'ar' : 'en')}`;
+          content.appendChild(list);
+          content.appendChild(time);
+          modal.classList.add('active');
+          const closeBtn = modal.querySelector('[data-close-modal]');
+          closeBtn.focus();
+          const keyHandler = (e) => { if (e.key === 'Escape') close(); };
+          const close = () => {
+            modal.classList.remove('active');
+            document.removeEventListener('keydown', keyHandler);
+          };
+          closeBtn.onclick = close;
+          modal.addEventListener('click', (e) => { if (e.target === modal) close(); }, { once: true });
+          document.addEventListener('keydown', keyHandler);
+        };
+
+        const getColumns = (kind) => {
+          if (kind === 'vendor') {
+            return [
+              { key: 'company', label: translate('vendor_fields.company') },
+              { key: 'email', label: translate('vendor_fields.email') },
+              { key: 'phone', label: translate('vendor_fields.phone') },
+              { key: 'category', label: translate('vendor_fields.category') },
+              { key: 'aov', label: translate('vendor_fields.aov') },
+              { key: 'avg_profit', label: translate('vendor_fields.avg_profit') },
+              { key: 'orders_all', label: translate('vendor_fields.orders_all') },
+              { key: 'orders_all_other', label: translate('otherSpecify') },
+              { key: 'orders_profitable', label: translate('vendor_fields.orders_profitable') },
+              { key: 'orders_profitable_other', label: translate('otherSpecify') },
+              { key: 'min_orders_to_stay', label: translate('vendor_fields.min_orders_to_stay') },
+              { key: 'min_orders_to_stay_other', label: translate('otherSpecify') },
+              { key: 'accept_5_10k', label: translate('vendor_fields.accept_5_10k') },
+              { key: 'accept_5_10k_other', label: translate('otherSpecify') },
+              { key: 'accept_10_20k', label: translate('vendor_fields.accept_10_20k') },
+              { key: 'accept_10_20k_other', label: translate('otherSpecify') },
+              { key: 'accept_20k_plus', label: translate('vendor_fields.accept_20k_plus') },
+              { key: 'accept_20k_plus_other', label: translate('otherSpecify') },
+              { key: 'value_expect', label: translate('vendor_fields.value_expect') },
+              { key: 'value_expect_other', label: translate('otherSpecify') },
+              { key: 'leave_reason', label: translate('vendor_fields.leave_reason') },
+              { key: 'leave_reason_other', label: translate('otherSpecify') },
+              { key: 'recommend', label: translate('vendor_fields.recommend') },
+              { key: 'recommend_other', label: translate('otherSpecify') },
+              { key: 'notes', label: translate('vendor_fields.notes') },
+              { key: 'ts', label: translate('timestamp') },
+              { key: 'seconds', label: translate('vendorTimerLabel') }
+            ];
+          }
+          if (kind === 'customer') {
+            return [
+              { key: 'name', label: translate('customer_fields.name') },
+              { key: 'email', label: translate('customer_fields.email') },
+              { key: 'phone', label: translate('customer_fields.phone') },
+              { key: 'freq', label: translate('customer_fields.freq') },
+              { key: 'freq_other', label: translate('otherSpecify') },
+              { key: 'cats', label: translate('customer_fields.cats') },
+              { key: 'cats_other', label: translate('otherSpecify') },
+              { key: 'ease', label: translate('customer_fields.ease') },
+              { key: 'nps', label: translate('customer_fields.nps') },
+              { key: 'time_save', label: translate('customer_fields.time_save') },
+              { key: 'time_save_other', label: translate('otherSpecify') },
+              { key: 'money_save', label: translate('customer_fields.money_save') },
+              { key: 'money_save_other', label: translate('otherSpecify') },
+              { key: 'wants_services', label: translate('customer_fields.wants_services') },
+              { key: 'more', label: translate('customer_fields.more') },
+              { key: 'more_other', label: translate('otherSpecify') },
+              { key: 'ts', label: translate('timestamp') },
+              { key: 'seconds', label: translate('vendorTimerLabel') }
+            ];
+          }
+          return [
+            { key: 'name', label: translate('public_fields.name') },
+            { key: 'email', label: translate('public_fields.email') },
+            { key: 'phone', label: translate('public_fields.phone') },
+            { key: 'booked_before', label: translate('public_fields.booked_before') },
+            { key: 'platforms', label: translate('public_fields.platforms') },
+            { key: 'platforms_other', label: translate('otherSpecify') },
+            { key: 'barrier', label: translate('public_fields.barrier') },
+            { key: 'barrier_other', label: translate('otherSpecify') },
+            { key: 'top_factor', label: translate('public_fields.top_factor') },
+            { key: 'top_factor_other', label: translate('otherSpecify') },
+            { key: 'first_cat', label: translate('public_fields.first_cat') },
+            { key: 'first_cat_other', label: translate('otherSpecify') },
+            { key: 'premium', label: translate('public_fields.premium') },
+            { key: 'premium_other', label: translate('otherSpecify') },
+            { key: 'why_tamam', label: translate('public_fields.why_tamam') },
+            { key: 'ts', label: translate('timestamp') },
+            { key: 'seconds', label: translate('vendorTimerLabel') }
+          ];
+        };
+
+        renderTab('vendor');
+      },
+      unmount() {
+        destroyCharts();
+      }
+    };
+
+    const exportExcel = () => {
+      ensureDB();
+      const wb = XLSX.utils.book_new();
+      ['vendor', 'customer', 'public'].forEach(kind => {
+        const data = state.db[kind].map(record => {
+          const copy = { ...record };
+          Object.keys(copy).forEach(key => {
+            if (Array.isArray(copy[key])) {
+              copy[key] = copy[key].join(', ');
+            }
+          });
+          return copy;
+        });
+        const ws = XLSX.utils.json_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, kind.charAt(0).toUpperCase() + kind.slice(1));
+      });
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'tamam-research.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast(getDict().toastExported);
+    };
+
+    const exportJson = () => {
+      ensureDB();
+      const blob = new Blob([JSON.stringify(state.db, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'tamam-research.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast(getDict().download);
+    };
+
+    const handleImport = (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          ['vendor', 'customer', 'public'].forEach(kind => {
+            if (Array.isArray(data[kind])) {
+              state.db[kind] = state.db[kind].concat(data[kind]);
+            }
+          });
+          saveDB();
+          showToast(getDict().toastImported);
+          if (state.currentRoute === '#/surveys/results') {
+            navigate('#/surveys/results', true);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    };
+
+    const backupAndReset = (wrapper) => {
+      exportJson();
+      state.db = JSON.parse(JSON.stringify(DEFAULT_DB));
+      saveDB();
+      Object.values(STORAGE_KEYS.drafts).forEach(key => localStorage.removeItem(key));
+      Object.values(STORAGE_KEYS.completed).forEach(key => localStorage.removeItem(key));
+      showToast(getDict().toastReset);
+      if (wrapper) {
+        navigate('#/surveys/results', true);
+      }
+    };
+
+    const registerRoutes = () => {
+      router.routes['#/surveys'] = createHomeRoute();
+      router.routes['#/surveys/vendors'] = buildSurveyRoute('vendor');
+      router.routes['#/surveys/customers'] = buildSurveyRoute('customer');
+      router.routes['#/surveys/public'] = buildSurveyRoute('public');
+      router.routes['#/surveys/thanks'] = thanksRoute;
+      router.routes['#/surveys/results'] = resultsRoute;
+    };
+
+    const init = () => {
+      const savedTheme = localStorage.getItem(STORAGE_KEYS.theme) || 'light';
+      applyTheme(savedTheme);
+      document.getElementById('theme-toggle').addEventListener('click', () => {
+        const next = document.body.dataset.theme === 'light' ? 'dark' : 'light';
+        applyTheme(next);
+      });
+      document.getElementById('language-toggle').addEventListener('click', () => {
+        applyLanguage(state.lang === 'en' ? 'ar' : 'en');
+      });
+      applyLanguage('en');
+      registerRoutes();
+      router.init();
+      if (DEBUG) {
+        const panel = document.getElementById('debug-panel');
+        panel.hidden = false;
+        document.getElementById('debug-clear').addEventListener('click', () => {
+          localStorage.clear();
+          location.reload();
+        });
+        document.getElementById('debug-dump').addEventListener('click', () => {
+          console.table(ensureDB());
+        });
+      }
+      document.addEventListener('tamam:dataUpdated', () => {
+        if (state.currentRoute === '#/surveys/results') {
+          navigate('#/surveys/results', true);
+        }
+      });
+    };
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
