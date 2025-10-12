@@ -301,106 +301,122 @@
     .hero-immersive {
       position: relative;
       width: min(100%, 1120px);
-      margin: clamp(24px, 4vw, 48px) auto;
-      padding: clamp(56px, 7vw, 80px) clamp(28px, 6vw, 72px);
-      border-radius: 30px;
+      margin: clamp(24px, 4vw, 56px) auto;
+      padding: clamp(52px, 7vw, 96px) clamp(20px, 6vw, 72px);
+      border-radius: 32px;
       overflow: hidden;
       text-align: center;
-      color: var(--text-primary);
       isolation: isolate;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.28), 0 36px 80px rgba(46,56,96,0.28);
-      backdrop-filter: blur(24px);
       display: grid;
-      gap: 16px;
+      gap: clamp(20px, 4vw, 36px);
+      justify-items: center;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25), 0 40px 90px rgba(40,52,96,0.26);
+      backdrop-filter: blur(26px);
     }
     [data-theme="dark"] .hero-immersive {
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 40px 90px rgba(5,8,18,0.7);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 44px 110px rgba(4,6,20,0.72);
     }
-    .hero-immersive::before {
-      content: "";
+    .hero-bg {
       position: absolute;
-      inset: -20%;
-      background: radial-gradient(circle at 20% 10%, rgba(120,132,255,0.45), transparent 55%),
-        radial-gradient(circle at 80% 30%, rgba(182,116,255,0.38), transparent 60%),
-        linear-gradient(140deg, rgba(70,140,255,0.32), rgba(140,110,255,0.28), rgba(90,220,255,0.32));
-      opacity: 0.8;
-      animation: heroGlow 18s ease-in-out infinite;
+      inset: -25%;
+      background:
+        radial-gradient(55% 70% at 12% 18%, rgba(120,132,255,0.5), transparent 65%),
+        radial-gradient(45% 60% at 88% 22%, rgba(178,116,255,0.45), transparent 70%),
+        linear-gradient(135deg, rgba(70,140,255,0.28), rgba(140,110,255,0.24), rgba(90,200,255,0.26));
       z-index: -2;
+      opacity: 0.95;
+      animation: heroGlow 20s ease-in-out infinite alternate;
     }
     .hero-immersive::after {
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(12,16,40,0.14), rgba(12,16,40,0.32));
+      background: linear-gradient(180deg, rgba(15,18,40,0.18), rgba(15,18,40,0.32));
       mix-blend-mode: screen;
       z-index: -1;
     }
-    .hero-video-container {
-      position: absolute;
-      inset: 0;
-      z-index: -3;
-      overflow: hidden;
-    }
-    .hero-video-container video {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 120%;
-      min-height: 120%;
-      transform: translate(-50%, -50%);
-      object-fit: cover;
-      filter: saturate(1.15) brightness(1.08);
-    }
     .hero-overlay {
       position: relative;
+      z-index: 2;
       display: flex;
       flex-direction: column;
-      gap: 12px;
       align-items: center;
-      justify-content: center;
-      min-height: clamp(240px, 38vw, 360px);
-      text-align: center;
+      gap: 12px;
+      max-width: min(720px, 92%);
     }
     .hero-title {
-      font-size: clamp(36px, 6vw, 52px);
+      font-size: clamp(38px, 6vw, 54px);
       font-weight: 600;
       letter-spacing: -0.01em;
+      margin: 0;
     }
     .hero-sub {
-      margin: 0 auto;
-      max-width: min(640px, 90%);
-      font-size: clamp(18px, 2.4vw, 22px);
+      margin: 0;
+      font-size: clamp(18px, 2.6vw, 22px);
       color: var(--fg-muted-contrast);
-      text-shadow: 0 10px 30px rgba(8,10,24,0.35);
       line-height: 1.6;
+      text-shadow: 0 10px 30px rgba(8,10,28,0.32);
     }
-    .hero-audio {
-      border: 1px solid rgba(255,255,255,0.6);
-      background: rgba(255,255,255,0.28);
-      color: var(--fg-contrast);
+    .hero-video-wrap {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 1080px);
+      aspect-ratio: 16 / 9;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 32px 70px rgba(32,44,96,0.28);
+      backdrop-filter: blur(12px);
+      margin-top: clamp(12px, 4vw, 28px);
+    }
+    .hero-video-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(80% 90% at 50% 10%, rgba(255,255,255,0.2), transparent 70%);
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    .hero-video-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: saturate(1.12) brightness(1.04);
+    }
+    .hero-unmute {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      z-index: 3;
       padding: 10px 20px;
       border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.3);
+      color: var(--fg-contrast);
       font-weight: 500;
-      transition: transform 200ms ease, background 200ms ease, opacity 220ms ease;
-      box-shadow: 0 18px 38px rgba(36,46,88,0.28);
+      backdrop-filter: blur(12px);
+      transition: transform 200ms ease, background 200ms ease, opacity 200ms ease;
     }
-    [data-theme="dark"] .hero-audio {
-      background: rgba(18,20,34,0.55);
+    [data-theme="dark"] .hero-unmute {
+      background: rgba(22,24,40,0.6);
       border-color: rgba(255,255,255,0.18);
-      box-shadow: 0 20px 46px rgba(4,6,18,0.55);
+      color: var(--fg-contrast);
     }
-    .hero-audio:not([hidden]) {
-      opacity: 0.94;
+    .hero-unmute[hidden] {
+      display: none;
     }
-    .hero-audio:hover {
-      transform: translateY(-2px) scale(1.02);
+    .hero-unmute:hover {
+      transform: translateY(-1px) scale(1.02);
       background: rgba(255,255,255,0.42);
     }
-    .hero-audio:focus-visible {
+    [data-theme="dark"] .hero-unmute:hover {
+      background: rgba(36,40,68,0.72);
+    }
+    .hero-unmute:focus-visible {
       outline: none;
       box-shadow: var(--focus);
     }
-    .hero-audio:active {
+    .hero-unmute:active {
       transform: translateY(1px) scale(0.98);
     }
     @keyframes heroGlow {
@@ -1087,6 +1103,27 @@
       font-size: 12px;
     }
 
+    .netlify-form {
+      position: fixed;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .netlify-form input,
+    .netlify-form textarea {
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      border: 0;
+      padding: 0;
+      margin: 0;
+    }
+    .netlify-trap { display: none; }
+
     ::-webkit-scrollbar {
       height: 10px;
       width: 10px;
@@ -1103,7 +1140,7 @@
         transition-duration: 0.001ms !important;
         scroll-behavior: auto !important;
       }
-      .hero-immersive::before {
+      .hero-bg {
         animation: none !important;
       }
     }
@@ -1145,9 +1182,9 @@
 
   <div class="debug-panel" id="debug-panel"></div>
 
-  <form name="vendor" method="POST" netlify netlify-honeypot="bot-field" hidden onsubmit="return handleVendorSubmit(event)">
+  <form name="vendor" method="POST" netlify netlify-honeypot="bot-field" class="netlify-form" onsubmit="return submitVendor(event)">
     <input type="hidden" name="form-name" value="vendor" />
-    <p hidden><label>Do not fill this out <input name="bot-field" /></label></p>
+    <p class="netlify-trap"><label>Do not fill this out <input name="bot-field" /></label></p>
     <input type="hidden" name="company" />
     <input type="hidden" name="email" />
     <input type="hidden" name="phone" />
@@ -1172,15 +1209,15 @@
     <input type="hidden" name="leave_reason_other" />
     <input type="hidden" name="recommend" />
     <input type="hidden" name="recommend_other" />
-    <textarea name="notes" hidden></textarea>
+    <textarea name="notes"></textarea>
     <input type="hidden" name="ts" />
     <input type="hidden" name="seconds" />
     <input type="hidden" name="lang" />
   </form>
 
-  <form name="customer" method="POST" netlify netlify-honeypot="bot-field" hidden onsubmit="return handleCustomerSubmit(event)">
+  <form name="customer" method="POST" netlify netlify-honeypot="bot-field" class="netlify-form" onsubmit="return submitCustomer(event)">
     <input type="hidden" name="form-name" value="customer" />
-    <p hidden><label>Do not fill this out <input name="bot-field" /></label></p>
+    <p class="netlify-trap"><label>Do not fill this out <input name="bot-field" /></label></p>
     <input type="hidden" name="name" />
     <input type="hidden" name="email" />
     <input type="hidden" name="phone" />
@@ -1194,18 +1231,18 @@
     <input type="hidden" name="time_save_other" />
     <input type="hidden" name="money_save" />
     <input type="hidden" name="money_save_other" />
-    <textarea name="wants_services" hidden></textarea>
+    <textarea name="wants_services"></textarea>
     <input type="hidden" name="more" />
     <input type="hidden" name="more_other" />
-    <textarea name="notes" hidden></textarea>
+    <textarea name="notes"></textarea>
     <input type="hidden" name="ts" />
     <input type="hidden" name="seconds" />
     <input type="hidden" name="lang" />
   </form>
 
-  <form name="public" method="POST" netlify netlify-honeypot="bot-field" hidden onsubmit="return handlePublicSubmit(event)">
+  <form name="public" method="POST" netlify netlify-honeypot="bot-field" class="netlify-form" onsubmit="return submitPublic(event)">
     <input type="hidden" name="form-name" value="public" />
-    <p hidden><label>Do not fill this out <input name="bot-field" /></label></p>
+    <p class="netlify-trap"><label>Do not fill this out <input name="bot-field" /></label></p>
     <input type="hidden" name="name" />
     <input type="hidden" name="email" />
     <input type="hidden" name="phone" />
@@ -1220,7 +1257,7 @@
     <input type="hidden" name="first_cat_other" />
     <input type="hidden" name="premium" />
     <input type="hidden" name="premium_other" />
-    <textarea name="why_tamam" hidden></textarea>
+    <textarea name="why_tamam"></textarea>
     <input type="hidden" name="ts" />
     <input type="hidden" name="seconds" />
     <input type="hidden" name="lang" />
@@ -1230,9 +1267,9 @@
   window.TAMAM_BACKEND = window.TAMAM_BACKEND || 'netlify';
   window.TAMAM_HOSTINGER_ENDPOINT = window.TAMAM_HOSTINGER_ENDPOINT || '';
   window.TAMAM_HOSTINGER_EXPORT = window.TAMAM_HOSTINGER_EXPORT || '';
-  window.handleVendorSubmit = (event) => { event?.preventDefault?.(); return false; };
-  window.handleCustomerSubmit = (event) => { event?.preventDefault?.(); return false; };
-  window.handlePublicSubmit = (event) => { event?.preventDefault?.(); return false; };
+  window.submitVendor = (event) => { event?.preventDefault?.(); return false; };
+  window.submitCustomer = (event) => { event?.preventDefault?.(); return false; };
+  window.submitPublic = (event) => { event?.preventDefault?.(); return false; };
   const DEBUG = false;
   const logDebug = (...args) => { if (DEBUG) console.log('[Tamam]', ...args); };
 
@@ -1307,8 +1344,8 @@
       introTitle: "Why we're collecting data",
       introBody: 'To better understand how vendors, customers, and the public perceive Tamam\'s commission and subscription models, and to improve fairness and affordability for all.',
       heroTitle: 'Meet Tamam.',
-      heroSub: 'A super-app connecting users to trusted Home, Car, Health, and Lifestyle services across the UAE.',
-      heroAudioButton: 'Enable sound',
+      heroSub: 'Services on demand across Home, Health, Car, and Lifestyle.',
+      heroUnmute: 'Tap to unmute',
       heroAudioHint: 'Video is playing muted. Tap to enable sound.',
       heroAudioPlaying: 'Sound on. Enjoy the full experience.',
       heroAudioUnavailable: 'Unable to enable sound automatically.',
@@ -1538,8 +1575,8 @@
       introTitle: 'لماذا نجمع البيانات',
       introBody: 'لفهم أفضل لكيفية رؤية الشركاء والعملاء والجمهور لعمولات تمام ورسوم الاشتراك، ولتحسين العدالة وتكلفة الخدمة للجميع.',
       heroTitle: 'تعرّف على تمام.',
-      heroSub: 'تطبيق فائق يربط المستخدمين بخدمات موثوقة للمنزل والسيارة والصحة ونمط الحياة في جميع أنحاء الإمارات.',
-      heroAudioButton: 'تشغيل الصوت',
+      heroSub: 'خدمات عند الطلب للمنزل والسيارة والصحة ونمط الحياة.',
+      heroUnmute: 'اضغط لتفعيل الصوت',
       heroAudioHint: 'يتم تشغيل الفيديو دون صوت. اضغط لتفعيل الصوت.',
       heroAudioPlaying: 'تم تشغيل الصوت. استمتع بالتجربة.',
       heroAudioUnavailable: 'تعذر تشغيل الصوت تلقائياً.',
@@ -2045,10 +2082,14 @@
   }
 
   function recordSubmission(kind, data) {
-    const record = { ...data, origin: 'local' };
-    mergeAndPersist(kind, [record]);
-    logDebug('Submit', kind, record);
-    sendToBackend(kind, record, state.lang).then(() => {
+    const baseRecord = { ...data };
+    const localRecord = { ...baseRecord, origin: 'local' };
+    mergeAndPersist(kind, [localRecord]);
+    logDebug('Submit', kind, localRecord);
+    showToast(t('submitted'));
+    sendToBackend(kind, baseRecord, state.lang).then(() => {
+      const syncedRecord = { ...baseRecord, origin: 'remote' };
+      mergeAndPersist(kind, [syncedRecord]);
       state.remote.outboxPending = getOutbox().length;
       updateRemoteStatus();
       showToast(t('submittedSynced'));
@@ -2057,9 +2098,10 @@
       }
     }).catch(error => {
       logDebug('Remote sync failed', kind, error);
-      queueOutbox(kind, record, state.lang);
-      showToast(t('submittedOffline'));
+      queueOutbox(kind, baseRecord, state.lang);
+      state.remote.outboxPending = getOutbox().length;
       updateRemoteStatus();
+      showToast(t('submittedOffline'));
     });
   }
 
@@ -2354,21 +2396,13 @@
     intro.appendChild(body);
 
     const hero = document.createElement('section');
-    hero.id = 'hero';
+    hero.id = 'meet-tamam';
     hero.className = 'hero-immersive section-fade';
-    const videoWrap = document.createElement('div');
-    videoWrap.className = 'hero-video-container';
-    const heroVideo = document.createElement('video');
-    heroVideo.src = 'https://drive.google.com/uc?export=download&id=1HhoecxoyeZM1_y3xly0B1dipK7bqQJKP';
-    heroVideo.autoplay = true;
-    heroVideo.loop = true;
-    heroVideo.playsInline = true;
-    heroVideo.preload = 'auto';
-    heroVideo.muted = false;
-    heroVideo.controls = false;
-    heroVideo.setAttribute('playsinline', '');
-    heroVideo.setAttribute('aria-hidden', 'true');
-    videoWrap.appendChild(heroVideo);
+
+    const heroBg = document.createElement('div');
+    heroBg.className = 'hero-bg';
+    hero.appendChild(heroBg);
+
     const heroOverlay = document.createElement('div');
     heroOverlay.className = 'hero-overlay';
     const heroTitle = document.createElement('h2');
@@ -2379,41 +2413,125 @@
     heroSub.className = 'hero-sub';
     heroSub.dataset.i18n = 'heroSub';
     heroSub.textContent = t('heroSub');
-    const audioBtn = document.createElement('button');
-    audioBtn.type = 'button';
-    audioBtn.className = 'hero-audio';
-    audioBtn.dataset.i18n = 'heroAudioButton';
-    audioBtn.textContent = t('heroAudioButton');
-    audioBtn.hidden = true;
-    audioBtn.addEventListener('click', () => {
-      heroVideo.muted = false;
-      heroVideo.volume = 1;
-      heroVideo.play().then(() => {
-        audioBtn.hidden = true;
-        showToast(t('heroAudioPlaying'));
-      }).catch(() => {
-        showToast(t('heroAudioUnavailable'));
-      });
-    });
     heroOverlay.appendChild(heroTitle);
     heroOverlay.appendChild(heroSub);
-    heroOverlay.appendChild(audioBtn);
-    hero.appendChild(videoWrap);
-    hero.appendChild(heroOverlay);
 
-    const tryPlay = () => {
-      heroVideo.play().catch(() => {
-        heroVideo.muted = true;
-        heroVideo.play().then(() => {
-          audioBtn.hidden = false;
-          showToast(t('heroAudioHint'));
+    const videoWrap = document.createElement('div');
+    videoWrap.className = 'hero-video-wrap';
+    const heroVideo = document.createElement('video');
+    heroVideo.id = 'hero-video';
+    heroVideo.autoplay = true;
+    heroVideo.loop = true;
+    heroVideo.muted = true;
+    heroVideo.controls = false;
+    heroVideo.playsInline = true;
+    heroVideo.preload = 'auto';
+    heroVideo.setAttribute('playsinline', '');
+    heroVideo.setAttribute('muted', '');
+    heroVideo.setAttribute('aria-hidden', 'true');
+    const source = document.createElement('source');
+    source.src = 'https://drive.google.com/uc?export=download&id=1HhoecxoyeZM1_y3xly0B1dipK7bqQJKP';
+    source.type = 'video/mp4';
+    heroVideo.appendChild(source);
+    videoWrap.appendChild(heroVideo);
+
+    const unmuteBtn = document.createElement('button');
+    unmuteBtn.type = 'button';
+    unmuteBtn.className = 'hero-unmute';
+    unmuteBtn.dataset.i18n = 'heroUnmute';
+    unmuteBtn.textContent = t('heroUnmute');
+    videoWrap.appendChild(unmuteBtn);
+
+    hero.appendChild(heroOverlay);
+    hero.appendChild(videoWrap);
+
+    const storedPref = localStorage.getItem('tmm_unmute') === '1';
+    if (storedPref) {
+      heroVideo.muted = false;
+      heroVideo.removeAttribute('muted');
+    }
+
+    let hintShown = false;
+    const updateUnmuteVisibility = () => {
+      unmuteBtn.hidden = !heroVideo.muted;
+    };
+
+    const playMutedFallback = () => {
+      heroVideo.muted = true;
+      heroVideo.setAttribute('muted', '');
+      const attempt = heroVideo.play();
+      if (attempt && typeof attempt.then === 'function') {
+        attempt.then(() => {
+          updateUnmuteVisibility();
+          if (!hintShown) {
+            hintShown = true;
+            showToast(t('heroAudioHint'));
+          }
         }).catch(() => {
-          audioBtn.hidden = false;
+          updateUnmuteVisibility();
+        });
+      } else {
+        updateUnmuteVisibility();
+      }
+    };
+
+    heroVideo.addEventListener('canplay', () => {
+      const desiredSound = storedPref;
+      if (desiredSound) {
+        heroVideo.muted = false;
+        heroVideo.removeAttribute('muted');
+      }
+      const promise = heroVideo.play();
+      if (promise && typeof promise.then === 'function') {
+        promise.then(() => {
+          updateUnmuteVisibility();
+          if (!desiredSound && !hintShown) {
+            hintShown = true;
+            showToast(t('heroAudioHint'));
+          }
+        }).catch(() => {
+          if (desiredSound) {
+            showToast(t('heroAudioUnavailable'));
+          }
+          playMutedFallback();
+        });
+      } else {
+        updateUnmuteVisibility();
+      }
+    }, { once: true });
+
+    unmuteBtn.addEventListener('click', () => {
+      heroVideo.muted = false;
+      heroVideo.removeAttribute('muted');
+      const promise = heroVideo.play();
+      if (promise && typeof promise.then === 'function') {
+        promise.then(() => {
+          updateUnmuteVisibility();
+          localStorage.setItem('tmm_unmute', '1');
+          showToast(t('heroAudioPlaying'));
+        }).catch(() => {
+          heroVideo.muted = true;
+          heroVideo.setAttribute('muted', '');
+          updateUnmuteVisibility();
           showToast(t('heroAudioUnavailable'));
         });
-      });
-    };
-    heroVideo.addEventListener('canplay', () => requestAnimationFrame(tryPlay), { once: true });
+      } else {
+        updateUnmuteVisibility();
+      }
+    });
+
+    heroVideo.addEventListener('volumechange', () => {
+      if (heroVideo.muted) {
+        localStorage.removeItem('tmm_unmute');
+        heroVideo.setAttribute('muted', '');
+      } else {
+        localStorage.setItem('tmm_unmute', '1');
+        heroVideo.removeAttribute('muted');
+      }
+      updateUnmuteVisibility();
+    });
+
+    updateUnmuteVisibility();
 
     const iconPaths = {
       website: 'M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm0 17.25a7.48 7.48 0 0 1-3-.633 21.18 21.18 0 0 0 3.75-4.391 21.18 21.18 0 0 0 3.75 4.39A7.48 7.48 0 0 1 12 19.5zm4.615-1.262a22.648 22.648 0 0 1-3.865-4.58 22.648 22.648 0 0 1-3.865 4.58 7.5 7.5 0 1 1 7.73-12.119 22.64 22.64 0 0 1-7.64-.365 22.64 22.64 0 0 1 7.64.365A7.5 7.5 0 0 1 16.615 18.238z',
