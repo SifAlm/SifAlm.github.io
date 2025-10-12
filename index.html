@@ -67,7 +67,15 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      align-items: center;
       transition: direction var(--transition);
+    }
+    .app-header,
+    nav,
+    main {
+      width: min(1200px, 100%);
+      box-sizing: border-box;
+      margin: 0 auto;
     }
     .app-header {
       padding: 24px clamp(16px, 5vw, 48px) 16px;
@@ -138,6 +146,7 @@
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
+      justify-content: center;
     }
     .nav-link {
       padding: 10px 16px;
@@ -154,13 +163,17 @@
 
     main {
       flex: 1;
-      padding: 0 clamp(16px, 5vw, 48px) 80px;
+      padding: clamp(24px, 5vw, 48px) clamp(16px, 4vw, 48px) 80px;
     }
     .view {
       display: none;
       animation: fadeIn 240ms ease;
     }
-    .view.active { display: block; }
+    .view.active {
+      display: grid;
+      gap: clamp(24px, 4vw, 40px);
+      width: 100%;
+    }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
@@ -172,6 +185,8 @@
       border-radius: var(--radius-lg);
       padding: clamp(20px, 3vw, 32px);
       box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+      display: grid;
+      gap: clamp(16px, 2vw, 24px);
     }
     .card-muted {
       background: var(--surface-dark);
@@ -191,6 +206,14 @@
       gap: 16px;
       margin-bottom: 32px;
       max-width: 960px;
+      width: 100%;
+      justify-self: center;
+    }
+    .intro.card {
+      background: linear-gradient(135deg, rgba(255,255,255,0.82), rgba(232,238,255,0.9));
+    }
+    [data-theme="dark"] .intro.card {
+      background: linear-gradient(135deg, rgba(30,32,52,0.88), rgba(38,40,64,0.88));
     }
 
     .social-carousel {
@@ -213,6 +236,7 @@
       align-items: center;
       justify-content: center;
       padding: 0;
+      box-shadow: inset 0 0 0 1px var(--border), 0 18px 32px rgba(60,70,120,0.18);
     }
     .social-card iframe,
     .social-card blockquote {
@@ -221,12 +245,27 @@
       margin: 0 !important;
     }
     .social-fallback {
+      position: absolute;
+      inset: 0;
       display: grid;
       place-items: center;
       text-align: center;
       padding: 24px;
       color: var(--text);
       gap: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(220,230,255,0.78));
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition);
+      z-index: 2;
+    }
+    [data-theme="dark"] .social-fallback {
+      background: linear-gradient(180deg, rgba(20,22,40,0.92), rgba(32,36,60,0.88));
+      color: var(--text);
+    }
+    .social-card.no-embed .social-fallback {
+      opacity: 1;
+      pointer-events: auto;
     }
     .social-fallback svg { width: 32px; height: 32px; }
 
@@ -234,10 +273,13 @@
       margin-top: 32px;
       display: grid;
       gap: 16px;
-      background: var(--surface);
+      background: linear-gradient(135deg, rgba(255,255,255,0.78), rgba(235,238,255,0.9));
       border-radius: var(--radius-lg);
       padding: clamp(20px, 3vw, 32px);
       box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+    }
+    [data-theme="dark"] .cta-grid {
+      background: linear-gradient(135deg, rgba(34,38,62,0.88), rgba(22,24,40,0.88));
     }
     .cta-buttons {
       display: flex;
@@ -344,6 +386,43 @@
       box-shadow: 0 16px 32px rgba(70,70,120,0.28);
     }
 
+    .status-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      align-items: center;
+    }
+
+    .survey-card form {
+      max-width: 760px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .survey-card form .field-group {
+      background: rgba(255,255,255,0.45);
+      padding: 12px 14px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: inset 0 0 0 1px rgba(120,130,200,0.15);
+      gap: 12px;
+    }
+    [data-theme="dark"] .survey-card form .field-group {
+      background: rgba(28,30,46,0.7);
+      box-shadow: inset 0 0 0 1px rgba(140,150,255,0.2);
+    }
+
+    .survey-card form .field-group .options {
+      background: transparent;
+      padding: 0;
+    }
+
+    .survey-card form .option-item {
+      background: rgba(255,255,255,0.7);
+    }
+    [data-theme="dark"] .survey-card form .option-item {
+      background: rgba(32,34,54,0.85);
+    }
+
     .form-actions {
       display: flex;
       justify-content: flex-end;
@@ -415,7 +494,20 @@
 
     .dashboard-grid {
       display: grid;
-      gap: 24px;
+      gap: clamp(24px, 4vw, 40px);
+    }
+    .results-section {
+      display: grid;
+      gap: 20px;
+    }
+    .dashboard-shell {
+      background: linear-gradient(135deg, rgba(255,255,255,0.86), rgba(236,240,255,0.9));
+    }
+    [data-theme="dark"] .dashboard-shell {
+      background: linear-gradient(135deg, rgba(26,28,46,0.9), rgba(36,38,60,0.9));
+    }
+    .dashboard-shell .dashboard-grid {
+      margin-top: 8px;
     }
     .kpi-grid {
       display: grid;
@@ -433,12 +525,58 @@
     }
     .charts-grid {
       display: grid;
-      gap: 24px;
+      gap: 20px;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     }
-    .open-text {
+    .chart-card {
+      background: rgba(255,255,255,0.6);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: inset 0 0 0 1px var(--border);
       display: grid;
       gap: 12px;
+    }
+    [data-theme="dark"] .chart-card {
+      background: rgba(24,26,40,0.82);
+    }
+    .chart-card h4 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .chart-card canvas {
+      width: 100% !important;
+      height: 220px !important;
+    }
+    .open-grid {
+      display: grid;
+      gap: 16px;
+    }
+    .open-item {
+      background: rgba(255,255,255,0.6);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+    [data-theme="dark"] .open-item {
+      background: rgba(24,26,40,0.82);
+    }
+    .open-item h4 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .open-item-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .open-item-row span {
+      flex: 1 1 220px;
+      line-height: 1.4;
     }
     .pill {
       display: inline-flex;
@@ -454,8 +592,14 @@
       padding: 6px 12px;
       border-radius: 999px;
       border: none;
-      background: rgba(255,255,255,0.6);
+      background: var(--primary-soft);
+      color: var(--primary);
       cursor: pointer;
+      font-weight: 500;
+    }
+    [data-theme="dark"] .copy-btn {
+      background: rgba(98,110,220,0.25);
+      color: var(--text);
     }
 
     table {
@@ -472,6 +616,21 @@
       color: var(--text-muted);
       font-weight: 600;
     }
+    tbody tr {
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    tbody tr:hover {
+      background: rgba(108,122,255,0.08);
+    }
+    [data-theme="dark"] tbody tr:hover {
+      background: rgba(108,122,255,0.18);
+    }
+    .empty-row,
+    .empty-row:hover {
+      cursor: default;
+      background: transparent;
+    }
     [dir="rtl"] th, [dir="rtl"] td {
       text-align: right;
     }
@@ -481,7 +640,7 @@
       border-radius: var(--radius-md);
       box-shadow: inset 0 0 0 1px var(--border);
     }
-
+    
     .search-row {
       display: flex;
       gap: 12px;
@@ -572,7 +731,7 @@
     @media (max-width: 720px) {
       .app-header { padding: 20px 16px 12px; }
       nav { padding: 0 16px 16px; }
-      main { padding: 0 16px 64px; }
+      main { padding: 24px 16px 64px; }
       .intro { gap: 12px; }
       .cta-buttons { flex-direction: column; align-items: stretch; }
       .cta-links { justify-content: center; }
@@ -600,7 +759,7 @@
   <div class="toast-container" id="toast-container" role="status" aria-live="polite"></div>
   <div class="modal-backdrop" id="modal-backdrop" aria-modal="true" role="dialog" hidden>
     <div class="modal" role="document">
-      <div class="modal-close"><button id="modal-close">Close</button></div>
+      <div class="modal-close"><button id="modal-close" data-i18n="close">Close</button></div>
       <div id="modal-content"></div>
     </div>
   </div>
@@ -629,8 +788,8 @@
       navCustomers: 'Customer Survey',
       navPublic: 'Public Survey',
       navResults: 'Results Dashboard',
-      introTitle: 'Why we are listening',
-      introBody: 'Tamam is the UAE\'s super-app for trusted Home, Health, Car, and Lifestyle services. We\'re gathering structured feedback to help investors understand our traction and to shape upcoming product decisions. Your insights guide how we prioritize features, markets, and growth.',
+      introTitle: "Why we're listening",
+      introBody: 'Tamam is the UAE\'s premium super-app for trusted Home, Health, Car, and Lifestyle services. We\'re gathering structured feedback to give investors a crisp view of our traction and to guide the next wave of product enhancements. Your perspective shapes how we prioritize features, markets, and growth.',
       exploreSocials: 'Explore Our Socials',
       socialsFallback: 'Play on Instagram',
       getTamam: 'Get Tamam & Follow Us',
@@ -763,7 +922,10 @@
       exportJSON: 'Export JSON',
       importJSON: 'Import JSON',
       backupReset: 'Backup & Reset',
-      refreshData: 'Refresh Data',
+      refreshData: 'Refresh data',
+      resultsSummary: 'Performance snapshot',
+      resultsCharts: 'Trends & distributions',
+      chartsEmpty: 'Charts will appear once submissions arrive.',
       selectFile: 'Select JSON file…',
       kpiTotal: 'Total responses',
       kpiAvgAOV: 'Avg order value',
@@ -819,8 +981,8 @@
       navCustomers: 'استبيان العملاء',
       navPublic: 'استبيان الجمهور',
       navResults: 'لوحة النتائج',
-      introTitle: 'لماذا نستمع إليكم',
-      introBody: 'تمام هو التطبيق الفائق في الإمارات لحجز خدمات المنزل والصحة والسيارات ونمط الحياة الموثوقة. نجمع الآراء المنظمة لمساعدة المستثمرين على فهم تقدمنا وتوجيه قرارات المنتج القادمة. ملاحظاتكم ترشد أولوياتنا للميزات والأسواق والنمو.',
+      introTitle: 'لماذا نصغي إليكم',
+      introBody: 'تمام هو التطبيق الفائق الموثوق في الإمارات لحجز خدمات المنزل والصحة والسيارات ونمط الحياة. نجمع آراءكم المنظمة لنمنح المستثمرين رؤية واضحة عن نمونا ولنوجّه المرحلة التالية من تطوير المنتج. وجهة نظركم تحدد أولوياتنا للميزات والأسواق والنمو.',
       exploreSocials: 'تعرّف على قنواتنا الاجتماعية',
       socialsFallback: 'مشاهدة على إنستغرام',
       getTamam: 'حمّل تمام وتابعنا',
@@ -948,12 +1110,15 @@
       passwordCustomerTitle: 'دخول العملاء',
       passwordResultsTitle: 'دخول اللوحة',
       timerSeconds: '{seconds} ث',
-      progressValue: '{done}/{total} مجاب',
+      progressValue: 'الإجابات المكتملة {done}/{total}',
       exportExcel: 'تصدير Excel',
       exportJSON: 'تصدير JSON',
       importJSON: 'استيراد JSON',
       backupReset: 'نسخ احتياطي وإعادة ضبط',
       refreshData: 'تحديث البيانات',
+      resultsSummary: 'لمحة عن الأداء',
+      resultsCharts: 'الاتجاهات والتوزيعات',
+      chartsEmpty: 'ستظهر الرسوم البيانية عند وصول الردود.',
       selectFile: 'اختر ملف JSON…',
       kpiTotal: 'إجمالي الردود',
       kpiAvgAOV: 'متوسط قيمة الطلب',
@@ -967,7 +1132,7 @@
       tabVendors: 'الشركاء',
       tabCustomers: 'العملاء',
       tabPublic: 'الجمهور',
-      openResponses: 'إجابات مفتوحة وخيار أخرى',
+      openResponses: 'الإجابات المفتوحة وخيارات "أخرى"',
       tableTitle: 'جميع الردود',
       searchPlaceholder: 'ابحث بالاسم أو البريد أو الهاتف أو الفئة…',
       sortDate: 'ترتيب حسب التاريخ',
@@ -1354,7 +1519,7 @@
   }
   function renderHome(container) {
     const view = document.createElement('section');
-    view.className = 'view active';
+    view.className = 'view active home-view';
 
     const intro = document.createElement('div');
     intro.className = 'intro card';
@@ -1388,9 +1553,13 @@
       const block = document.createElement('blockquote');
       block.className = 'instagram-media';
       block.dataset.instgrmCaptioned = 'false';
+      block.dataset.instgrmPermalink = url;
+      block.dataset.instgrmVersion = '14';
       block.style.background = 'transparent';
       const link = document.createElement('a');
       link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener';
       block.appendChild(link);
       card.appendChild(block);
       const fallback = document.createElement('a');
@@ -1398,6 +1567,7 @@
       fallback.target = '_blank';
       fallback.rel = 'noopener';
       fallback.className = 'social-fallback';
+      fallback.setAttribute('aria-hidden', 'true');
       const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       icon.setAttribute('viewBox', '0 0 24 24');
       icon.setAttribute('fill', 'currentColor');
@@ -1411,6 +1581,20 @@
       fallback.appendChild(icon);
       fallback.appendChild(span);
       card.appendChild(fallback);
+      const observer = new MutationObserver(() => {
+        if (card.querySelector('iframe')) {
+          card.classList.remove('no-embed');
+          fallback.setAttribute('aria-hidden', 'true');
+          observer.disconnect();
+        }
+      });
+      observer.observe(card, { childList: true, subtree: true });
+      setTimeout(() => {
+        if (!card.querySelector('iframe')) {
+          card.classList.add('no-embed');
+          fallback.setAttribute('aria-hidden', 'false');
+        }
+      }, 3500);
       carousel.appendChild(card);
     });
     socialsCard.appendChild(carousel);
@@ -1467,6 +1651,7 @@
     view.appendChild(socialsCard);
     view.appendChild(ctaCard);
 
+    requestAnimationFrame(() => window.instgrm?.Embeds?.process());
     applyI18n(view);
     container.appendChild(view);
   }
@@ -2037,7 +2222,7 @@
     const view = document.createElement('section');
     view.className = 'view active';
     const card = document.createElement('div');
-    card.className = 'card';
+    card.className = 'card survey-card';
     const heading = document.createElement('h2');
     heading.className = 'section-title';
     heading.dataset.i18n = config.titleKey;
@@ -2045,10 +2230,7 @@
     card.appendChild(heading);
 
     const statusRow = document.createElement('div');
-    statusRow.style.display = 'flex';
-    statusRow.style.flexWrap = 'wrap';
-    statusRow.style.gap = '12px';
-    statusRow.style.alignItems = 'center';
+    statusRow.className = 'status-row';
 
     const progressLabel = document.createElement('div');
     progressLabel.className = 'field-description';
@@ -2364,6 +2546,10 @@
     document.documentElement.dataset.theme = state.theme;
     localStorage.setItem(STORAGE_KEYS.theme, state.theme);
     updateThemeToggle();
+    if (state.currentRoute === routes['#/surveys/results'] && state.passwordUnlocked.results) {
+      const view = app.querySelector('.dashboard-grid');
+      if (view) renderResultsTab(view, state.results.tab);
+    }
   });
 
   document.getElementById('lang-toggle').addEventListener('click', () => {
@@ -2722,6 +2908,13 @@
 
   function renderKPIs(kind, records) {
     const kpis = RESULTS_MAP[kind].kpi(records);
+    const section = document.createElement('div');
+    section.className = 'card results-section kpi-section';
+    const title = document.createElement('h3');
+    title.className = 'section-title';
+    title.dataset.i18n = 'resultsSummary';
+    title.textContent = t('resultsSummary');
+    section.appendChild(title);
     const wrapper = document.createElement('div');
     wrapper.className = 'kpi-grid';
     kpis.forEach(item => {
@@ -2739,41 +2932,62 @@
       card.appendChild(value);
       wrapper.appendChild(card);
     });
-    return wrapper;
+    section.appendChild(wrapper);
+    return section;
   }
 
   function renderCharts(kind, records) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'charts-grid';
+    const section = document.createElement('div');
+    section.className = 'card results-section charts-section';
+    const title = document.createElement('h3');
+    title.className = 'section-title';
+    title.dataset.i18n = 'resultsCharts';
+    title.textContent = t('resultsCharts');
+    section.appendChild(title);
+
+    if (state.chartInstances[kind]) {
+      Object.values(state.chartInstances[kind]).forEach(chart => chart?.destroy());
+    }
+    state.chartInstances[kind] = {};
+
     const charts = RESULTS_MAP[kind].charts;
-    state.chartInstances[kind] = state.chartInstances[kind] || {};
+    if (!records.length) {
+      const empty = document.createElement('div');
+      empty.className = 'field-description';
+      empty.dataset.i18n = 'chartsEmpty';
+      empty.textContent = t('chartsEmpty');
+      section.appendChild(empty);
+      return section;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'charts-grid';
+    section.appendChild(grid);
+
+    const textColor = getComputedStyle(document.body).color;
+
     charts.forEach(chartConfig => {
       const card = document.createElement('div');
-      card.className = 'card';
-      const title = document.createElement('h3');
-      title.className = 'section-title';
-      title.dataset.i18n = chartConfig.labelKey;
-      title.textContent = t(chartConfig.labelKey);
-      card.appendChild(title);
+      card.className = 'chart-card';
+      const heading = document.createElement('h4');
+      heading.className = 'field-label';
+      heading.dataset.i18n = chartConfig.labelKey;
+      heading.textContent = t(chartConfig.labelKey);
+      card.appendChild(heading);
       const canvas = document.createElement('canvas');
-      canvas.style.height = '260px';
       card.appendChild(canvas);
-      wrapper.appendChild(card);
+      grid.appendChild(card);
       const ctx = canvas.getContext('2d');
-      if (state.chartInstances[kind][chartConfig.id]) {
-        state.chartInstances[kind][chartConfig.id].destroy();
-        delete state.chartInstances[kind][chartConfig.id];
-      }
-      if (!records.length) return;
+
       const options = {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: { ticks: { color: getComputedStyle(document.body).color } },
-          y: { ticks: { color: getComputedStyle(document.body).color }, beginAtZero: true }
+          x: { ticks: { color: textColor }, grid: { color: 'rgba(120,130,200,0.18)' } },
+          y: { ticks: { color: textColor }, grid: { color: 'rgba(120,130,200,0.12)' }, beginAtZero: true }
         },
         plugins: {
-          legend: { display: chartConfig.type === 'stacked', rtl: state.lang === 'ar', labels: { color: getComputedStyle(document.body).color } },
+          legend: { display: chartConfig.type === 'stacked', rtl: state.lang === 'ar', labels: { color: textColor } },
           tooltip: { rtl: state.lang === 'ar' }
         }
       };
@@ -2799,9 +3013,7 @@
           }]
         };
       }
-      if (state.chartInstances[kind][chartConfig.id]) {
-        state.chartInstances[kind][chartConfig.id].destroy();
-      }
+
       const chart = new Chart(ctx, {
         type: 'bar',
         data,
@@ -2809,46 +3021,49 @@
       });
       state.chartInstances[kind][chartConfig.id] = chart;
     });
-    return wrapper;
+    return section;
   }
 
   function renderOpenResponses(kind, records) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'open-text card';
+    const section = document.createElement('div');
+    section.className = 'card results-section open-section';
     const title = document.createElement('h3');
     title.className = 'section-title';
     title.dataset.i18n = 'openResponses';
     title.textContent = t('openResponses');
-    wrapper.appendChild(title);
+    section.appendChild(title);
     const fields = RESULTS_MAP[kind].openFields;
     if (!records.length) {
       const empty = document.createElement('div');
+      empty.className = 'field-description';
       empty.dataset.i18n = 'resultsEmpty';
       empty.textContent = t('resultsEmpty');
-      wrapper.appendChild(empty);
-      return wrapper;
+      section.appendChild(empty);
+      return section;
     }
+    const grid = document.createElement('div');
+    grid.className = 'open-grid';
+    section.appendChild(grid);
     fields.forEach(field => {
       const list = records.map(r => ({ value: r[field.key], record: r })).filter(item => item.value && String(item.value).trim());
       if (!list.length) return;
       const block = document.createElement('div');
-      block.className = 'card';
-      block.style.background = 'transparent';
-      block.style.boxShadow = 'none';
+      block.className = 'open-item';
       const heading = document.createElement('h4');
-      const label = field.labelKey ? t(field.labelKey) : field.label();
-      heading.textContent = label;
+      if (field.labelKey) {
+        heading.dataset.i18n = field.labelKey;
+        heading.textContent = t(field.labelKey);
+      } else {
+        heading.textContent = field.label();
+      }
       block.appendChild(heading);
       list.forEach(item => {
         const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.justifyContent = 'space-between';
-        row.style.alignItems = 'center';
-        row.style.gap = '12px';
-        const text = document.createElement('div');
+        row.className = 'open-item-row';
+        const text = document.createElement('span');
         text.textContent = item.value;
-        text.style.flex = '1';
         const btn = document.createElement('button');
+        btn.type = 'button';
         btn.className = 'copy-btn';
         btn.dataset.i18n = 'copy';
         btn.textContent = t('copy');
@@ -2857,9 +3072,17 @@
         row.appendChild(btn);
         block.appendChild(row);
       });
-      wrapper.appendChild(block);
+      grid.appendChild(block);
     });
-    return wrapper;
+    if (!grid.children.length) {
+      section.removeChild(grid);
+      const empty = document.createElement('div');
+      empty.className = 'field-description';
+      empty.dataset.i18n = 'resultsEmpty';
+      empty.textContent = t('resultsEmpty');
+      section.appendChild(empty);
+    }
+    return section;
   }
 
   function formatValueForTable(kind, key, value) {
@@ -2879,7 +3102,7 @@
 
   function renderTable(kind, records) {
     const section = document.createElement('div');
-    section.className = 'card';
+    section.className = 'card results-section table-section';
     const header = document.createElement('div');
     header.className = 'section-title';
     header.dataset.i18n = 'tableTitle';
@@ -2947,8 +3170,11 @@
       const rows = applyFilter();
       if (!rows.length) {
         const emptyRow = document.createElement('tr');
+        emptyRow.className = 'empty-row';
         const cell = document.createElement('td');
         cell.colSpan = RESULTS_MAP[kind].columns.length;
+        cell.className = 'field-description';
+        cell.style.textAlign = 'center';
         cell.dataset.i18n = 'resultsEmpty';
         cell.textContent = t('resultsEmpty');
         emptyRow.appendChild(cell);
@@ -3084,7 +3310,7 @@
     const view = document.createElement('section');
     view.className = 'view active';
     const card = document.createElement('div');
-    card.className = 'card';
+    card.className = 'card dashboard-shell';
 
     const controls = document.createElement('div');
     controls.className = 'export-bar';
