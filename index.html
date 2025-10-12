@@ -1182,101 +1182,14 @@
 
   <div class="debug-panel" id="debug-panel"></div>
 
-  <form name="vendor" method="POST" netlify netlify-honeypot="bot-field" class="netlify-form" onsubmit="return submitVendor(event)">
-    <input type="hidden" name="form-name" value="vendor" />
-    <p class="netlify-trap"><label>Do not fill this out <input name="bot-field" /></label></p>
-    <input type="hidden" name="company" />
-    <input type="hidden" name="email" />
-    <input type="hidden" name="phone" />
-    <input type="hidden" name="category" />
-    <input type="hidden" name="aov" />
-    <input type="hidden" name="avg_profit" />
-    <input type="hidden" name="orders_all" />
-    <input type="hidden" name="orders_all_other" />
-    <input type="hidden" name="orders_profitable" />
-    <input type="hidden" name="orders_profitable_other" />
-    <input type="hidden" name="min_orders_to_stay" />
-    <input type="hidden" name="min_orders_to_stay_other" />
-    <input type="hidden" name="accept_5_10k" />
-    <input type="hidden" name="accept_5_10k_other" />
-    <input type="hidden" name="accept_10_20k" />
-    <input type="hidden" name="accept_10_20k_other" />
-    <input type="hidden" name="accept_20k_plus" />
-    <input type="hidden" name="accept_20k_plus_other" />
-    <input type="hidden" name="value_expect" />
-    <input type="hidden" name="value_expect_other" />
-    <input type="hidden" name="leave_reason" />
-    <input type="hidden" name="leave_reason_other" />
-    <input type="hidden" name="recommend" />
-    <input type="hidden" name="recommend_other" />
-    <textarea name="notes"></textarea>
-    <input type="hidden" name="ts" />
-    <input type="hidden" name="seconds" />
-    <input type="hidden" name="lang" />
-  </form>
-
-  <form name="customer" method="POST" netlify netlify-honeypot="bot-field" class="netlify-form" onsubmit="return submitCustomer(event)">
-    <input type="hidden" name="form-name" value="customer" />
-    <p class="netlify-trap"><label>Do not fill this out <input name="bot-field" /></label></p>
-    <input type="hidden" name="name" />
-    <input type="hidden" name="email" />
-    <input type="hidden" name="phone" />
-    <input type="hidden" name="freq" />
-    <input type="hidden" name="freq_other" />
-    <input type="hidden" name="cats" />
-    <input type="hidden" name="cats_other" />
-    <input type="hidden" name="ease" />
-    <input type="hidden" name="nps" />
-    <input type="hidden" name="time_save" />
-    <input type="hidden" name="time_save_other" />
-    <input type="hidden" name="money_save" />
-    <input type="hidden" name="money_save_other" />
-    <textarea name="wants_services"></textarea>
-    <input type="hidden" name="more" />
-    <input type="hidden" name="more_other" />
-    <textarea name="notes"></textarea>
-    <input type="hidden" name="ts" />
-    <input type="hidden" name="seconds" />
-    <input type="hidden" name="lang" />
-  </form>
-
-  <form name="public" method="POST" netlify netlify-honeypot="bot-field" class="netlify-form" onsubmit="return submitPublic(event)">
-    <input type="hidden" name="form-name" value="public" />
-    <p class="netlify-trap"><label>Do not fill this out <input name="bot-field" /></label></p>
-    <input type="hidden" name="name" />
-    <input type="hidden" name="email" />
-    <input type="hidden" name="phone" />
-    <input type="hidden" name="booked_before" />
-    <input type="hidden" name="platforms" />
-    <input type="hidden" name="platforms_other" />
-    <input type="hidden" name="barrier" />
-    <input type="hidden" name="barrier_other" />
-    <input type="hidden" name="top_factor" />
-    <input type="hidden" name="top_factor_other" />
-    <input type="hidden" name="first_cat" />
-    <input type="hidden" name="first_cat_other" />
-    <input type="hidden" name="premium" />
-    <input type="hidden" name="premium_other" />
-    <textarea name="why_tamam"></textarea>
-    <input type="hidden" name="ts" />
-    <input type="hidden" name="seconds" />
-    <input type="hidden" name="lang" />
-  </form>
-
   <script>
-  window.TAMAM_BACKEND = window.TAMAM_BACKEND || 'netlify';
-  window.TAMAM_HOSTINGER_ENDPOINT = window.TAMAM_HOSTINGER_ENDPOINT || '';
-  window.TAMAM_HOSTINGER_EXPORT = window.TAMAM_HOSTINGER_EXPORT || '';
-  window.submitVendor = (event) => { event?.preventDefault?.(); return false; };
-  window.submitCustomer = (event) => { event?.preventDefault?.(); return false; };
-  window.submitPublic = (event) => { event?.preventDefault?.(); return false; };
+  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwh9f5f1-Md6JNkwKw-wicyHW1SD08rwWoJR6RlsoFQ1lxEhtSR4UTcIG9cnWogHDvz/exec';
   const DEBUG = false;
   const logDebug = (...args) => { if (DEBUG) console.log('[Tamam]', ...args); };
 
-  const DEFAULT_BACKEND = (window.TAMAM_BACKEND || 'netlify').toLowerCase();
-  const DEFAULT_HOSTINGER = {
-    submit: window.TAMAM_HOSTINGER_ENDPOINT || '',
-    exportUrl: window.TAMAM_HOSTINGER_EXPORT || ''
+  const REMOTE_ENDPOINTS = {
+    submit: GOOGLE_APPS_SCRIPT_URL,
+    exportUrl: `${GOOGLE_APPS_SCRIPT_URL}?mode=list`
   };
 
   const NAV_ITEMS = [
@@ -1286,52 +1199,11 @@
     { hash: '#/surveys/public', key: 'navPublic' },
     { hash: '#/surveys/results', key: 'navResults' }
   ];
-  const NETLIFY_FORM_NAMES = {
-    vendor: 'vendor',
-    customer: 'customer',
-    public: 'public'
-  };
-
   const REMOTE_MULTI_FIELDS = {
     vendor: ['value_expect'],
     customer: ['cats', 'more'],
     public: ['platforms']
   };
-
-  function loadRemoteConfig() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.remoteConfig);
-      const parsed = raw ? JSON.parse(raw) : {};
-      const backend = (parsed.backend || DEFAULT_BACKEND || 'netlify').toLowerCase();
-      return {
-        backend,
-        netlify: {
-          siteId: parsed?.netlify?.siteId || parsed?.siteId || '',
-          token: parsed?.netlify?.token || parsed?.token || ''
-        },
-        hostinger: {
-          submit: parsed?.hostinger?.submit || DEFAULT_HOSTINGER.submit || '',
-          exportUrl: parsed?.hostinger?.exportUrl || DEFAULT_HOSTINGER.exportUrl || ''
-        }
-      };
-    } catch (e) {
-      logDebug('Remote config parse failed', e);
-      return {
-        backend: DEFAULT_BACKEND,
-        netlify: { siteId: '', token: '' },
-        hostinger: { ...DEFAULT_HOSTINGER }
-      };
-    }
-  }
-
-  function saveRemoteConfig(config) {
-    const payload = {
-      backend: config.backend,
-      netlify: { ...config.netlify },
-      hostinger: { ...config.hostinger }
-    };
-    localStorage.setItem(STORAGE_KEYS.remoteConfig, JSON.stringify(payload));
-  }
 
   const I18N = {
     en: {
@@ -1343,8 +1215,8 @@
       navResults: 'Results Dashboard',
       introTitle: "Why we're collecting data",
       introBody: 'To better understand how vendors, customers, and the public perceive Tamam\'s commission and subscription models, and to improve fairness and affordability for all.',
-      heroTitle: 'Meet Tamam.',
-      heroSub: 'Services on demand across Home, Health, Car, and Lifestyle.',
+      heroTitle: 'Meet Tamam',
+      heroSub: 'A super-app connecting users to trusted Home, Car, Health, and Lifestyle services across the UAE.',
       heroUnmute: 'Tap to unmute',
       heroAudioHint: 'Video is playing muted. Tap to enable sound.',
       heroAudioPlaying: 'Sound on. Enjoy the full experience.',
@@ -1483,7 +1355,7 @@
       exportJSON: 'Export JSON',
       importJSON: 'Import JSON',
       backupReset: 'Backup & Reset',
-      confirmReset: 'Export a backup and clear this device?',
+      confirmReset: 'Export a backup and clear all responses globally?',
       refreshData: 'Refresh data',
       connectNetlify: 'Connect Netlify',
       remoteConfigTitle: 'Remote data sync',
@@ -1505,11 +1377,11 @@
       syncComplete: 'Remote responses synced.',
       syncFailed: 'Unable to sync remote data.',
       remoteStatusSyncing: 'Syncing remote data…',
-      remoteStatusIdle: 'Connect Netlify to view live results.',
+      remoteStatusIdle: 'Standby — awaiting secure data sync.',
       hostingerStatusIdle: 'Add Hostinger endpoints to view live results.',
       remoteStatusPending: '{count} submission(s) waiting to sync.',
       remoteStatusSynced: 'Remote sync: {time}',
-      remoteStatusReady: 'Remote sync ready.',
+      remoteStatusReady: 'Cloud sync ready.',
       remoteConnectPrompt: 'Connect Netlify to view live results.',
       hostingerConnectPrompt: 'Add Hostinger endpoints to sync results.',
       openHostingerConfig: 'Configure Hostinger',
@@ -1543,7 +1415,7 @@
       clearData: 'Clear Local Data',
       dumpData: 'Dump DB',
       importSuccess: 'Data imported.',
-      resetDone: 'Database cleared.',
+      resetDone: 'Portal data cleared.',
       exportReady: 'Download started.',
       invalidFile: 'Invalid file.',
       passwordPromptVendor: 'Enter the vendor survey password to continue.',
@@ -1552,7 +1424,7 @@
       durationLabel: 'Duration',
       timestampLabel: 'Submitted at',
       instagramAlt: 'Instagram icon',
-      legalNotice: 'All responses are confidential. Data collected through this portal will be used strictly for research and improvement purposes and will never be shared with third parties.',
+      legalNotice: 'All responses are confidential. Data collected through this portal will be used strictly for Tamam research and improvement purposes and will never be shared or sold to third parties.',
       '0': '0',
       '1': '1',
       '2': '2',
@@ -1574,8 +1446,8 @@
       navResults: 'لوحة النتائج',
       introTitle: 'لماذا نجمع البيانات',
       introBody: 'لفهم أفضل لكيفية رؤية الشركاء والعملاء والجمهور لعمولات تمام ورسوم الاشتراك، ولتحسين العدالة وتكلفة الخدمة للجميع.',
-      heroTitle: 'تعرّف على تمام.',
-      heroSub: 'خدمات عند الطلب للمنزل والسيارة والصحة ونمط الحياة.',
+      heroTitle: 'تعرّف على تمام',
+      heroSub: 'تطبيق شامل يربطك بخدمات المنزل والسيارة والصحة ونمط الحياة الموثوقة في الإمارات.',
       heroUnmute: 'اضغط لتفعيل الصوت',
       heroAudioHint: 'يتم تشغيل الفيديو دون صوت. اضغط لتفعيل الصوت.',
       heroAudioPlaying: 'تم تشغيل الصوت. استمتع بالتجربة.',
@@ -1714,7 +1586,7 @@
       exportJSON: 'تصدير JSON',
       importJSON: 'استيراد JSON',
       backupReset: 'نسخ احتياطي وإعادة ضبط',
-      confirmReset: 'هل تريد حفظ نسخة احتياطية ثم مسح بيانات هذا الجهاز؟',
+      confirmReset: 'هل تريد حفظ نسخة احتياطية ثم مسح جميع الردود على مستوى النظام؟',
       refreshData: 'تحديث البيانات',
       connectNetlify: 'ربط Netlify',
       remoteConfigTitle: 'مزامنة البيانات عن بُعد',
@@ -1736,11 +1608,11 @@
       syncComplete: 'تمت مزامنة الردود البعيدة.',
       syncFailed: 'تعذر مزامنة البيانات البعيدة.',
       remoteStatusSyncing: 'جاري مزامنة البيانات البعيدة…',
-      remoteStatusIdle: 'اربط نتليفاي للاطلاع على النتائج المباشرة.',
+      remoteStatusIdle: 'في وضع الاستعداد بانتظار مزامنة البيانات.',
       hostingerStatusIdle: 'أضف روابط Hostinger للاطلاع على النتائج المباشرة.',
       remoteStatusPending: 'هناك {count} ردود تنتظر المزامنة.',
       remoteStatusSynced: 'آخر مزامنة: {time}',
-      remoteStatusReady: 'المزامنة جاهزة.',
+      remoteStatusReady: 'المزامنة السحابية جاهزة.',
       remoteConnectPrompt: 'اربط نتليفاي للاطلاع على النتائج المباشرة.',
       hostingerConnectPrompt: 'أضف روابط Hostinger لمزامنة النتائج.',
       openHostingerConfig: 'إعداد Hostinger',
@@ -1774,7 +1646,7 @@
       clearData: 'مسح البيانات المحلية',
       dumpData: 'عرض قاعدة البيانات',
       importSuccess: 'تم استيراد البيانات.',
-      resetDone: 'تم مسح القاعدة.',
+      resetDone: 'تم مسح بيانات البوابة.',
       exportReady: 'تم بدء التنزيل.',
       invalidFile: 'ملف غير صالح.',
       passwordPromptVendor: 'أدخل كلمة مرور استبيان الشركاء للمتابعة.',
@@ -1783,7 +1655,7 @@
       durationLabel: 'المدة',
       timestampLabel: 'وقت الإرسال',
       instagramAlt: 'أيقونة إنستغرام',
-      legalNotice: 'جميع الردود سرّية. سيتم استخدام البيانات التي تُجمع عبر هذه البوابة لأغراض البحث والتحسين فقط، ولن تتم مشاركتها مع أي أطراف ثالثة.',
+      legalNotice: 'جميع الردود سرّية. سيتم استخدام البيانات التي تُجمع عبر هذه البوابة لأغراض أبحاث وتحسين تمام فقط، ولن تُشارك أو تُباع لأي طرف ثالث.',
       '0': '٠',
       '1': '١',
       '2': '٢',
@@ -1819,8 +1691,6 @@
     },
     theme: 'tmm_theme',
     lang: 'tmm_lang',
-    remoteConfig: 'tamam_remote_config',
-    outbox: 'tmm_outbox'
   };
 
   const defaultDB = () => ({ vendor: [], customer: [], public: [] });
@@ -1840,28 +1710,6 @@
     localStorage.setItem(STORAGE_KEYS.db, JSON.stringify(db));
   }
 
-  function getOutbox() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.outbox);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-      logDebug('Outbox parse failed', e);
-      return [];
-    }
-  }
-
-  function saveOutbox(list) {
-    if (!Array.isArray(list) || !list.length) {
-      localStorage.removeItem(STORAGE_KEYS.outbox);
-    } else {
-      localStorage.setItem(STORAGE_KEYS.outbox, JSON.stringify(list));
-    }
-  }
-
-  const remoteConfig = loadRemoteConfig();
-
   const state = {
     lang: localStorage.getItem(STORAGE_KEYS.lang) || 'en',
     theme: localStorage.getItem(STORAGE_KEYS.theme) || 'light',
@@ -1878,22 +1726,15 @@
     passwordUnlocked: {},
     results: { tab: 'vendor' },
     remote: {
-      backend: remoteConfig.backend,
-      netlify: remoteConfig.netlify,
-      hostinger: remoteConfig.hostinger,
       records: { vendor: [], customer: [], public: [] },
       lastSync: null,
       syncing: false,
       syncError: null,
       statusEl: null,
-      syncInterval: null,
-      outboxPending: 0,
-      bannerHost: null,
-      bannerEl: null
-    }
+      syncInterval: null
+    },
+    home: null
   };
-
-  state.remote.outboxPending = getOutbox().length;
 
   document.documentElement.setAttribute('lang', state.lang === 'ar' ? 'ar' : 'en');
   document.getElementById('app-shell').setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
@@ -2081,88 +1922,30 @@
     document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind } }));
   }
 
-  function recordSubmission(kind, data) {
-    const baseRecord = { ...data };
-    const localRecord = { ...baseRecord, origin: 'local' };
-    mergeAndPersist(kind, [localRecord]);
-    logDebug('Submit', kind, localRecord);
-    showToast(t('submitted'));
-    sendToBackend(kind, baseRecord, state.lang).then(() => {
-      const syncedRecord = { ...baseRecord, origin: 'remote' };
-      mergeAndPersist(kind, [syncedRecord]);
-      state.remote.outboxPending = getOutbox().length;
+  async function recordSubmission(kind, data) {
+    const normalized = normalizeRecordForStorage(kind, data);
+    if (!normalized) return;
+    normalized.origin = 'remote';
+    try {
+      await postToRemote(kind, normalized);
+      mergeAndPersist(kind, [normalized]);
+      state.remote.lastSync = new Date().toISOString();
+      state.remote.syncError = null;
       updateRemoteStatus();
       showToast(t('submittedSynced'));
-      if (activeBackend() === 'netlify' && state.remote.netlify.siteId && state.remote.netlify.token) {
-        syncNetlify(false);
-      }
-    }).catch(error => {
-      logDebug('Remote sync failed', kind, error);
-      queueOutbox(kind, baseRecord, state.lang);
-      state.remote.outboxPending = getOutbox().length;
+      await fetchRemoteSnapshot(false);
+    } catch (error) {
+      state.remote.syncError = error;
       updateRemoteStatus();
-      showToast(t('submittedOffline'));
-    });
-  }
-
-  function toBackendValue(value) {
-    if (Array.isArray(value)) return value.join(', ');
-    if (value === undefined || value === null) return '';
-    if (typeof value === 'object') return JSON.stringify(value);
-    return String(value);
-  }
-  function queueOutbox(kind, record, lang, backendOverride) {
-    const normalized = normalizeRecordForStorage(kind, record);
-    if (!normalized) return;
-    const entry = {
-      signature: recordSignature(kind, normalized),
-      kind,
-      record: normalized,
-      lang: lang || state.lang,
-      backend: (backendOverride || activeBackend() || 'netlify'),
-      created: new Date().toISOString(),
-      retries: 0
-    };
-    const outbox = getOutbox();
-    if (!outbox.some(item => item.signature === entry.signature)) {
-      outbox.push(entry);
-      saveOutbox(outbox);
-    }
-    state.remote.outboxPending = outbox.length;
-  }
-
-  function encodeFormBody(kind, record, lang) {
-    const formName = NETLIFY_FORM_NAMES[kind];
-    if (!formName) throw new Error('Missing form name');
-    const payload = new URLSearchParams();
-    payload.append('form-name', formName);
-    payload.append('bot-field', '');
-    payload.append('lang', lang || state.lang);
-    SURVEY_CONFIGS[kind].recordFields.forEach(key => {
-      payload.append(key, toBackendValue(record[key]));
-    });
-    return payload.toString();
-  }
-
-  async function postToNetlify(kind, record, lang) {
-    const body = encodeFormBody(kind, record, lang);
-    const response = await fetch('/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
-      credentials: 'omit'
-    });
-    if (!response.ok) {
-      throw new Error(`Netlify post failed: ${response.status}`);
+      logDebug('Remote submit failed', kind, error);
+      throw error;
     }
   }
 
-  async function postToHostinger(kind, record, lang) {
-    const endpoint = state.remote.hostinger.submit || DEFAULT_HOSTINGER.submit;
-    if (!endpoint) throw new Error('Hostinger endpoint missing');
+  async function postToRemote(kind, record) {
     const payload = {
       kind,
-      lang: lang || state.lang,
+      lang: state.lang,
       ts: record.ts,
       seconds: record.seconds,
       data: {}
@@ -2171,54 +1954,63 @@
       const value = record[key];
       payload.data[key] = Array.isArray(value) ? [...value] : (value ?? '');
     });
-    const response = await fetch(endpoint, {
+    const response = await fetch(REMOTE_ENDPOINTS.submit, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
       credentials: 'omit'
     });
     if (!response.ok) {
-      throw new Error(`Hostinger post failed: ${response.status}`);
+      throw new Error(`Remote post failed: ${response.status}`);
     }
+    let json = null;
+    try {
+      json = await response.json();
+    } catch (e) {
+      logDebug('Remote response parse skipped', e);
+    }
+    if (json && json.vendor && json.customer && json.public) {
+      applyRemoteSnapshot(json);
+    }
+    return json;
   }
 
-  function activeBackend() {
-    return (state.remote.backend || DEFAULT_BACKEND || 'netlify').toLowerCase();
-  }
-
-  function sendToBackend(kind, record, lang, backendOverride) {
-    const backend = (backendOverride || activeBackend()).toLowerCase();
-    if (backend === 'hostinger') {
-      return postToHostinger(kind, record, lang);
-    }
-    return postToNetlify(kind, record, lang);
-  }
-
-  async function flushOutbox(manual = false) {
-    const entries = getOutbox();
-    if (!entries.length) {
-      state.remote.outboxPending = 0;
-      updateRemoteStatus();
-      return true;
-    }
-    let success = 0;
-    const remaining = [];
-    for (const entry of entries) {
-      try {
-        await sendToBackend(entry.kind, entry.record, entry.lang || state.lang, entry.backend);
-        success++;
-      } catch (error) {
-        entry.retries = (entry.retries || 0) + 1;
-        entry.error = error.message;
-        remaining.push(entry);
-        logDebug('Outbox retry failed', entry, error);
-      }
-    }
-    saveOutbox(remaining);
-    state.remote.outboxPending = remaining.length;
+  async function fetchRemoteSnapshot(manual = false) {
+    state.remote.syncing = true;
     updateRemoteStatus();
-    if (manual && remaining.length) showToast(t('submittedOffline'));
-    return remaining.length === 0;
+    if (manual) showToast(t('syncingRemote'));
+    try {
+      const response = await fetch(REMOTE_ENDPOINTS.exportUrl, { cache: 'no-store', credentials: 'omit' });
+      if (!response.ok) throw new Error(`Remote fetch failed: ${response.status}`);
+      const snapshot = await response.json();
+      applyRemoteSnapshot(snapshot);
+      state.remote.lastSync = new Date().toISOString();
+      state.remote.syncError = null;
+      if (manual) showToast(t('syncComplete'));
+    } catch (error) {
+      state.remote.syncError = error;
+      logDebug('Remote fetch failed', error);
+      if (manual) showToast(t('syncFailed'));
+    } finally {
+      state.remote.syncing = false;
+      updateRemoteStatus();
+    }
+  }
+
+  function applyRemoteSnapshot(snapshot) {
+    if (!snapshot) return;
+    const vendorRecords = (snapshot.vendor || []).map(entry => normalizeRemoteEntry('vendor', entry)).filter(Boolean);
+    const customerRecords = (snapshot.customer || []).map(entry => normalizeRemoteEntry('customer', entry)).filter(Boolean);
+    const publicRecords = (snapshot.public || []).map(entry => normalizeRemoteEntry('public', entry)).filter(Boolean);
+    state.remote.records = {
+      vendor: vendorRecords,
+      customer: customerRecords,
+      public: publicRecords
+    };
+    saveDB(defaultDB());
+    mergeAndPersist('vendor', vendorRecords);
+    mergeAndPersist('customer', customerRecords);
+    mergeAndPersist('public', publicRecords);
   }
 
   function createInput(name, type = 'text', attrs = {}) {
@@ -2340,63 +2132,89 @@
 
   function createPasswordGate(titleKey, promptKey, correct) {
     const wrapper = document.createElement('div');
-    wrapper.className = 'card password-gate';
+    wrapper.className = 'card password-gate section-fade';
+
     const heading = document.createElement('h2');
     heading.className = 'section-title';
     heading.dataset.i18n = titleKey;
     heading.textContent = t(titleKey);
+
     const paragraph = document.createElement('p');
+    paragraph.className = 'field-description';
     paragraph.dataset.i18n = promptKey;
     paragraph.textContent = t(promptKey);
+
     const form = document.createElement('form');
-    form.addEventListener('submit', e => {
-      e.preventDefault();
-      const value = input.value.trim();
-      if (value === correct) {
-        wrapper.dispatchEvent(new CustomEvent('password-ok', { bubbles: true }));
-        logDebug('Password ok', titleKey);
-      } else {
-        showToast(t('invalidPassword'));
-        logDebug('Password fail', titleKey, value);
-      }
-    });
-    const input = createInput('password');
+    form.noValidate = true;
+
+    const field = document.createElement('div');
+    field.className = 'field';
+    field.dataset.required = 'true';
+
+    const label = document.createElement('label');
+    label.dataset.i18n = 'passwordPrompt';
+    label.textContent = t('passwordPrompt');
+
+    const input = document.createElement('input');
     input.type = 'password';
-    input.placeholder = t('passwordPrompt');
-    input.dataset.i18nPlaceholder = 'passwordPrompt';
     input.required = true;
+    input.className = 'field-input';
+    input.autocomplete = 'current-password';
+
+    label.appendChild(input);
+    field.appendChild(label);
+
+    const actions = document.createElement('div');
+    actions.className = 'form-actions';
+
     const submit = document.createElement('button');
     submit.type = 'submit';
     submit.className = 'btn btn-primary';
     submit.dataset.i18n = 'submitPassword';
     submit.textContent = t('submitPassword');
-    form.appendChild(input);
-    form.appendChild(submit);
+    actions.appendChild(submit);
+
+    form.appendChild(field);
+    form.appendChild(actions);
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const value = input.value.trim();
+      if (value === correct) {
+        wrapper.dispatchEvent(new CustomEvent('password-ok', { bubbles: true }));
+      } else {
+        showToast(t('invalidPassword'));
+        input.value = '';
+        input.focus();
+      }
+    });
+
+    setTimeout(() => input.focus(), 50);
+
     wrapper.appendChild(heading);
     wrapper.appendChild(paragraph);
     wrapper.appendChild(form);
-    setTimeout(() => input.focus(), 50);
     return wrapper;
   }
+
   function renderHome(container) {
     const view = document.createElement('section');
-    view.className = 'view active home-view';
+    view.className = 'view active overview';
 
     const intro = document.createElement('div');
-    intro.className = 'intro card section-fade';
-    const title = document.createElement('h2');
-    title.className = 'section-title';
-    title.dataset.i18n = 'introTitle';
-    title.textContent = t('introTitle');
-    const body = document.createElement('p');
-    body.className = 'section-subtitle';
-    body.dataset.i18n = 'introBody';
-    body.textContent = t('introBody');
-    intro.appendChild(title);
-    intro.appendChild(body);
+    intro.className = 'card intro section-fade';
+    const introTitle = document.createElement('h2');
+    introTitle.className = 'section-title';
+    introTitle.dataset.i18n = 'introTitle';
+    introTitle.textContent = t('introTitle');
+    const introBody = document.createElement('p');
+    introBody.className = 'section-subtitle';
+    introBody.dataset.i18n = 'introBody';
+    introBody.textContent = t('introBody');
+    intro.appendChild(introTitle);
+    intro.appendChild(introBody);
 
     const hero = document.createElement('section');
-    hero.id = 'meet-tamam';
     hero.className = 'hero-immersive section-fade';
 
     const heroBg = document.createElement('div');
@@ -2405,7 +2223,7 @@
 
     const heroOverlay = document.createElement('div');
     heroOverlay.className = 'hero-overlay';
-    const heroTitle = document.createElement('h2');
+    const heroTitle = document.createElement('h3');
     heroTitle.className = 'hero-title';
     heroTitle.dataset.i18n = 'heroTitle';
     heroTitle.textContent = t('heroTitle');
@@ -2413,125 +2231,35 @@
     heroSub.className = 'hero-sub';
     heroSub.dataset.i18n = 'heroSub';
     heroSub.textContent = t('heroSub');
+    const heroHint = document.createElement('span');
+    heroHint.className = 'field-description';
+    heroHint.dataset.i18n = 'heroAudioHint';
+    heroHint.textContent = t('heroAudioHint');
     heroOverlay.appendChild(heroTitle);
     heroOverlay.appendChild(heroSub);
+    heroOverlay.appendChild(heroHint);
 
-    const videoWrap = document.createElement('div');
-    videoWrap.className = 'hero-video-wrap';
+    const heroVideoWrap = document.createElement('div');
+    heroVideoWrap.className = 'hero-video-wrap';
     const heroVideo = document.createElement('video');
-    heroVideo.id = 'hero-video';
-    heroVideo.autoplay = true;
-    heroVideo.loop = true;
-    heroVideo.muted = true;
-    heroVideo.controls = false;
-    heroVideo.playsInline = true;
-    heroVideo.preload = 'auto';
     heroVideo.setAttribute('playsinline', '');
-    heroVideo.setAttribute('muted', '');
-    heroVideo.setAttribute('aria-hidden', 'true');
-    const source = document.createElement('source');
-    source.src = 'https://drive.google.com/uc?export=download&id=1HhoecxoyeZM1_y3xly0B1dipK7bqQJKP';
-    source.type = 'video/mp4';
-    heroVideo.appendChild(source);
-    videoWrap.appendChild(heroVideo);
+    heroVideo.setAttribute('autoplay', '');
+    heroVideo.setAttribute('loop', '');
+    heroVideo.setAttribute('preload', 'auto');
+    heroVideo.src = 'High%20Quilty%20Animation.mp4';
+    heroVideo.className = 'hero-video';
 
     const unmuteBtn = document.createElement('button');
     unmuteBtn.type = 'button';
     unmuteBtn.className = 'hero-unmute';
     unmuteBtn.dataset.i18n = 'heroUnmute';
     unmuteBtn.textContent = t('heroUnmute');
-    videoWrap.appendChild(unmuteBtn);
+
+    heroVideoWrap.appendChild(heroVideo);
+    heroVideoWrap.appendChild(unmuteBtn);
 
     hero.appendChild(heroOverlay);
-    hero.appendChild(videoWrap);
-
-    const storedPref = localStorage.getItem('tmm_unmute') === '1';
-    if (storedPref) {
-      heroVideo.muted = false;
-      heroVideo.removeAttribute('muted');
-    }
-
-    let hintShown = false;
-    const updateUnmuteVisibility = () => {
-      unmuteBtn.hidden = !heroVideo.muted;
-    };
-
-    const playMutedFallback = () => {
-      heroVideo.muted = true;
-      heroVideo.setAttribute('muted', '');
-      const attempt = heroVideo.play();
-      if (attempt && typeof attempt.then === 'function') {
-        attempt.then(() => {
-          updateUnmuteVisibility();
-          if (!hintShown) {
-            hintShown = true;
-            showToast(t('heroAudioHint'));
-          }
-        }).catch(() => {
-          updateUnmuteVisibility();
-        });
-      } else {
-        updateUnmuteVisibility();
-      }
-    };
-
-    heroVideo.addEventListener('canplay', () => {
-      const desiredSound = storedPref;
-      if (desiredSound) {
-        heroVideo.muted = false;
-        heroVideo.removeAttribute('muted');
-      }
-      const promise = heroVideo.play();
-      if (promise && typeof promise.then === 'function') {
-        promise.then(() => {
-          updateUnmuteVisibility();
-          if (!desiredSound && !hintShown) {
-            hintShown = true;
-            showToast(t('heroAudioHint'));
-          }
-        }).catch(() => {
-          if (desiredSound) {
-            showToast(t('heroAudioUnavailable'));
-          }
-          playMutedFallback();
-        });
-      } else {
-        updateUnmuteVisibility();
-      }
-    }, { once: true });
-
-    unmuteBtn.addEventListener('click', () => {
-      heroVideo.muted = false;
-      heroVideo.removeAttribute('muted');
-      const promise = heroVideo.play();
-      if (promise && typeof promise.then === 'function') {
-        promise.then(() => {
-          updateUnmuteVisibility();
-          localStorage.setItem('tmm_unmute', '1');
-          showToast(t('heroAudioPlaying'));
-        }).catch(() => {
-          heroVideo.muted = true;
-          heroVideo.setAttribute('muted', '');
-          updateUnmuteVisibility();
-          showToast(t('heroAudioUnavailable'));
-        });
-      } else {
-        updateUnmuteVisibility();
-      }
-    });
-
-    heroVideo.addEventListener('volumechange', () => {
-      if (heroVideo.muted) {
-        localStorage.removeItem('tmm_unmute');
-        heroVideo.setAttribute('muted', '');
-      } else {
-        localStorage.setItem('tmm_unmute', '1');
-        heroVideo.removeAttribute('muted');
-      }
-      updateUnmuteVisibility();
-    });
-
-    updateUnmuteVisibility();
+    hero.appendChild(heroVideoWrap);
 
     const iconPaths = {
       website: 'M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm0 17.25a7.48 7.48 0 0 1-3-.633 21.18 21.18 0 0 0 3.75-4.391 21.18 21.18 0 0 0 3.75 4.39A7.48 7.48 0 0 1 12 19.5zm4.615-1.262a22.648 22.648 0 0 1-3.865-4.58 22.648 22.648 0 0 1-3.865 4.58 7.5 7.5 0 1 1 7.73-12.119 22.64 22.64 0 0 1-7.64-.365 22.64 22.64 0 0 1 7.64.365A7.5 7.5 0 0 1 16.615 18.238z',
@@ -2561,8 +2289,6 @@
     ctaTitle.className = 'section-title';
     ctaTitle.dataset.i18n = 'getTamam';
     ctaTitle.textContent = t('getTamam');
-    ctaCard.appendChild(ctaTitle);
-
     const ctaContent = document.createElement('div');
     ctaContent.className = 'cta-content';
 
@@ -2572,8 +2298,6 @@
     downloadLabel.className = 'field-description';
     downloadLabel.dataset.i18n = 'ctaDownload';
     downloadLabel.textContent = t('ctaDownload');
-    downloadStack.appendChild(downloadLabel);
-
     const btnRow = document.createElement('div');
     btnRow.className = 'cta-buttons';
     const appStore = document.createElement('a');
@@ -2584,7 +2308,6 @@
     appImg.className = 'store-badge';
     appImg.src = 'https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg';
     appImg.alt = 'Download on the App Store';
-    appStore.appendChild(appImg);
     const play = document.createElement('a');
     play.href = 'https://play.google.com/store/apps/details?id=com.tamam.customer&pcampaignid=web_share';
     play.target = '_blank';
@@ -2593,9 +2316,11 @@
     playImg.className = 'store-badge';
     playImg.src = 'https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg';
     playImg.alt = 'Get it on Google Play';
+    appStore.appendChild(appImg);
     play.appendChild(playImg);
     btnRow.appendChild(appStore);
     btnRow.appendChild(play);
+    downloadStack.appendChild(downloadLabel);
     downloadStack.appendChild(btnRow);
 
     const followStack = document.createElement('div');
@@ -2604,8 +2329,6 @@
     followLabel.className = 'field-description';
     followLabel.dataset.i18n = 'ctaFollow';
     followLabel.textContent = t('ctaFollow');
-    followStack.appendChild(followLabel);
-
     const linkRow = document.createElement('div');
     linkRow.className = 'cta-links';
     linkData.forEach(l => {
@@ -2621,10 +2344,12 @@
       a.appendChild(span);
       linkRow.appendChild(a);
     });
+    followStack.appendChild(followLabel);
     followStack.appendChild(linkRow);
 
     ctaContent.appendChild(downloadStack);
     ctaContent.appendChild(followStack);
+    ctaCard.appendChild(ctaTitle);
     ctaCard.appendChild(ctaContent);
 
     const legal = document.createElement('footer');
@@ -2637,8 +2362,93 @@
     view.appendChild(ctaCard);
     view.appendChild(legal);
 
+    const updateUnmuteVisibility = () => {
+      const show = heroVideo.muted;
+      unmuteBtn.hidden = !show;
+      unmuteBtn.setAttribute('aria-hidden', String(!show));
+    };
+
+    const attemptPlay = (withSound) => {
+      if (withSound) {
+        heroVideo.muted = false;
+        heroVideo.removeAttribute('muted');
+      } else {
+        heroVideo.muted = true;
+        heroVideo.setAttribute('muted', '');
+      }
+      return heroVideo.play().catch(err => {
+        if (withSound) {
+          logDebug('Autoplay with sound blocked', err);
+          heroVideo.muted = true;
+          heroVideo.setAttribute('muted', '');
+          updateUnmuteVisibility();
+          localStorage.setItem('tmm_unmute', '0');
+          heroVideo.play().catch(() => {});
+        }
+        return Promise.reject(err);
+      });
+    };
+
+    const savedPref = localStorage.getItem('tmm_unmute');
+    const wantsSound = savedPref === '0' ? false : true;
+    updateUnmuteVisibility();
+    requestAnimationFrame(() => {
+      attemptPlay(wantsSound).catch(() => {});
+      updateUnmuteVisibility();
+    });
+
+    heroVideo.addEventListener('loadeddata', () => {
+      if (heroVideo.paused) {
+        attemptPlay(!heroVideo.muted).catch(() => {});
+      }
+    });
+
+    heroVideo.addEventListener('volumechange', () => {
+      if (heroVideo.muted) {
+        localStorage.setItem('tmm_unmute', '0');
+      } else {
+        localStorage.setItem('tmm_unmute', '1');
+      }
+      updateUnmuteVisibility();
+    });
+
+    unmuteBtn.addEventListener('click', () => {
+      heroVideo.muted = false;
+      heroVideo.removeAttribute('muted');
+      heroVideo.play().then(() => {
+        localStorage.setItem('tmm_unmute', '1');
+        showToast(t('heroAudioPlaying'));
+        updateUnmuteVisibility();
+      }).catch(err => {
+        logDebug('Unmute blocked', err);
+        heroVideo.muted = true;
+        heroVideo.setAttribute('muted', '');
+        showToast(t('heroAudioUnavailable'));
+        updateUnmuteVisibility();
+      });
+    });
+
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleMotion = () => {
+      heroBg.style.animationPlayState = motionQuery.matches ? 'paused' : 'running';
+      if (motionQuery.matches) {
+        heroBg.style.animation = 'none';
+      } else {
+        heroBg.style.removeProperty('animation');
+      }
+    };
+    handleMotion();
+    motionQuery.addEventListener('change', handleMotion);
+
     applyI18n(view);
     container.appendChild(view);
+
+    state.home = {
+      cleanup() {
+        motionQuery.removeEventListener('change', handleMotion);
+        heroVideo.pause();
+      }
+    };
   }
   const SURVEY_CONFIGS = {
     vendor: {
@@ -3017,7 +2827,7 @@
     return str.split(/[,;\n]+/).map(v => v.trim()).filter(Boolean);
   }
 
-  function normalizeHostinger(kind, entry) {
+  function normalizeRemoteEntry(kind, entry) {
     if (!entry) return null;
     const base = entry.data ? { ...entry.data } : { ...entry };
     base.ts = base.ts || entry.ts || entry.timestamp || '';
@@ -3028,30 +2838,6 @@
     });
     base.origin = 'remote';
     return normalizeRecordForStorage(kind, base);
-  }
-
-  function normalizeNetlify(kind, submission) {
-    const data = submission?.data || {};
-    const config = SURVEY_CONFIGS[kind];
-    if (!config) return null;
-    const record = {};
-    config.recordFields.forEach(key => {
-      if (key === 'seconds') {
-        const raw = data[key] ?? submission.seconds ?? submission.data?.seconds;
-        record[key] = Number(raw) || 0;
-      } else if (key === 'ts') {
-        record[key] = data[key] || submission.created_at || submission.updated_at || '';
-      } else if (REMOTE_MULTI_FIELDS[kind]?.includes(key)) {
-        record[key] = parseRemoteList(data[key]);
-      } else {
-        let value = data[key];
-        if (Array.isArray(value)) value = value[0];
-        record[key] = value ?? '';
-      }
-    });
-    record.origin = 'remote';
-    record.remote_id = submission.id || submission.number || submission.uuid || null;
-    return normalizeRecordForStorage(kind, record);
   }
 
   function getCombinedRecords(kind) {
@@ -3087,30 +2873,18 @@
   function updateRemoteStatus() {
     const statusEl = state.remote.statusEl;
     if (!statusEl) return;
-    const backend = activeBackend();
-    const { siteId, token } = state.remote.netlify;
-    const pending = state.remote.outboxPending || getOutbox().length;
     let stateKey = 'idle';
-    let message = '';
-    if (pending > 0) {
-      stateKey = 'pending';
-      message = t('remoteStatusPending', { count: numberLabel(pending) });
-    } else if (state.remote.syncing) {
+    let message = t('remoteStatusIdle');
+    if (state.remote.syncing) {
       stateKey = 'syncing';
       message = t('remoteStatusSyncing');
     } else if (state.remote.syncError) {
       stateKey = 'error';
       message = t('syncFailed');
-    } else if (backend === 'netlify' && (!siteId || !token)) {
-      stateKey = 'idle';
-      message = t('remoteStatusIdle');
-    } else if (backend === 'hostinger' && (!state.remote.hostinger.submit || !state.remote.hostinger.exportUrl)) {
-      stateKey = 'idle';
-      message = t('hostingerStatusIdle');
     } else if (state.remote.lastSync) {
       stateKey = 'synced';
       message = t('remoteStatusSynced', { time: formatDate(state.remote.lastSync) });
-    } else {
+    } else if (state.remote.records.vendor.length || state.remote.records.customer.length || state.remote.records.public.length) {
       stateKey = 'ready';
       message = t('remoteStatusReady');
     }
@@ -3118,302 +2892,20 @@
     statusEl.innerHTML = '';
     const dot = document.createElement('span');
     dot.className = 'status-dot';
-    const text = document.createElement('span');
-    text.textContent = message;
+    const textEl = document.createElement('span');
+    textEl.textContent = message;
     statusEl.appendChild(dot);
-    statusEl.appendChild(text);
+    statusEl.appendChild(textEl);
     refreshRemoteBanner();
   }
 
   function refreshRemoteBanner() {
-    const host = state.remote.bannerHost;
-    if (!host) return;
-    const backend = activeBackend();
-    const needsNetlifyConfig = backend === 'netlify' && (!state.remote.netlify.siteId || !state.remote.netlify.token);
-    const needsHostConfig = backend === 'hostinger' && (!state.remote.hostinger.submit || !state.remote.hostinger.exportUrl);
-    if (needsNetlifyConfig) {
-      if (!state.remote.bannerEl) {
-        const banner = document.createElement('div');
-        banner.className = 'remote-banner';
-        const label = document.createElement('span');
-        label.dataset.i18n = 'remoteConnectPrompt';
-        label.textContent = t('remoteConnectPrompt');
-        const btn = document.createElement('button');
-        btn.dataset.i18n = 'connectNetlify';
-        btn.textContent = t('connectNetlify');
-        btn.addEventListener('click', openNetlifyConfig);
-        banner.appendChild(label);
-        banner.appendChild(btn);
-        host.appendChild(banner);
-        applyI18n(banner);
-        state.remote.bannerEl = banner;
-      } else {
-        applyI18n(state.remote.bannerEl);
-      }
-    } else if (needsHostConfig) {
-      if (!state.remote.bannerEl) {
-        const banner = document.createElement('div');
-        banner.className = 'remote-banner';
-        const label = document.createElement('span');
-        label.dataset.i18n = 'hostingerConnectPrompt';
-        label.textContent = t('hostingerConnectPrompt');
-        const btn = document.createElement('button');
-        btn.dataset.i18n = 'openHostingerConfig';
-        btn.textContent = t('openHostingerConfig');
-        btn.addEventListener('click', openNetlifyConfig);
-        banner.appendChild(label);
-        banner.appendChild(btn);
-        host.appendChild(banner);
-        applyI18n(banner);
-        state.remote.bannerEl = banner;
-      } else {
-        applyI18n(state.remote.bannerEl);
-      }
-    } else if (state.remote.bannerEl) {
+    if (state.remote.bannerEl) {
       state.remote.bannerEl.remove();
       state.remote.bannerEl = null;
     }
   }
 
-  function openNetlifyConfig() {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'remote-config';
-    const title = document.createElement('h3');
-    title.className = 'section-title';
-    title.dataset.i18n = 'remoteConfigTitle';
-    title.textContent = t('remoteConfigTitle');
-    wrapper.appendChild(title);
-
-    const backendGroup = document.createElement('div');
-    backendGroup.className = 'field-group';
-    const backendLabel = document.createElement('label');
-    backendLabel.className = 'field-label';
-    backendLabel.dataset.i18n = 'backendMode';
-    backendLabel.textContent = t('backendMode');
-    const backendSelect = document.createElement('select');
-    backendSelect.className = 'field-input';
-    const backendOptions = [
-      { value: 'netlify', key: 'backendNetlify' },
-      { value: 'hostinger', key: 'backendHostinger' }
-    ];
-    backendOptions.forEach(opt => {
-      const option = document.createElement('option');
-      option.value = opt.value;
-      option.textContent = t(opt.key);
-      option.dataset.i18n = opt.key;
-      backendSelect.appendChild(option);
-    });
-    backendSelect.value = state.remote.backend || DEFAULT_BACKEND || 'netlify';
-    backendGroup.appendChild(backendLabel);
-    backendGroup.appendChild(backendSelect);
-
-    const siteGroup = document.createElement('div');
-    siteGroup.className = 'field-group';
-    const siteLabel = document.createElement('label');
-    siteLabel.className = 'field-label';
-    siteLabel.dataset.i18n = 'netlifySiteId';
-    siteLabel.textContent = t('netlifySiteId');
-    const siteInput = createInput('netlify-site', 'text');
-    siteInput.dir = 'ltr';
-    siteInput.value = state.remote.netlify.siteId || '';
-    siteGroup.appendChild(siteLabel);
-    siteGroup.appendChild(siteInput);
-
-    const tokenGroup = document.createElement('div');
-    tokenGroup.className = 'field-group';
-    const tokenLabel = document.createElement('label');
-    tokenLabel.className = 'field-label';
-    tokenLabel.dataset.i18n = 'netlifyToken';
-    tokenLabel.textContent = t('netlifyToken');
-    const tokenInput = createInput('netlify-token', 'password', { autocomplete: 'off' });
-    tokenInput.dir = 'ltr';
-    tokenInput.value = state.remote.netlify.token || '';
-    tokenGroup.appendChild(tokenLabel);
-    tokenGroup.appendChild(tokenInput);
-
-    const netlifyNote = document.createElement('p');
-    netlifyNote.className = 'field-description';
-    netlifyNote.dataset.i18n = 'netlifyConfigNote';
-    netlifyNote.textContent = t('netlifyConfigNote');
-
-    const hostSubmitGroup = document.createElement('div');
-    hostSubmitGroup.className = 'field-group';
-    const hostSubmitLabel = document.createElement('label');
-    hostSubmitLabel.className = 'field-label';
-    hostSubmitLabel.dataset.i18n = 'hostingerSubmitEndpoint';
-    hostSubmitLabel.textContent = t('hostingerSubmitEndpoint');
-    const hostSubmitInput = createInput('hostinger-submit', 'text');
-    hostSubmitInput.dir = 'ltr';
-    hostSubmitInput.value = state.remote.hostinger.submit || '';
-    hostSubmitGroup.appendChild(hostSubmitLabel);
-    hostSubmitGroup.appendChild(hostSubmitInput);
-
-    const hostExportGroup = document.createElement('div');
-    hostExportGroup.className = 'field-group';
-    const hostExportLabel = document.createElement('label');
-    hostExportLabel.className = 'field-label';
-    hostExportLabel.dataset.i18n = 'hostingerExportEndpoint';
-    hostExportLabel.textContent = t('hostingerExportEndpoint');
-    const hostExportInput = createInput('hostinger-export', 'text');
-    hostExportInput.dir = 'ltr';
-    hostExportInput.value = state.remote.hostinger.exportUrl || '';
-    hostExportGroup.appendChild(hostExportLabel);
-    hostExportGroup.appendChild(hostExportInput);
-
-    const hostingerNote = document.createElement('p');
-    hostingerNote.className = 'field-description';
-    hostingerNote.dataset.i18n = 'hostingerConfigNote';
-    hostingerNote.textContent = t('hostingerConfigNote');
-
-    const actions = document.createElement('div');
-    actions.className = 'modal-actions';
-    const cancelBtn = document.createElement('button');
-    cancelBtn.type = 'button';
-    cancelBtn.className = 'btn';
-    cancelBtn.dataset.i18n = 'cancel';
-    cancelBtn.textContent = t('cancel');
-    cancelBtn.addEventListener('click', closeModal);
-    const saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'btn btn-primary';
-    saveBtn.dataset.i18n = 'saveConfig';
-    saveBtn.textContent = t('saveConfig');
-    saveBtn.addEventListener('click', () => {
-      const backend = backendSelect.value;
-      state.remote.backend = backend;
-      state.remote.netlify = {
-        siteId: siteInput.value.trim(),
-        token: tokenInput.value.trim()
-      };
-      state.remote.hostinger = {
-        submit: hostSubmitInput.value.trim(),
-        exportUrl: hostExportInput.value.trim()
-      };
-      saveRemoteConfig({
-        backend,
-        netlify: state.remote.netlify,
-        hostinger: state.remote.hostinger
-      });
-      state.remote.records = { vendor: [], customer: [], public: [] };
-      state.remote.lastSync = null;
-      state.remote.syncError = null;
-      if (state.remote.syncInterval) {
-        clearInterval(state.remote.syncInterval);
-        state.remote.syncInterval = null;
-      }
-      document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'remote' } }));
-      updateRemoteStatus();
-      closeModal();
-      showToast(t('remoteConfigSaved'));
-      if (backend === 'hostinger' && state.remote.hostinger.submit && state.remote.hostinger.exportUrl) {
-        syncNetlify(true);
-      } else if (backend === 'netlify' && state.remote.netlify.siteId && state.remote.netlify.token) {
-        syncNetlify(true);
-      }
-    });
-    actions.appendChild(cancelBtn);
-    actions.appendChild(saveBtn);
-
-    const netlifyWrap = document.createElement('div');
-    netlifyWrap.appendChild(siteGroup);
-    netlifyWrap.appendChild(tokenGroup);
-    netlifyWrap.appendChild(netlifyNote);
-
-    const hostingerWrap = document.createElement('div');
-    hostingerWrap.appendChild(hostSubmitGroup);
-    hostingerWrap.appendChild(hostExportGroup);
-    hostingerWrap.appendChild(hostingerNote);
-
-    const toggleBackendSections = () => {
-      const mode = backendSelect.value;
-      netlifyWrap.style.display = mode === 'netlify' ? '' : 'none';
-      hostingerWrap.style.display = mode === 'hostinger' ? '' : 'none';
-    };
-    backendSelect.addEventListener('change', toggleBackendSections);
-    toggleBackendSections();
-
-    wrapper.appendChild(backendGroup);
-    wrapper.appendChild(netlifyWrap);
-    wrapper.appendChild(hostingerWrap);
-    wrapper.appendChild(actions);
-    applyI18n(wrapper);
-    openModal(wrapper);
-  }
-
-  async function fetchJSON(url) {
-    const res = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'omit' });
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-    return res.json();
-  }
-
-  async function syncNetlify(manual = false) {
-    if (state.remote.syncing) return;
-    await flushOutbox(false);
-    const backend = activeBackend();
-    const { siteId, token } = state.remote.netlify;
-    if (backend === 'netlify' && (!siteId || !token)) {
-      if (manual) showToast(t('remoteConfigMissing'));
-      return;
-    }
-    if (backend === 'hostinger' && (!state.remote.hostinger.submit || !state.remote.hostinger.exportUrl)) {
-      if (manual) showToast(t('hostingerConfigMissing'));
-      return;
-    }
-    state.remote.syncing = true;
-    updateRemoteStatus();
-    if (manual) showToast(t('syncingRemote'));
-    try {
-      let vendorRecords = [];
-      let customerRecords = [];
-      let publicRecords = [];
-      if (backend === 'hostinger') {
-        const exportUrl = state.remote.hostinger.exportUrl || DEFAULT_HOSTINGER.exportUrl;
-        if (!exportUrl) throw new Error('Hostinger export missing');
-        const remote = await fetchJSON(exportUrl);
-        vendorRecords = (remote?.vendor || []).map(entry => normalizeHostinger('vendor', entry)).filter(Boolean);
-        customerRecords = (remote?.customer || []).map(entry => normalizeHostinger('customer', entry)).filter(Boolean);
-        publicRecords = (remote?.public || []).map(entry => normalizeHostinger('public', entry)).filter(Boolean);
-      } else {
-        const forms = await fetchJSON(`https://api.netlify.com/api/v1/sites/${siteId}/forms?access_token=${token}`);
-        const idMap = forms.reduce((acc, form) => {
-          acc[(form.name || '').toLowerCase()] = form.id;
-          return acc;
-        }, {});
-        const loadForm = async (kind) => {
-          const formId = idMap[NETLIFY_FORM_NAMES[kind]];
-          if (!formId) return [];
-          const submissions = await fetchJSON(`https://api.netlify.com/api/v1/forms/${formId}/submissions?access_token=${token}`);
-          return submissions.map(sub => normalizeNetlify(kind, sub)).filter(Boolean);
-        };
-        [vendorRecords, customerRecords, publicRecords] = await Promise.all([
-          loadForm('vendor'),
-          loadForm('customer'),
-          loadForm('public')
-        ]);
-      }
-      state.remote.records = {
-        vendor: vendorRecords,
-        customer: customerRecords,
-        public: publicRecords
-      };
-      mergeAndPersist('vendor', vendorRecords);
-      mergeAndPersist('customer', customerRecords);
-      mergeAndPersist('public', publicRecords);
-      state.remote.lastSync = new Date().toISOString();
-      state.remote.syncError = null;
-      logDebug('Remote sync success', state.remote.records);
-      if (manual) showToast(t('syncComplete'));
-    } catch (error) {
-      state.remote.syncError = error;
-      logDebug('Remote sync failed', error);
-      if (manual) showToast(t('syncFailed'));
-    } finally {
-      state.remote.syncing = false;
-      updateRemoteStatus();
-    }
-  }
   function createField(config, surveyKind) {
     const wrapper = document.createElement('div');
     if (config.type !== 'note') {
@@ -3675,15 +3167,14 @@
     actions.appendChild(submit);
     form.appendChild(actions);
 
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', async e => {
       e.preventDefault();
       if (alreadyCompleted(kind)) {
         showToast(t('alreadySubmitted'));
         return;
       }
       if (!validateForm(form)) return;
-      const seconds = stopTimer(kind);
-      clearInterval(state.timers[kind]);
+      const seconds = Math.round((Date.now() - (state.surveys[kind].start || Date.now())) / 1000);
       const record = { ...state.surveys[kind].data };
       Object.keys(record).forEach(key => {
         if (Array.isArray(record[key])) record[key] = [...record[key]];
@@ -3691,11 +3182,21 @@
       record.ts = new Date().toISOString();
       record.seconds = seconds;
       ensureRecordFields(record, config.recordFields);
-      recordSubmission(kind, record);
-      resetDraft(kind);
-      handleCompletion(kind);
-      state.surveys[kind].data = {};
-      location.hash = '#/surveys/thanks';
+      try {
+        await recordSubmission(kind, record);
+        stopTimer(kind);
+        if (state.timers[kind]) {
+          clearInterval(state.timers[kind]);
+          state.timers[kind] = null;
+        }
+        resetDraft(kind);
+        handleCompletion(kind);
+        state.surveys[kind].data = {};
+        location.hash = '#/surveys/thanks';
+      } catch (error) {
+        logDebug('Submit failed', kind, error);
+        showToast(t('syncFailed'));
+      }
     });
 
     card.appendChild(form);
@@ -3870,9 +3371,18 @@
     registerRoute('#/surveys', {
       mount(container) {
         container.innerHTML = '';
+        if (state.home?.cleanup) {
+          state.home.cleanup();
+          state.home = null;
+        }
         renderHome(container);
       },
-      unmount() {},
+      unmount() {
+        if (state.home?.cleanup) {
+          state.home.cleanup();
+          state.home = null;
+        }
+      },
       onLang() {
         const view = app.querySelector('.view');
         if (view) applyI18n(view);
@@ -3927,8 +3437,6 @@
           state.remote.syncInterval = null;
         }
         state.remote.statusEl = null;
-        state.remote.bannerHost = null;
-        state.remote.bannerEl = null;
       },
       onLang() {
         if (!state.passwordUnlocked.results) {
@@ -3976,6 +3484,10 @@
     saveDB(defaultDB());
     Object.values(STORAGE_KEYS.drafts).forEach(key => localStorage.removeItem(key));
     Object.values(STORAGE_KEYS.completed).forEach(key => localStorage.removeItem(key));
+    state.passwordUnlocked = {};
+    state.remote.records = { vendor: [], customer: [], public: [] };
+    state.remote.lastSync = null;
+    state.remote.syncError = null;
     showToast(t('resetDone'));
     document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'all' } }));
   }
@@ -4011,8 +3523,7 @@
   updateThemeToggle();
   updateNav();
   ensureHash();
-  flushOutbox(false);
-  window.addEventListener('online', () => flushOutbox(false));
+  fetchRemoteSnapshot(false);
   const modalBackdrop = document.getElementById('modal-backdrop');
   const modalContent = document.getElementById('modal-content');
   const modalClose = document.getElementById('modal-close');
@@ -4708,15 +4219,27 @@
     reader.readAsText(file);
   }
 
-  function backupAndReset() {
+  async function backupAndReset() {
     if (!confirm(t('confirmReset'))) return;
     exportJSON(true);
-    setTimeout(() => {
-      clearAllStorage();
-      if (state.currentRoute === routes['#/surveys/results']) {
-        state.currentRoute.mount(app);
-      }
-    }, 400);
+    try {
+      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?mode=reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset' }),
+        credentials: 'omit'
+      });
+      if (!response.ok) throw new Error(`Remote reset failed: ${response.status}`);
+    } catch (error) {
+      logDebug('Remote reset failed', error);
+      showToast(t('syncFailed'));
+      return;
+    }
+    clearAllStorage();
+    await fetchRemoteSnapshot(true);
+    if (state.currentRoute === routes['#/surveys/results']) {
+      state.currentRoute.mount(app);
+    }
   }
   function renderResults(container) {
     const view = document.createElement('section');
@@ -4757,11 +4280,6 @@
     backupBtn.dataset.i18n = 'backupReset';
     backupBtn.textContent = t('backupReset');
     backupBtn.addEventListener('click', backupAndReset);
-    const connectBtn = document.createElement('button');
-    connectBtn.className = 'cta-link';
-    connectBtn.dataset.i18n = 'connectNetlify';
-    connectBtn.textContent = t('connectNetlify');
-    connectBtn.addEventListener('click', openNetlifyConfig);
     const refreshBtn = document.createElement('button');
     refreshBtn.className = 'cta-link';
     refreshBtn.dataset.i18n = 'refreshData';
@@ -4769,8 +4287,7 @@
     refreshBtn.addEventListener('click', async () => {
       refreshBtn.disabled = true;
       try {
-        await flushOutbox(true);
-        await syncNetlify(true);
+        await fetchRemoteSnapshot(true);
         cardContent.innerHTML = '';
         renderResultsTab(cardContent, state.results.tab);
       } finally {
@@ -4781,7 +4298,6 @@
     controls.appendChild(exportJsonBtn);
     controls.appendChild(importLabel);
     controls.appendChild(backupBtn);
-    controls.appendChild(connectBtn);
     controls.appendChild(refreshBtn);
 
     const remoteWrap = document.createElement('div');
@@ -4793,7 +4309,6 @@
     remoteWrap.appendChild(statusBar);
     card.appendChild(remoteWrap);
     state.remote.statusEl = statusBar;
-    state.remote.bannerHost = remoteWrap;
     updateRemoteStatus();
 
     const tabBar = document.createElement('div');
@@ -4824,18 +4339,23 @@
 
     renderResultsTab(cardContent, state.results.tab);
     applyI18n(view);
-    const backend = (window.TAMAM_BACKEND || 'netlify').toLowerCase();
-    if (backend === 'hostinger') {
-      syncNetlify(false);
-      if (state.remote.syncInterval) clearInterval(state.remote.syncInterval);
-      state.remote.syncInterval = setInterval(() => syncNetlify(false), 120000);
-    } else if (state.remote.netlify.siteId && state.remote.netlify.token) {
-      syncNetlify(false);
-      if (state.remote.syncInterval) clearInterval(state.remote.syncInterval);
-      state.remote.syncInterval = setInterval(() => syncNetlify(false), 120000);
-    } else {
-      updateRemoteStatus();
-    }
+
+    fetchRemoteSnapshot(false).then(() => {
+      cardContent.innerHTML = '';
+      renderResultsTab(cardContent, state.results.tab);
+    });
+    if (state.remote.syncInterval) clearInterval(state.remote.syncInterval);
+    state.remote.syncInterval = setInterval(() => {
+      fetchRemoteSnapshot(false).then(() => {
+        if (state.currentRoute === routes['#/surveys/results']) {
+          const grid = app.querySelector('.dashboard-grid');
+          if (grid) {
+            grid.innerHTML = '';
+            renderResultsTab(grid, state.results.tab);
+          }
+        }
+      });
+    }, 30000);
   }
 
   function renderResultsTab(container, kind) {
