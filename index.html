@@ -413,7 +413,7 @@
     }
     .unmute[hidden] { display: none; }
     @media (min-width: 720px) {
-      .video-shell { width: clamp(360px, 24vw, 440px); }
+      .video-shell { width: clamp(360px, 24vw, 460px); }
     }
     @keyframes titleIn {
       to { opacity: 1; transform: translateY(0); }
@@ -1862,16 +1862,24 @@
   }
 
   async function postToRemote(kind, record) {
-    const payload = { kind, ts: record.ts, seconds: record.seconds };
+    const payload = { kind, data: {} };
     SURVEY_CONFIGS[kind].recordFields.forEach(key => {
-      if (key === 'ts' || key === 'seconds') return;
-      const value = record[key];
+      let value = record[key];
       if (Array.isArray(value)) {
-        payload[key] = value.join(', ');
+        value = value.map(v => String(v));
+      } else if (key === 'seconds') {
+        value = Number(value) || 0;
       } else {
-        payload[key] = value ?? '';
+        value = value ?? '';
       }
+      payload.data[key] = value;
     });
+    if (!payload.data.ts) {
+      payload.data.ts = new Date().toISOString();
+    }
+    if (typeof payload.data.seconds !== 'number') {
+      payload.data.seconds = Number(payload.data.seconds) || 0;
+    }
     const response = await fetch(REMOTE_ENDPOINTS.submit, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1887,26 +1895,39 @@
     } catch (e) {
       logDebug('Remote response parse skipped', e);
     }
-    if (json && json.vendor && json.customer && json.public) {
+    if (json && json.status && json.status !== 'ok') {
+      throw new Error(json.message || 'Remote submission rejected');
+    }
+    if (json && json.data && json.data.vendor && json.data.customer && json.data.public) {
+      applyRemoteSnapshot(json.data);
+    } else if (json && json.vendor && json.customer && json.public) {
       applyRemoteSnapshot(json);
     }
     return json;
   }
 
-  async function tryFetchRemote(url) {
+  async function fetchRemoteData(timeout = 12000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
     try {
-      const response = await fetch(url, {
+      const response = await fetch(REMOTE_ENDPOINTS.list, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
         cache: 'no-store',
         credentials: 'omit',
-        headers: { 'Accept': 'application/json' }
+        signal: controller.signal
       });
       if (!response.ok) throw new Error(`Remote fetch failed: ${response.status}`);
-      const text = await response.text();
-      if (!text) return null;
-      return JSON.parse(text);
-    } catch (error) {
-      logDebug('Remote fetch attempt failed', url, error);
-      return null;
+      const json = await response.json();
+      if (json && json.status && json.status !== 'ok' && !(json.vendor || json.customer || json.public)) {
+        throw new Error(json.message || 'Remote snapshot unavailable');
+      }
+      if (json && json.data && json.data.vendor) {
+        return json.data;
+      }
+      return json;
+    } finally {
+      clearTimeout(timer);
     }
   }
 
@@ -1915,12 +1936,10 @@
     updateRemoteStatus();
     if (manual) showToast(t('syncingRemote'));
     try {
-      let snapshot = await tryFetchRemote(REMOTE_ENDPOINTS.list);
-      if (!snapshot) {
-        const joiner = REMOTE_ENDPOINTS.list.includes('?') ? '&' : '?';
-        snapshot = await tryFetchRemote(`${REMOTE_ENDPOINTS.list}${joiner}mode=list`);
+      const snapshot = await fetchRemoteData();
+      if (!snapshot || !snapshot.vendor || !snapshot.customer || !snapshot.public) {
+        throw new Error('Remote snapshot unavailable');
       }
-      if (!snapshot) throw new Error('Remote snapshot unavailable');
       applyRemoteSnapshot(snapshot);
       state.remote.lastSync = new Date().toISOString();
       state.remote.syncError = null;
@@ -2195,16 +2214,17 @@
     heroVideo.className = 'hero-video';
     heroVideo.id = 'heroVideo';
 
-    const unmuteBtn = document.createElement('button');
-    unmuteBtn.type = 'button';
-    unmuteBtn.className = 'unmute';
-    unmuteBtn.id = 'unmuteBtn';
-    unmuteBtn.dataset.i18n = 'heroUnmute';
-    unmuteBtn.textContent = t('heroUnmute');
-    unmuteBtn.setAttribute('aria-label', t('heroUnmute'));
+    const soundBtn = document.createElement('button');
+    soundBtn.type = 'button';
+    soundBtn.className = 'unmute';
+    soundBtn.id = 'soundBtn';
+    soundBtn.textContent = '🔇';
+    soundBtn.setAttribute('aria-pressed', 'false');
+    soundBtn.setAttribute('aria-label', t('heroUnmute'));
+    soundBtn.setAttribute('title', t('heroUnmute'));
 
     videoFrame.appendChild(heroVideo);
-    videoFrame.appendChild(unmuteBtn);
+    videoFrame.appendChild(soundBtn);
     videoShell.appendChild(halo);
     videoShell.appendChild(videoFrame);
 
@@ -2315,72 +2335,75 @@
     view.appendChild(ctaCard);
     view.appendChild(legal);
 
-    const updateUnmuteVisibility = () => {
-      const show = heroVideo.muted;
-      unmuteBtn.hidden = !show;
-      unmuteBtn.setAttribute('aria-hidden', String(!show));
-      unmuteBtn.tabIndex = show ? 0 : -1;
+    const SOUND_STORAGE_KEY = 'tmm_sound';
+    const updateSoundUI = () => {
+      const unmuted = !heroVideo.muted;
+      soundBtn.textContent = unmuted ? '🔊' : '🔇';
+      soundBtn.setAttribute('aria-pressed', String(unmuted));
+      const labelKey = unmuted ? 'heroAudioPlaying' : 'heroUnmute';
+      soundBtn.setAttribute('aria-label', t(labelKey));
+      soundBtn.setAttribute('title', t(labelKey));
+      const hintKey = unmuted ? 'heroAudioPlaying' : 'heroAudioHint';
+      heroHint.dataset.i18n = hintKey;
+      heroHint.textContent = t(hintKey);
+      heroHint.style.opacity = unmuted ? '0.7' : '1';
     };
 
-    const attemptPlay = (withSound) => {
-      if (withSound) {
-        heroVideo.muted = false;
-        heroVideo.removeAttribute('muted');
-      } else {
-        heroVideo.muted = true;
+    const applyMutedState = (muted) => {
+      heroVideo.muted = muted;
+      if (muted) {
         heroVideo.setAttribute('muted', '');
+      } else {
+        heroVideo.removeAttribute('muted');
       }
-      return heroVideo.play().catch(err => {
-        if (withSound) {
-          logDebug('Autoplay with sound blocked', err);
-          heroVideo.muted = true;
-          heroVideo.setAttribute('muted', '');
-          updateUnmuteVisibility();
-          localStorage.setItem('tmm_unmute', '0');
-          heroVideo.play().catch(() => {});
-        }
-        return Promise.reject(err);
-      });
+      updateSoundUI();
     };
 
-    const savedPref = localStorage.getItem('tmm_unmute');
-    const wantsSound = savedPref === '0' ? false : true;
-    updateUnmuteVisibility();
+    localStorage.removeItem('tmm_unmute');
+    const savedPref = localStorage.getItem(SOUND_STORAGE_KEY);
+    applyMutedState(!(savedPref === '1'));
     requestAnimationFrame(() => {
-      attemptPlay(wantsSound).catch(() => {});
-      updateUnmuteVisibility();
+      heroVideo.play().catch(err => {
+        logDebug('Hero autoplay blocked', err);
+        if (!heroVideo.muted) {
+          applyMutedState(true);
+          localStorage.setItem(SOUND_STORAGE_KEY, '0');
+        }
+      });
     });
 
-    heroVideo.addEventListener('loadeddata', () => {
-      if (heroVideo.paused) {
-        attemptPlay(!heroVideo.muted).catch(() => {});
+    const toggleSound = async () => {
+      const nextMuted = !heroVideo.muted;
+      applyMutedState(nextMuted);
+      if (!nextMuted) {
+        try {
+          await heroVideo.play();
+          showToast(t('heroAudioPlaying'));
+        } catch (err) {
+          logDebug('Hero unmute blocked', err);
+          applyMutedState(true);
+          showToast(t('heroAudioUnavailable'));
+        }
+      } else {
+        showToast(t('heroAudioHint'));
       }
-    });
+      localStorage.setItem(SOUND_STORAGE_KEY, heroVideo.muted ? '0' : '1');
+    };
+
+    soundBtn.addEventListener('click', toggleSound);
 
     heroVideo.addEventListener('volumechange', () => {
-      if (heroVideo.muted) {
-        localStorage.setItem('tmm_unmute', '0');
-      } else {
-        localStorage.setItem('tmm_unmute', '1');
-      }
-      updateUnmuteVisibility();
+      localStorage.setItem(SOUND_STORAGE_KEY, heroVideo.muted ? '0' : '1');
+      updateSoundUI();
     });
 
-    unmuteBtn.addEventListener('click', () => {
-      heroVideo.muted = false;
-      heroVideo.removeAttribute('muted');
-      heroVideo.play().then(() => {
-        localStorage.setItem('tmm_unmute', '1');
-        showToast(t('heroAudioPlaying'));
-        updateUnmuteVisibility();
-      }).catch(err => {
-        logDebug('Unmute blocked', err);
-        heroVideo.muted = true;
-        heroVideo.setAttribute('muted', '');
-        showToast(t('heroAudioUnavailable'));
-        updateUnmuteVisibility();
-      });
-    });
+    const visibilityHandler = () => {
+      if (document.visibilityState === 'visible' && !heroVideo.muted) {
+        heroVideo.play().catch(() => {});
+      }
+    };
+
+    document.addEventListener('visibilitychange', visibilityHandler);
 
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const handleMotion = () => {
@@ -2399,7 +2422,11 @@
     state.home = {
       cleanup() {
         motionQuery.removeEventListener('change', handleMotion);
+        document.removeEventListener('visibilitychange', visibilityHandler);
         heroVideo.pause();
+      },
+      updateLang() {
+        updateSoundUI();
       }
     };
   }
@@ -3330,6 +3357,7 @@
       onLang() {
         const view = app.querySelector('.view');
         if (view) applyI18n(view);
+        if (state.home?.updateLang) state.home.updateLang();
       }
     });
 
