@@ -239,6 +239,28 @@ def normalize_space(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
+def canonicalize_url(url: str, base: str) -> str:
+    from urllib.parse import urlparse, urlunparse
+
+    if not url:
+        return url
+    parsed = urlparse(url)
+    scheme = parsed.scheme or "https"
+    netloc = parsed.netloc or urlparse(base).netloc
+    path = parsed.path or "/"
+    while "/en-AE/en-AE" in path:
+        path = path.replace("/en-AE/en-AE", "/en-AE")
+    while "//" in path:
+        path = path.replace("//", "/")
+    if not path.startswith("/"):
+        path = "/" + path
+    path = path.rstrip("/") or "/"
+    normalized = urlunparse((scheme, netloc, path, "", "", ""))
+    if not normalized.startswith("http"):
+        normalized = f"https://{netloc}{path}"
+    return normalized
+
+
 def slugify(value: str) -> str:
     value = normalize_space(value)
     value = re.sub(r"[^0-9A-Za-z]+", "-", value)
@@ -517,27 +539,31 @@ class JustlifeScraper:
         return False
 
     async def discover(self):
-        queue = deque([(self.config.base_url.rstrip('/'), None, 0)])
+        base = self.config.base_url.rstrip("/")
+        queue = deque([(canonicalize_url(base, base), None, 0)])
         seen = set()
         while queue and len(self.artifacts.pages) < self.config.discovery_limit:
             url, parent_id, depth = queue.popleft()
-            if url in seen:
+            normalized_url = canonicalize_url(url, base)
+            if normalized_url in seen:
                 continue
-            seen.add(url)
-            ok = await self.navigate(url)
+            seen.add(normalized_url)
+            ok = await self.navigate(normalized_url)
             if not ok:
-                self.artifacts.notes.append(f"Failed to navigate during discovery: {url}")
+                self.artifacts.notes.append(f"Failed to navigate during discovery: {normalized_url}")
                 continue
+            await self.page.wait_for_timeout(500)
             content = await self.page.content()
             soup = BeautifulSoup(content, "lxml")
-            title = normalize_space(soup.title.text if soup.title else await self.page.title())
-            model_type, has_addons, has_slots, notes, element_logs = await self.detect_model(soup)
-            page_id = uuid5_url(url)
+            title = await self.extract_title()
+            controls = await js_controls(self.page)
+            model_type, has_addons, has_slots, notes, element_logs = await self.detect_model(controls)
+            page_id = uuid5_url(normalized_url)
             page_record = PageRecord(
                 page_id=page_id,
                 parent_page_id=parent_id,
                 level=level_for_depth(depth),
-                url=url,
+                url=normalized_url,
                 page_title_text=title or slugify(url.split("/")[-1]),
                 detected_model_type=model_type,
                 has_addons=has_addons,
@@ -548,66 +574,112 @@ class JustlifeScraper:
             for log in element_logs:
                 log.page_id = page_id
                 self.artifacts.elements.append(log)
-            new_links = self.extract_links(url, soup)
+            new_links = await self.extract_links(normalized_url)
             for link in new_links:
                 if link not in seen:
                     queue.append((link, page_id, depth + 1))
 
-    def extract_links(self, current_url: str, soup: BeautifulSoup) -> List[str]:
-        base = self.config.base_url.split("//", 1)[-1]
+    async def extract_title(self) -> str:
+        for selector in ["h1", "h2", "title"]:
+            try:
+                locator = self.page.locator(selector).first
+                if await locator.count():
+                    text = normalize_space(await locator.inner_text())
+                    if text:
+                        return text
+            except Exception:
+                continue
+        return normalize_space(await self.page.title())
+
+    async def extract_links(self, current_url: str) -> List[str]:
+        base = self.config.base_url.rstrip("/")
+        js_links = await self.page.evaluate(
+            """
+            () => {
+                const anchors = Array.from(document.querySelectorAll('a[href]'));
+                const items = [];
+                anchors.forEach(anchor => {
+                    const href = anchor.getAttribute('href');
+                    if (!href || href.startsWith('#') || href.toLowerCase().startsWith('javascript')) return;
+                    let absolute;
+                    try {
+                        absolute = new URL(href, window.location.origin).href;
+                    } catch (err) {
+                        return;
+                    }
+                    const text = (anchor.innerText || anchor.textContent || '').trim().toLowerCase();
+                    const meta = (anchor.getAttribute('data-testid') || anchor.className || '').toLowerCase();
+                    items.push({ href: absolute, text, meta });
+                });
+                return items;
+            }
+            """,
+        )
         links: List[str] = []
-        for anchor in soup.select("a[href]"):
-            href = anchor.get("href")
-            if not href:
+        for item in js_links:
+            href = item.get("href")
+            if not href or not href.startswith(base):
                 continue
-            if href.startswith("javascript") or href.startswith("#"):
+            if any(segment in href.lower() for segment in EXCLUDED_SEGMENTS):
                 continue
-            if href.startswith("/"):
-                href = f"https://{base}{href}"
-            if not href.startswith(self.config.base_url):
-                continue
-            normalized = href.split("#")[0].rstrip("/")
-            if any(token in normalized.lower() for token in EXCLUDED_SEGMENTS):
-                continue
-            if not any(keyword in normalized.lower() for keyword in SERVICE_KEYWORDS):
+            text = item.get("text", "")
+            meta = item.get("meta", "")
+            if not any(keyword in href.lower() or keyword in text for keyword in SERVICE_KEYWORDS):
+                if "book" not in text and "book" not in meta and "service" not in text:
+                    continue
+            normalized = canonicalize_url(href, base)
+            if normalized == current_url:
                 continue
             links.append(normalized)
         return list(dict.fromkeys(links))
 
-    async def detect_model(self, soup: BeautifulSoup) -> Tuple[str, bool, bool, str, List[ElementRecord]]:
-        body_text = soup.get_text(" ")
-        lowered = body_text.lower()
+    async def detect_model(self, controls: List[Dict[str, Any]]) -> Tuple[str, bool, bool, str, List[ElementRecord]]:
+        groups = [normalize_space(control.get("group", "")).lower() for control in controls]
+        options_text = [normalize_space(control.get("optionLabel", "")).lower() for control in controls]
         detections: List[str] = []
-        if any(word in lowered for word in ["hour", "hrs", "cleaner", "professional"]):
+
+        def group_has(tokens: Iterable[str]) -> bool:
+            return any(any(token in group for token in tokens) for group in groups)
+
+        def option_has(tokens: Iterable[str]) -> bool:
+            return any(any(token in option for token in tokens) for option in options_text)
+
+        model = "OTHER"
+        if group_has(["hour", "duration"]) and option_has(["clean", "pro", "maid"]):
             model = "HOURS_PROS"
-            detections.append("Detected HOURS_PROS via keywords")
-        elif any(word in lowered for word in ["bedroom", "bathroom", "kitchen", "villa"]):
+            detections.append("Detected HOURS_PROS via controls")
+        elif group_has(["bed", "room", "bath"]) or option_has(["bed", "bath"]):
             model = "ROOM_MATERIAL"
-            detections.append("Detected ROOM_MATERIAL via keywords")
-        elif any(word in lowered for word in ["unit", "piece", "items", "pieces"]):
+            detections.append("Detected ROOM_MATERIAL via controls")
+        elif group_has(["unit", "quantity", "piece", "item"]) or option_has(["unit", "piece", "item"]):
             model = "UNIT_QUANTITY"
-            detections.append("Detected UNIT_QUANTITY via keywords")
-        elif any(word in lowered for word in ["sqft", "square", "area"]):
+            detections.append("Detected UNIT_QUANTITY via controls")
+        elif group_has(["area", "sqft", "square"]):
             model = "AREA_BASED"
-            detections.append("Detected AREA_BASED via keywords")
-        elif any(word in lowered for word in ["package", "plan", "premium", "bundle"]):
+            detections.append("Detected AREA_BASED via controls")
+        elif group_has(["package", "plan", "bundle"]):
             model = "FLAT_PACKAGE"
-            detections.append("Detected FLAT_PACKAGE via keywords")
+            detections.append("Detected FLAT_PACKAGE via controls")
         else:
-            model = "OTHER"
-            detections.append("No model keyword match")
-        has_addons = bool(soup.select_one(", ".join(ADDON_SELECTORS)))
-        has_slots = "slot" in lowered or bool(soup.select_one(", ".join(BS_SLOT_SELECTORS)))
+            detections.append("No explicit model detected")
+
+        has_addons = await self.page.locator(", ".join(ADDON_SELECTORS)).count() > 0
+        has_slots = False
+        for text in AVAILABILITY_TRIGGER_TEXT:
+            locator = self.page.get_by_text(re.compile(text, re.I))
+            if await locator.count():
+                has_slots = True
+                break
         if has_addons:
-            detections.append("Add-on markers found")
+            detections.append("Add-on elements present")
         if has_slots:
-            detections.append("Potential availability slots")
+            detections.append("Potential availability controls")
         element_logs = [
             ElementRecord(
                 page_id="",
-                selector="body",
+                selector="controls",
                 element_role="detection",
-                raw_text=body_text[:2000],
+                raw_text=json.dumps(controls)[:2000],
                 normalized_text=", ".join(detections),
             )
         ]
@@ -642,18 +714,20 @@ class JustlifeScraper:
         price_records: List[PriceRecord] = []
         option_records: List[OptionRecord] = []
         element_records: List[ElementRecord] = []
-        combinations: List[List[ControlOption]] = []
-        if option_controls:
-            pools = [control.options for control in option_controls]
-            current: List[List[ControlOption]] = [[]]
-            for options in pools:
-                temp = []
-                for prefix in current:
-                    for option in options:
-                        temp.append(prefix + [option])
-                current = temp
-            combinations = current[: self.config.max_combinations]
-        else:
+        combinations: List[List[ControlOption]] = [[]]
+        enumerated_controls: List[List[ControlOption]] = []
+        for control in option_controls:
+            sampled = self.sample_control_options(control, page_record.detected_model_type)
+            if not sampled:
+                continue
+            enumerated_controls.append(sampled)
+        for options in enumerated_controls:
+            new_combos: List[List[ControlOption]] = []
+            for prefix in combinations:
+                for option in options:
+                    new_combos.append(prefix + [option])
+            combinations = new_combos[: self.config.max_combinations]
+        if not combinations:
             combinations = [[]]
         visited_dimensions = set()
         for control in option_controls:
@@ -669,12 +743,18 @@ class JustlifeScraper:
                         sort_index=opt.sort_index,
                     )
                 )
+        combinations = combinations[: self.config.max_combinations]
+        if combinations and combinations[0]:
+            combinations = [[]] + combinations
+        combinations = combinations[: self.config.max_combinations]
         combo_progress = tqdm(combinations, desc=f"Combos {page_record.page_title_text}", leave=False)
         for combo in combo_progress:
             await self.navigate(page_record.url)
             await asyncio.sleep(0.5)
             dimensions: Dict[str, Any] = {}
             selector_meta = {"controls": []}
+            baseline_price = await read_first_text(self.page, PRICE_SELECTORS)
+            last_price_text = baseline_price
             for option in combo:
                 dimensions[option.control_group] = option.option_label
                 selector_meta["controls"].append({
@@ -684,12 +764,14 @@ class JustlifeScraper:
                 })
                 await self.apply_option(option)
                 await asyncio.sleep(0.5)
+                updated = await wait_for_price_change(self.page, last_price_text or "")
+                if normalize_space(updated) != normalize_space(last_price_text or ""):
+                    last_price_text = updated
             key = tuple(sorted(dimensions.items()))
             if key in visited_dimensions:
                 continue
             visited_dimensions.add(key)
-            price_text_before = await read_first_text(self.page, PRICE_SELECTORS)
-            price_text = await wait_for_price_change(self.page, price_text_before)
+            price_text = last_price_text or await read_first_text(self.page, PRICE_SELECTORS)
             qa_flags: List[str] = []
             if not price_text:
                 qa_flags.append("NO_PRICE")
@@ -793,6 +875,25 @@ class JustlifeScraper:
             self.artifacts.notes.append(f"No controls detected on {page_record.url}")
         return controls
 
+    def sample_control_options(self, control: Control, model_type: str) -> List[ControlOption]:
+        options = control.options
+        if len(options) <= 3:
+            return options
+        unique: Dict[str, ControlOption] = {}
+        for option in options:
+            if option.option_label not in unique:
+                unique[option.option_label] = option
+        deduped = list(unique.values())
+        if len(deduped) <= 3:
+            return deduped
+        selected: List[ControlOption] = []
+        indices = [0, len(deduped) // 2, len(deduped) - 1]
+        for idx in indices:
+            option = deduped[idx]
+            if option not in selected:
+                selected.append(option)
+        return selected
+
     async def apply_option(self, option: ControlOption) -> None:
         try:
             if option.option_type == "select":
@@ -804,6 +905,17 @@ class JustlifeScraper:
 
     async def capture_addons(self, page_record: PageRecord) -> List[AddonRecord]:
         addons: List[AddonRecord] = []
+        try:
+            for trigger_text in ["Add-ons", "Add ons", "Extras", "Upgrade"]:
+                locator = self.page.get_by_text(re.compile(trigger_text, re.I))
+                if await locator.count():
+                    try:
+                        await locator.first.click()
+                        await asyncio.sleep(0.4)
+                    except Exception:
+                        continue
+        except Exception:
+            pass
         content = await self.page.content()
         soup = BeautifulSoup(content, "lxml")
         for selector in ADDON_SELECTORS:
@@ -1191,6 +1303,14 @@ async def main():
     print("Configuration:", json.dumps(asdict(config), indent=2))
     async with JustlifeScraper(config) as scraper:
         artifacts = await scraper.run()
+    if not artifacts.prices or not artifacts.options:
+        message = (
+            "Dynamic content blocked or selectors unresolved; no price/option data captured. "
+            "Check Playwright availability and site accessibility."
+        )
+        notes_path = OUTPUT_DIR / "NOTES.txt"
+        notes_path.write_text(message, encoding="utf-8")
+        raise RuntimeError(message)
     summary = {
         "timestamp": utc_now(),
         "base_url": config.base_url,
