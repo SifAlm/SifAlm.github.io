@@ -1,6 +1,6 @@
 """Google Colab one-cell runner for the Justlife competitive intelligence scraper."""
 
-COLAB_CELL = r"""
+COLAB_CELL = r'''
 # Tamam Intelligence – Justlife Competitive Intelligence Scraper
 # This cell installs its own dependencies, launches Playwright Chromium,
 # crawls and enumerates service configurations, and produces a styled Excel workbook.
@@ -327,7 +327,7 @@ async def extract_breakdown(page) -> Dict[str, Any]:
 
 
 async def js_controls(page) -> List[Dict[str, Any]]:
-    script = \"\"\"
+    script = """
     () => {
         const cssPath = (el) => {
             if (!el) return null;
@@ -455,7 +455,7 @@ async def js_controls(page) -> List[Dict[str, Any]]:
 
         return controls;
     }
-    \"\"\"
+    """
     try:
         return await page.evaluate(script)
     except Exception:
@@ -1272,4 +1272,4 @@ if __name__ == "__main__":
     except RuntimeError:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(main())
-"""
+'''
