@@ -65,6 +65,9 @@ SLOT_SELECTORS = [
     "button:has-text('AM')",
     "button:has-text('PM')",
 ]
+# Soupsieve (used by BeautifulSoup) cannot parse Playwright-style pseudo selectors such as
+# `:has-text()`, so keep a sanitized variant for static parsing operations.
+BS_SLOT_SELECTORS = [selector for selector in SLOT_SELECTORS if ":" not in selector]
 OFFER_SELECTORS = [
     "[data-testid*='offer']",
     "[class*='offer']",
@@ -594,7 +597,7 @@ class JustlifeScraper:
             model = "OTHER"
             detections.append("No model keyword match")
         has_addons = bool(soup.select_one(", ".join(ADDON_SELECTORS)))
-        has_slots = "slot" in lowered or bool(soup.select_one(", ".join(SLOT_SELECTORS)))
+        has_slots = "slot" in lowered or bool(soup.select_one(", ".join(BS_SLOT_SELECTORS)))
         if has_addons:
             detections.append("Add-on markers found")
         if has_slots:
