@@ -559,10 +559,13 @@ class JustlifeScraper:
             controls = await js_controls(self.page)
             model_type, has_addons, has_slots, notes, element_logs = await self.detect_model(controls)
             page_id = uuid5_url(normalized_url)
+            level = level_for_depth(depth)
+            if model_type != "OTHER" and level in {"category", "subcategory"}:
+                level = "service"
             page_record = PageRecord(
                 page_id=page_id,
                 parent_page_id=parent_id,
-                level=level_for_depth(depth),
+                level=level,
                 url=normalized_url,
                 page_title_text=title or slugify(url.split("/")[-1]),
                 detected_model_type=model_type,
@@ -686,7 +689,12 @@ class JustlifeScraper:
         return model, has_addons, has_slots, "; ".join(detections), element_logs
 
     async def scrape_services(self):
-        service_pages = [page for page in self.artifacts.pages if page.level in {"service", "flow"}]
+        service_pages = [
+            page
+            for page in self.artifacts.pages
+            if (page.level in {"service", "flow"} or page.detected_model_type != "OTHER")
+            and page.level != "home"
+        ]
         for page_record in tqdm(service_pages, desc="Scraping services"):
             success = False
             for attempt in range(self.config.per_service_retry):
