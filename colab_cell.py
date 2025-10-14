@@ -1,11 +1,37 @@
 """Google Colab one-cell runner for the Justlife competitive intelligence scraper."""
 
-COLAB_CELL = r'''
-# Tamam Intelligence – Justlife Competitive Intelligence Scraper
-# This cell installs its own dependencies, launches Playwright Chromium,
-# crawls and enumerates service configurations, and produces a styled Excel workbook.
-!pip install --quiet playwright requests beautifulsoup4 lxml pandas openpyxl tqdm fake_useragent nest_asyncio
-!python -m playwright install --with-deps chromium
+import importlib
+import subprocess
+import sys
+from typing import List
+
+
+def ensure_dependencies() -> None:
+    """Install runtime dependencies if they are missing."""
+
+    package_name_map = {
+        "playwright": "playwright",
+        "bs4": "beautifulsoup4",
+        "lxml": "lxml",
+        "pandas": "pandas",
+        "openpyxl": "openpyxl",
+        "tqdm": "tqdm",
+        "fake_useragent": "fake_useragent",
+        "nest_asyncio": "nest_asyncio",
+        "requests": "requests",
+    }
+    to_install: List[str] = []
+    for module_name, package_name in package_name_map.items():
+        try:
+            importlib.import_module(module_name)
+        except ImportError:
+            to_install.append(package_name)
+    if to_install:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--quiet", *to_install])
+    subprocess.check_call([sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"])
+
+
+ensure_dependencies()
 
 import asyncio
 import json
@@ -13,13 +39,12 @@ import math
 import os
 import random
 import re
-import sys
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, Optional, Tuple
 
 import nest_asyncio
 import pandas as pd
@@ -1311,14 +1336,21 @@ async def main():
     print("Configuration:", json.dumps(asdict(config), indent=2))
     async with JustlifeScraper(config) as scraper:
         artifacts = await scraper.run()
-    if not artifacts.prices or not artifacts.options:
+    missing_core: List[str] = []
+    if not artifacts.prices:
+        missing_core.append("price data")
+    if not artifacts.options:
+        missing_core.append("option data")
+    if missing_core:
         message = (
-            "Dynamic content blocked or selectors unresolved; no price/option data captured. "
-            "Check Playwright availability and site accessibility."
+            "Dynamic content blocked or selectors unresolved; "
+            + ", ".join(missing_core)
+            + " missing. Check Playwright availability and site accessibility."
         )
+        artifacts.notes.append(message)
         notes_path = OUTPUT_DIR / "NOTES.txt"
         notes_path.write_text(message, encoding="utf-8")
-        raise RuntimeError(message)
+        print(f"WARNING: {message}")
     summary = {
         "timestamp": utc_now(),
         "base_url": config.base_url,
@@ -1403,4 +1435,3 @@ if __name__ == "__main__":
     except RuntimeError:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(main())
-'''

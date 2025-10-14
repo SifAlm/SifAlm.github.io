@@ -5,8 +5,8 @@ This repository provides a single Google Colab cell that installs all dependenci
 ## Usage
 
 1. Open a fresh Google Colab notebook.
-2. Copy the value of `COLAB_CELL` from [`colab_cell.py`](./colab_cell.py).
-3. Paste it into a single cell in Colab and run it.
+2. Copy the full contents of [`colab_cell.py`](./colab_cell.py).
+3. Paste it into a single Python cell in Colab and run it.
 
 The cell will:
 
