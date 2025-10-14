@@ -1898,11 +1898,11 @@
     SURVEY_CONFIGS[kind].recordFields.forEach(key => {
       let value = record[key];
       if (Array.isArray(value)) {
-        value = value.map(v => String(v));
+        value = value.map(v => String(v).trim()).filter(Boolean).join(', ');
       } else if (key === 'seconds') {
         value = Number(value) || 0;
-      } else {
-        value = value ?? '';
+      } else if (value === undefined || value === null) {
+        value = '';
       }
       payload.data[key] = value;
     });
@@ -1914,10 +1914,11 @@
     }
     const response = await fetch(REMOTE_ENDPOINTS.submit, {
       method: 'POST',
+      mode: 'cors',
+      redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
-      cache: 'no-store',
-      credentials: 'omit'
+      cache: 'no-store'
     });
     if (!response.ok) {
       throw new Error(`Remote post failed: ${response.status}`);
@@ -1935,11 +1936,17 @@
     try {
       const response = await fetch(REMOTE_ENDPOINTS.list, {
         method: 'GET',
+        mode: 'cors',
         cache: 'no-store',
-        credentials: 'omit',
-        signal: controller.signal
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json, text/plain, */*' }
       });
       if (!response.ok) throw new Error(`Remote fetch failed: ${response.status}`);
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(text ? text.slice(0, 120) : 'Invalid content-type');
+      }
       const json = await response.json();
       if (!json || typeof json !== 'object') {
         throw new Error('Remote snapshot unavailable');
