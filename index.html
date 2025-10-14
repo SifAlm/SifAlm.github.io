@@ -74,6 +74,10 @@
       40% { opacity: 0.6; }
       100% { transform: translateX(120%); opacity: 0; }
     }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
     @keyframes fadeLift {
       from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
@@ -674,6 +678,24 @@
       font-weight: 600;
       transition: transform var(--transition), box-shadow var(--transition);
     }
+    .btn.is-loading {
+      pointer-events: none;
+      opacity: 0.75;
+      position: relative;
+    }
+    .btn.is-loading::after {
+      content: '';
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      animation: spin 0.8s linear infinite;
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
     .btn-primary {
       background: linear-gradient(135deg, #6d7bff, #b388ff);
       color: white;
@@ -1187,9 +1209,9 @@
     { hash: '#/surveys/results', key: 'navResults' }
   ];
   const REMOTE_MULTI_FIELDS = {
-    vendor: ['value_expect'],
-    customer: ['cats', 'more'],
-    public: ['platforms']
+    vendor: ['expectations'],
+    customer: ['categories_used', 'increase_usage_factors'],
+    public: ['platforms_used']
   };
 
   const I18N = {
@@ -1233,6 +1255,9 @@
       thanksTitle: 'Thank you for your insight',
       thanksBody: 'We appreciate your time—your responses will shape how Tamam evolves for our community.',
       backHome: 'Back to overview',
+      adminNotes: 'Admin notes',
+      submissionIdLabel: 'Submission ID',
+      noteLabel: 'Note',
       surveyVendorTitle: 'Vendor Partnership Survey',
       surveyCustomerTitle: 'Customer Experience Survey',
       surveyPublicTitle: 'Public Sentiment Survey',
@@ -1443,6 +1468,9 @@
       thanksTitle: 'شكراً لمشاركتك',
       thanksBody: 'نقدّر وقتك—إجاباتك ستوجه تطور تمام لمجتمعنا.',
       backHome: 'العودة إلى النظرة العامة',
+      adminNotes: 'ملاحظات المشرف',
+      submissionIdLabel: 'معرّف الإرسال',
+      noteLabel: 'ملاحظة',
       surveyVendorTitle: 'استبيان الشركاء',
       surveyCustomerTitle: 'استبيان العملاء',
       surveyPublicTitle: 'استبيان الجمهور',
@@ -1637,6 +1665,8 @@
     lang: 'tmm_lang',
   };
 
+  const DEVICE_ID_KEY = 'tmm_device_id';
+
   const state = {
     lang: localStorage.getItem(STORAGE_KEYS.lang) || 'en',
     theme: localStorage.getItem(STORAGE_KEYS.theme) || 'light',
@@ -1660,7 +1690,8 @@
       statusEl: null,
       syncInterval: null
     },
-    home: null
+    home: null,
+    deviceId: null
   };
 
   document.documentElement.setAttribute('lang', state.lang === 'ar' ? 'ar' : 'en');
@@ -1697,6 +1728,18 @@
     const str = I18N[state.lang][key] || key;
     return str.replace(/\{(.*?)\}/g, (_, v) => vars[v] ?? '');
   };
+
+  function getDeviceId() {
+    if (state.deviceId) return state.deviceId;
+    let stored = localStorage.getItem(DEVICE_ID_KEY);
+    if (!stored) {
+      const generated = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `dev-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      stored = generated;
+      localStorage.setItem(DEVICE_ID_KEY, stored);
+    }
+    state.deviceId = stored;
+    return stored;
+  }
 
   function showToast(message) {
     const container = document.getElementById('toast-container');
@@ -1842,6 +1885,140 @@
     return normalized;
   }
 
+  function buildRemoteRecord(kind, data, meta = {}) {
+    const deviceId = meta.deviceId || getDeviceId();
+    const language = meta.language || state.lang || 'en';
+    const seconds = Number(meta.seconds) || 0;
+    const submissionId = meta.submissionId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+    const baseAdminParts = [`submission_id=${submissionId}`];
+    if (kind === 'vendor') {
+      const category = data.category || '';
+      const commissionRange = COMMISSION_BANDS[category] || COMMISSION_BANDS.home;
+      const monthlyOther = data.orders_all_other?.trim?.() || '';
+      const profitableOther = data.orders_profitable_other?.trim?.() || '';
+      const stayOther = data.min_orders_to_stay_other?.trim?.() || '';
+      const revOther = [];
+      if (data.accept_5_10k === 'other' && data.accept_5_10k_other?.trim()) revOther.push(`5-10k: ${data.accept_5_10k_other.trim()}`);
+      if (data.accept_10_20k === 'other' && data.accept_10_20k_other?.trim()) revOther.push(`10-20k: ${data.accept_10_20k_other.trim()}`);
+      if (data.accept_20k_plus === 'other' && data.accept_20k_plus_other?.trim()) revOther.push(`20k+: ${data.accept_20k_plus_other.trim()}`);
+      const notesParts = [];
+      if (data.notes?.trim()) notesParts.push(data.notes.trim());
+      if (profitableOther) notesParts.push(`Profitable volume: ${profitableOther}`);
+      if (stayOther) notesParts.push(`Min orders to stay: ${stayOther}`);
+      const expectations = Array.isArray(data.value_expect) ? data.value_expect.filter(Boolean) : [];
+      const adminNotes = baseAdminParts.join(' | ');
+      return {
+        ts: new Date().toISOString(),
+        device_id: deviceId,
+        seconds,
+        name: data.company || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        language,
+        category,
+        average_order_value_aed: data.aov || '',
+        average_profit_percent: data.avg_profit || '',
+        typical_monthly_orders: data.orders_all || '',
+        channels_used: data.orders_all === 'other' ? monthlyOther : '',
+        subscription_aed: '75',
+        commission_model_label: `${commissionRange} commission per order + AED 75/month subscription`,
+        acceptable_at_monthly_orders: data.orders_profitable || '',
+        min_orders_to_stay: data.min_orders_to_stay || '',
+        rev_5k_10k_accept: data.accept_5_10k || '',
+        rev_10k_20k_accept: data.accept_10_20k || '',
+        rev_20k_plus_accept: data.accept_20k_plus || '',
+        rev_other_text: revOther.join(' | '),
+        expectations: expectations.join(', '),
+        expectations_other_text: data.value_expect_other || '',
+        reason_to_leave: data.leave_reason || '',
+        reason_to_leave_other_text: data.leave_reason_other || '',
+        would_recommend: data.recommend || '',
+        would_recommend_other_text: data.recommend_other || '',
+        category_specific_notes: notesParts.join(' | '),
+        consent: 'yes',
+        admin_notes: adminNotes
+      };
+    }
+    if (kind === 'customer') {
+      const frequencyOther = data.freq === 'other' ? (data.freq_other || '') : '';
+      const cats = Array.isArray(data.cats) ? data.cats.filter(Boolean) : [];
+      const catsOther = cats.includes('other') ? (data.cats_other || '') : '';
+      const timeOther = data.time_save === 'other' ? (data.time_save_other || '') : '';
+      const moneyOther = data.money_save === 'other' ? (data.money_save_other || '') : '';
+      const increase = Array.isArray(data.more) ? data.more.filter(Boolean) : [];
+      const increaseOther = increase.includes('other') ? (data.more_other || '') : '';
+      const adminParts = baseAdminParts.slice();
+      if (data.notes?.trim()) adminParts.push(`note=${data.notes.trim()}`);
+      const adminNotes = adminParts.join(' | ');
+      return {
+        ts: new Date().toISOString(),
+        device_id: deviceId,
+        seconds,
+        name: data.name || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        language,
+        usage_frequency: data.freq || '',
+        usage_frequency_other_text: frequencyOther,
+        categories_used: cats.join(', '),
+        categories_used_other_text: catsOther,
+        last_booking_ease_1_5: data.ease || '',
+        nps_0_10: data.nps || '',
+        save_time: data.time_save || '',
+        save_time_other_text: timeOther,
+        save_money: data.money_save || '',
+        save_money_other_text: moneyOther,
+        wanted_additional_services_text: data.wants_services || '',
+        increase_usage_factors: increase.join(', '),
+        increase_usage_other_text: increaseOther,
+        consent: 'yes',
+        admin_notes: adminNotes
+      };
+    }
+    if (kind === 'public') {
+      const platforms = Array.isArray(data.platforms) ? data.platforms.filter(Boolean) : [];
+      const platformsOther = platforms.includes('other') ? (data.platforms_other || '') : '';
+      const barrierOther = data.barrier === 'other' ? (data.barrier_other || '') : '';
+      const factorOther = data.top_factor === 'other' ? (data.top_factor_other || '') : '';
+      const categoryOther = data.first_cat === 'other' ? (data.first_cat_other || '') : '';
+      const premiumOther = data.premium === 'other' ? (data.premium_other || '') : '';
+      const adminNotes = baseAdminParts.join(' | ');
+      return {
+        ts: new Date().toISOString(),
+        device_id: deviceId,
+        seconds,
+        name: data.name || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        language,
+        ever_booked_services_online: data.booked_before || '',
+        platforms_used: platforms.join(', '),
+        platforms_other_text: platformsOther,
+        why_not_use_apps: data.barrier || '',
+        why_not_other_text: barrierOther,
+        factor_rank_1: data.top_factor || '',
+        factor_rank_2: '',
+        factor_rank_3: '',
+        factors_other_text: factorOther,
+        category_try_first: data.first_cat || '',
+        category_try_other_text: categoryOther,
+        willingness_pay_5_10_aed: data.premium || '',
+        willingness_other_text: premiumOther,
+        choose_tamam_reason_text: data.why_tamam || '',
+        consent: 'yes',
+        admin_notes: adminNotes
+      };
+    }
+    return {
+      ts: new Date().toISOString(),
+      device_id: deviceId,
+      seconds,
+      language,
+      admin_notes: `submission_id=${submissionId}`,
+      consent: 'yes'
+    };
+  }
+
   function recordSignature(kind, record) {
     const payload = SURVEY_CONFIGS[kind].recordFields.map(key => {
       const value = record[key];
@@ -1884,7 +2061,11 @@
       state.remote.syncError = null;
       updateRemoteStatus();
       showToast(t('submittedSynced'));
-      await fetchRemoteSnapshot(false);
+      fetchRemoteSnapshot(false).catch(error => {
+        state.remote.syncError = error;
+        updateRemoteStatus();
+        logDebug('Post-submit refresh failed', error);
+      });
     } catch (error) {
       state.remote.syncError = error;
       updateRemoteStatus();
@@ -2465,6 +2646,61 @@
       }
     };
   }
+  const FIELD_ALIASES = {
+    vendor: {
+      name: 'company',
+      average_order_value_aed: 'aov',
+      average_profit_percent: 'avg_profit',
+      typical_monthly_orders: 'orders_all',
+      acceptable_at_monthly_orders: 'orders_profitable',
+      min_orders_to_stay: 'min_orders_to_stay',
+      rev_5k_10k_accept: 'accept_5_10k',
+      rev_10k_20k_accept: 'accept_10_20k',
+      rev_20k_plus_accept: 'accept_20k_plus',
+      expectations: 'value_expect',
+      expectations_other_text: 'value_expect_other',
+      reason_to_leave: 'leave_reason',
+      reason_to_leave_other_text: 'leave_reason_other',
+      would_recommend: 'recommend',
+      would_recommend_other_text: 'recommend_other',
+      category_specific_notes: 'notes',
+      channels_used: 'orders_all_other'
+    },
+    customer: {
+      usage_frequency: 'freq',
+      usage_frequency_other_text: 'freq_other',
+      categories_used: 'cats',
+      categories_used_other_text: 'cats_other',
+      last_booking_ease_1_5: 'ease',
+      nps_0_10: 'nps',
+      save_time: 'time_save',
+      save_time_other_text: 'time_save_other',
+      save_money: 'money_save',
+      save_money_other_text: 'money_save_other',
+      increase_usage_factors: 'more',
+      increase_usage_other_text: 'more_other',
+      wanted_additional_services_text: 'wants_services'
+    },
+    public: {
+      ever_booked_services_online: 'booked_before',
+      platforms_used: 'platforms',
+      platforms_other_text: 'platforms_other',
+      why_not_use_apps: 'barrier',
+      why_not_other_text: 'barrier_other',
+      factor_rank_1: 'top_factor',
+      factors_other_text: 'top_factor_other',
+      category_try_first: 'first_cat',
+      category_try_other_text: 'first_cat_other',
+      willingness_pay_5_10_aed: 'premium',
+      willingness_other_text: 'premium_other',
+      choose_tamam_reason_text: 'why_tamam'
+    }
+  };
+
+  function resolveFieldKey(kind, field) {
+    return FIELD_ALIASES[kind]?.[field] || field;
+  }
+
   const SURVEY_CONFIGS = {
     vendor: {
       titleKey: 'surveyVendorTitle',
@@ -2620,7 +2856,7 @@
         },
         { key: 'notes', type: 'textarea', labelKey: 'anythingElse', required: false }
       ],
-      recordFields: ['company','email','phone','category','aov','avg_profit','orders_all','orders_all_other','orders_profitable','orders_profitable_other','min_orders_to_stay','min_orders_to_stay_other','accept_5_10k','accept_5_10k_other','accept_10_20k','accept_10_20k_other','accept_20k_plus','accept_20k_plus_other','value_expect','value_expect_other','leave_reason','leave_reason_other','recommend','recommend_other','notes','ts','seconds']
+      recordFields: ['ts','device_id','seconds','name','email','phone','language','category','average_order_value_aed','average_profit_percent','typical_monthly_orders','channels_used','subscription_aed','commission_model_label','acceptable_at_monthly_orders','min_orders_to_stay','rev_5k_10k_accept','rev_10k_20k_accept','rev_20k_plus_accept','rev_other_text','expectations','expectations_other_text','reason_to_leave','reason_to_leave_other_text','would_recommend','would_recommend_other_text','category_specific_notes','consent','admin_notes']
     },
     customer: {
       titleKey: 'surveyCustomerTitle',
@@ -2724,7 +2960,7 @@
         },
         { key: 'notes', type: 'textarea', labelKey: 'anythingElse', required: false }
       ],
-      recordFields: ['name','email','phone','freq','freq_other','cats','cats_other','ease','nps','time_save','time_save_other','money_save','money_save_other','wants_services','more','more_other','notes','ts','seconds']
+      recordFields: ['ts','device_id','seconds','name','email','phone','language','usage_frequency','usage_frequency_other_text','categories_used','categories_used_other_text','last_booking_ease_1_5','nps_0_10','save_time','save_time_other_text','save_money','save_money_other_text','wanted_additional_services_text','increase_usage_factors','increase_usage_other_text','consent','admin_notes']
     },
     public: {
       titleKey: 'surveyPublicTitle',
@@ -2818,7 +3054,7 @@
         },
         { key: 'why_tamam', type: 'textarea', labelKey: 'whyTamam', required: true }
       ],
-      recordFields: ['name','email','phone','booked_before','platforms','platforms_other','barrier','barrier_other','top_factor','top_factor_other','first_cat','first_cat_other','premium','premium_other','why_tamam','ts','seconds']
+      recordFields: ['ts','device_id','seconds','name','email','phone','language','ever_booked_services_online','platforms_used','platforms_other_text','why_not_use_apps','why_not_other_text','factor_rank_1','factor_rank_2','factor_rank_3','factors_other_text','category_try_first','category_try_other_text','willingness_pay_5_10_aed','willingness_other_text','choose_tamam_reason_text','consent','admin_notes']
     }
   };
 
@@ -3177,21 +3413,26 @@
 
     form.addEventListener('submit', async e => {
       e.preventDefault();
+      if (submit.disabled) return;
+      const guardUntil = surveyState.lockUntil || 0;
+      if (Date.now() < guardUntil) return;
       if (alreadyCompleted(kind)) {
         showToast(t('alreadySubmitted'));
         return;
       }
       if (!validateForm(form)) return;
+      submit.disabled = true;
+      submit.classList.add('is-loading');
       const seconds = Math.round((Date.now() - (state.surveys[kind].start || Date.now())) / 1000);
       const record = { ...state.surveys[kind].data };
       Object.keys(record).forEach(key => {
         if (Array.isArray(record[key])) record[key] = [...record[key]];
       });
-      record.ts = new Date().toISOString();
-      record.seconds = seconds;
-      ensureRecordFields(record, config.recordFields);
+      const submissionId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const remoteRecord = buildRemoteRecord(kind, record, { seconds, language: state.lang, deviceId: getDeviceId(), submissionId });
+      ensureRecordFields(remoteRecord, config.recordFields);
       try {
-        await recordSubmission(kind, record);
+        await recordSubmission(kind, remoteRecord);
         stopTimer(kind);
         if (state.timers[kind]) {
           clearInterval(state.timers[kind]);
@@ -3200,10 +3441,14 @@
         resetDraft(kind);
         handleCompletion(kind);
         state.surveys[kind].data = {};
+        surveyState.lockUntil = Date.now() + 2500;
+        surveyState.lastSubmissionId = submissionId;
         location.hash = '#/surveys/thanks';
       } catch (error) {
         logDebug('Submit failed', kind, error);
         showToast(t('syncFailed'));
+        submit.disabled = false;
+        submit.classList.remove('is-loading');
       }
     });
 
@@ -3584,73 +3829,65 @@
   const RESULTS_MAP = {
     vendor: {
       labelKey: 'tabVendors',
-      searchFields: ['company', 'email', 'phone', 'category'],
+      searchFields: ['name', 'email', 'phone', 'category'],
       kpi: records => {
         const total = records.length;
-        const avg = (list, key) => {
-          const nums = list.map(r => Number(r[key])).filter(n => !Number.isNaN(n));
-          if (!nums.length) return 0;
-          return nums.reduce((a, b) => a + b, 0) / nums.length;
+        const avg = key => {
+          const nums = records.map(r => Number(r[key])).filter(n => !Number.isNaN(n));
+          return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
         };
-        const avgSeconds = avg(records, 'seconds');
         return [
           { labelKey: 'kpiTotal', value: total },
-          { labelKey: 'kpiAvgAOV', value: avg(records, 'aov').toFixed(1) },
-          { labelKey: 'kpiAvgProfit', value: avg(records, 'avg_profit').toFixed(1) + '%' },
-          { labelKey: 'kpiAvgSeconds', value: avgSeconds.toFixed(0) }
+          { labelKey: 'kpiAvgAOV', value: avg('average_order_value_aed').toFixed(1) },
+          { labelKey: 'kpiAvgProfit', value: avg('average_profit_percent').toFixed(1) + '%' },
+          { labelKey: 'kpiAvgSeconds', value: avg('seconds').toFixed(0) }
         ];
       },
       charts: [
-        { id: 'orders_all', type: 'bar', field: 'orders_all', labelKey: 'typicalMonthlyOrders' },
-        { id: 'orders_profitable', type: 'bar', field: 'orders_profitable', labelKey: 'vendorProfitableVolume' },
+        { id: 'typical_monthly_orders', type: 'bar', field: 'typical_monthly_orders', labelKey: 'typicalMonthlyOrders' },
+        { id: 'acceptable_at_monthly_orders', type: 'bar', field: 'acceptable_at_monthly_orders', labelKey: 'vendorProfitableVolume' },
         { id: 'min_orders_to_stay', type: 'bar', field: 'min_orders_to_stay', labelKey: 'vendorMinStay' },
         { id: 'revenue_accept', type: 'stacked', labelKey: 'vendorExpect', fields: [
-          { field: 'accept_5_10k', labelKey: 'vendorScenario1' },
-          { field: 'accept_10_20k', labelKey: 'vendorScenario2' },
-          { field: 'accept_20k_plus', labelKey: 'vendorScenario3' }
+          { field: 'rev_5k_10k_accept', labelKey: 'vendorScenario1' },
+          { field: 'rev_10k_20k_accept', labelKey: 'vendorScenario2' },
+          { field: 'rev_20k_plus_accept', labelKey: 'vendorScenario3' }
         ], choices: ['acceptable', 'neutral', 'not', 'other'] },
-        { id: 'value_expect', type: 'bar', field: 'value_expect', mode: 'multi', labelKey: 'vendorExpect' },
-        { id: 'leave_reason', type: 'bar', field: 'leave_reason', labelKey: 'leaveReason' },
-        { id: 'recommend', type: 'bar', field: 'recommend', labelKey: 'recommend' }
+        { id: 'expectations', type: 'bar', field: 'expectations', mode: 'multi', labelKey: 'vendorExpect' },
+        { id: 'reason_to_leave', type: 'bar', field: 'reason_to_leave', labelKey: 'leaveReason' },
+        { id: 'would_recommend', type: 'bar', field: 'would_recommend', labelKey: 'recommend' }
       ],
       openFields: [
-        { key: 'orders_all_other', label: () => `${t('other')} (${t('typicalMonthlyOrders')})` },
-        { key: 'orders_profitable_other', label: () => `${t('other')} (${t('vendorProfitableVolume')})` },
-        { key: 'min_orders_to_stay_other', label: () => `${t('other')} (${t('vendorMinStay')})` },
-        { key: 'accept_5_10k_other', label: () => `${t('other')} (${t('vendorScenario1')})` },
-        { key: 'accept_10_20k_other', label: () => `${t('other')} (${t('vendorScenario2')})` },
-        { key: 'accept_20k_plus_other', label: () => `${t('other')} (${t('vendorScenario3')})` },
-        { key: 'value_expect_other', label: () => `${t('other')} (${t('vendorExpect')})` },
-        { key: 'leave_reason_other', label: () => `${t('other')} (${t('leaveReason')})` },
-        { key: 'recommend_other', label: () => `${t('other')} (${t('recommend')})` },
-        { key: 'notes', labelKey: 'anythingElse' }
+        { key: 'channels_used', label: () => `${t('other')} (${t('typicalMonthlyOrders')})` },
+        { key: 'rev_other_text', label: () => `${t('vendorExpect')} · ${t('other')}` },
+        { key: 'expectations_other_text', label: () => `${t('other')} (${t('vendorExpect')})` },
+        { key: 'reason_to_leave_other_text', label: () => `${t('other')} (${t('leaveReason')})` },
+        { key: 'would_recommend_other_text', label: () => `${t('other')} (${t('recommend')})` },
+        { key: 'category_specific_notes', labelKey: 'anythingElse' },
+        { key: 'admin_notes', labelKey: 'adminNotes' }
       ],
       columns: [
-        { key: 'company', labelKey: 'companyName' },
+        { key: 'name', labelKey: 'companyName' },
         { key: 'email', labelKey: 'businessEmail' },
         { key: 'phone', labelKey: 'phoneNumber' },
         { key: 'category', labelKey: 'primaryCategory' },
-        { key: 'aov', labelKey: 'averageOrderValue' },
-        { key: 'avg_profit', labelKey: 'averageProfitMargin' },
-        { key: 'orders_all', labelKey: 'typicalMonthlyOrders' },
-        { key: 'orders_all_other', label: () => `${t('other')} (${t('typicalMonthlyOrders')})` },
-        { key: 'orders_profitable', labelKey: 'vendorProfitableVolume' },
-        { key: 'orders_profitable_other', label: () => `${t('other')} (${t('vendorProfitableVolume')})` },
+        { key: 'average_order_value_aed', labelKey: 'averageOrderValue' },
+        { key: 'average_profit_percent', labelKey: 'averageProfitMargin' },
+        { key: 'typical_monthly_orders', labelKey: 'typicalMonthlyOrders' },
+        { key: 'channels_used', label: () => `${t('other')} (${t('typicalMonthlyOrders')})` },
+        { key: 'acceptable_at_monthly_orders', labelKey: 'vendorProfitableVolume' },
         { key: 'min_orders_to_stay', labelKey: 'vendorMinStay' },
-        { key: 'min_orders_to_stay_other', label: () => `${t('other')} (${t('vendorMinStay')})` },
-        { key: 'accept_5_10k', labelKey: 'vendorScenario1' },
-        { key: 'accept_5_10k_other', label: () => `${t('other')} (${t('vendorScenario1')})` },
-        { key: 'accept_10_20k', labelKey: 'vendorScenario2' },
-        { key: 'accept_10_20k_other', label: () => `${t('other')} (${t('vendorScenario2')})` },
-        { key: 'accept_20k_plus', labelKey: 'vendorScenario3' },
-        { key: 'accept_20k_plus_other', label: () => `${t('other')} (${t('vendorScenario3')})` },
-        { key: 'value_expect', labelKey: 'vendorExpect' },
-        { key: 'value_expect_other', label: () => `${t('other')} (${t('vendorExpect')})` },
-        { key: 'leave_reason', labelKey: 'leaveReason' },
-        { key: 'leave_reason_other', label: () => `${t('other')} (${t('leaveReason')})` },
-        { key: 'recommend', labelKey: 'recommend' },
-        { key: 'recommend_other', label: () => `${t('other')} (${t('recommend')})` },
-        { key: 'notes', labelKey: 'anythingElse' },
+        { key: 'rev_5k_10k_accept', labelKey: 'vendorScenario1' },
+        { key: 'rev_10k_20k_accept', labelKey: 'vendorScenario2' },
+        { key: 'rev_20k_plus_accept', labelKey: 'vendorScenario3' },
+        { key: 'rev_other_text', label: () => `${t('vendorExpect')} · ${t('other')}` },
+        { key: 'expectations', labelKey: 'vendorExpect' },
+        { key: 'expectations_other_text', label: () => `${t('other')} (${t('vendorExpect')})` },
+        { key: 'reason_to_leave', labelKey: 'leaveReason' },
+        { key: 'reason_to_leave_other_text', label: () => `${t('other')} (${t('leaveReason')})` },
+        { key: 'would_recommend', labelKey: 'recommend' },
+        { key: 'would_recommend_other_text', label: () => `${t('other')} (${t('recommend')})` },
+        { key: 'category_specific_notes', labelKey: 'anythingElse' },
+        { key: 'admin_notes', labelKey: 'adminNotes' },
         { key: 'seconds', labelKey: 'durationLabel' },
         { key: 'ts', labelKey: 'timestampLabel' }
       ]
@@ -3660,54 +3897,53 @@
       searchFields: ['name', 'email', 'phone'],
       kpi: records => {
         const total = records.length;
-        const avg = (list, key) => {
-          const nums = list.map(r => Number(r[key])).filter(n => !Number.isNaN(n));
-          if (!nums.length) return 0;
-          return nums.reduce((a, b) => a + b, 0) / nums.length;
+        const avg = key => {
+          const nums = records.map(r => Number(r[key])).filter(n => !Number.isNaN(n));
+          return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
         };
         return [
           { labelKey: 'kpiTotal', value: total },
-          { labelKey: 'kpiAvgNps', value: avg(records, 'nps').toFixed(1) },
-          { labelKey: 'kpiAvgEase', value: avg(records, 'ease').toFixed(1) },
-          { labelKey: 'kpiAvgSeconds', value: avg(records, 'seconds').toFixed(0) }
+          { labelKey: 'kpiAvgNps', value: avg('nps_0_10').toFixed(1) },
+          { labelKey: 'kpiAvgEase', value: avg('last_booking_ease_1_5').toFixed(1) },
+          { labelKey: 'kpiAvgSeconds', value: avg('seconds').toFixed(0) }
         ];
       },
       charts: [
-        { id: 'freq', type: 'bar', field: 'freq', labelKey: 'usageFrequency' },
-        { id: 'cats', type: 'bar', field: 'cats', mode: 'multi', labelKey: 'usedCategories' },
-        { id: 'ease', type: 'bar', field: 'ease', labelKey: 'easeBooking' },
-        { id: 'nps', type: 'bar', field: 'nps', labelKey: 'recommendScore' },
-        { id: 'time_save', type: 'bar', field: 'time_save', labelKey: 'timeSave' },
-        { id: 'money_save', type: 'bar', field: 'money_save', labelKey: 'moneySave' },
-        { id: 'more', type: 'bar', field: 'more', mode: 'multi', labelKey: 'useMore' }
+        { id: 'usage_frequency', type: 'bar', field: 'usage_frequency', labelKey: 'usageFrequency' },
+        { id: 'categories_used', type: 'bar', field: 'categories_used', mode: 'multi', labelKey: 'usedCategories' },
+        { id: 'last_booking_ease_1_5', type: 'bar', field: 'last_booking_ease_1_5', labelKey: 'easeBooking' },
+        { id: 'nps_0_10', type: 'bar', field: 'nps_0_10', labelKey: 'recommendScore' },
+        { id: 'save_time', type: 'bar', field: 'save_time', labelKey: 'timeSave' },
+        { id: 'save_money', type: 'bar', field: 'save_money', labelKey: 'moneySave' },
+        { id: 'increase_usage_factors', type: 'bar', field: 'increase_usage_factors', mode: 'multi', labelKey: 'useMore' }
       ],
       openFields: [
-        { key: 'freq_other', label: () => `${t('other')} (${t('usageFrequency')})` },
-        { key: 'cats_other', label: () => `${t('other')} (${t('usedCategories')})` },
-        { key: 'time_save_other', label: () => `${t('other')} (${t('timeSave')})` },
-        { key: 'money_save_other', label: () => `${t('other')} (${t('moneySave')})` },
-        { key: 'more_other', label: () => `${t('other')} (${t('useMore')})` },
-        { key: 'wants_services', labelKey: 'futureServices' },
-        { key: 'notes', labelKey: 'anythingElse' }
+        { key: 'usage_frequency_other_text', label: () => `${t('other')} (${t('usageFrequency')})` },
+        { key: 'categories_used_other_text', label: () => `${t('other')} (${t('usedCategories')})` },
+        { key: 'save_time_other_text', label: () => `${t('other')} (${t('timeSave')})` },
+        { key: 'save_money_other_text', label: () => `${t('other')} (${t('moneySave')})` },
+        { key: 'increase_usage_other_text', label: () => `${t('other')} (${t('useMore')})` },
+        { key: 'wanted_additional_services_text', labelKey: 'futureServices' },
+        { key: 'admin_notes', labelKey: 'adminNotes' }
       ],
       columns: [
         { key: 'name', labelKey: 'customerName' },
         { key: 'email', labelKey: 'businessEmail' },
         { key: 'phone', labelKey: 'phoneNumber' },
-        { key: 'freq', labelKey: 'usageFrequency' },
-        { key: 'freq_other', label: () => `${t('other')} (${t('usageFrequency')})` },
-        { key: 'cats', labelKey: 'usedCategories' },
-        { key: 'cats_other', label: () => `${t('other')} (${t('usedCategories')})` },
-        { key: 'ease', labelKey: 'easeBooking' },
-        { key: 'nps', labelKey: 'recommendScore' },
-        { key: 'time_save', labelKey: 'timeSave' },
-        { key: 'time_save_other', label: () => `${t('other')} (${t('timeSave')})` },
-        { key: 'money_save', labelKey: 'moneySave' },
-        { key: 'money_save_other', label: () => `${t('other')} (${t('moneySave')})` },
-        { key: 'wants_services', labelKey: 'futureServices' },
-        { key: 'more', labelKey: 'useMore' },
-        { key: 'more_other', label: () => `${t('other')} (${t('useMore')})` },
-        { key: 'notes', labelKey: 'anythingElse' },
+        { key: 'usage_frequency', labelKey: 'usageFrequency' },
+        { key: 'usage_frequency_other_text', label: () => `${t('other')} (${t('usageFrequency')})` },
+        { key: 'categories_used', labelKey: 'usedCategories' },
+        { key: 'categories_used_other_text', label: () => `${t('other')} (${t('usedCategories')})` },
+        { key: 'last_booking_ease_1_5', labelKey: 'easeBooking' },
+        { key: 'nps_0_10', labelKey: 'recommendScore' },
+        { key: 'save_time', labelKey: 'timeSave' },
+        { key: 'save_time_other_text', label: () => `${t('other')} (${t('timeSave')})` },
+        { key: 'save_money', labelKey: 'moneySave' },
+        { key: 'save_money_other_text', label: () => `${t('other')} (${t('moneySave')})` },
+        { key: 'wanted_additional_services_text', labelKey: 'futureServices' },
+        { key: 'increase_usage_factors', labelKey: 'useMore' },
+        { key: 'increase_usage_other_text', label: () => `${t('other')} (${t('useMore')})` },
+        { key: 'admin_notes', labelKey: 'adminNotes' },
         { key: 'seconds', labelKey: 'durationLabel' },
         { key: 'ts', labelKey: 'timestampLabel' }
       ]
@@ -3717,56 +3953,59 @@
       searchFields: ['name', 'email', 'phone'],
       kpi: records => {
         const total = records.length;
-        const yes = records.filter(r => r.booked_before === 'yes').length;
-        const willing = records.filter(r => r.premium === 'yes').length;
+        const booked = records.filter(r => r.ever_booked_services_online === 'yes').length;
+        const willing = records.filter(r => r.willingness_pay_5_10_aed === 'yes').length;
         const avgSeconds = records.map(r => Number(r.seconds)).filter(n => !Number.isNaN(n));
-        const avg = avgSeconds.length ? avgSeconds.reduce((a,b)=>a+b,0)/avgSeconds.length : 0;
+        const avg = avgSeconds.length ? avgSeconds.reduce((a, b) => a + b, 0) / avgSeconds.length : 0;
         return [
           { labelKey: 'kpiTotal', value: total },
-          { labelKey: 'kpiBookedBefore', value: total ? Math.round((yes/total)*100) + '%' : '0%' },
-          { labelKey: 'kpiWilling', value: total ? Math.round((willing/total)*100) + '%' : '0%' },
+          { labelKey: 'kpiBookedBefore', value: total ? Math.round((booked / total) * 100) + '%' : '0%' },
+          { labelKey: 'kpiWilling', value: total ? Math.round((willing / total) * 100) + '%' : '0%' },
           { labelKey: 'kpiAvgSeconds', value: avg.toFixed(0) }
         ];
       },
       charts: [
-        { id: 'booked_before', type: 'bar', field: 'booked_before', labelKey: 'publicBookedBefore' },
-        { id: 'platforms', type: 'bar', field: 'platforms', mode: 'multi', labelKey: 'usedPlatforms' },
-        { id: 'barrier', type: 'bar', field: 'barrier', labelKey: 'barrierNo' },
-        { id: 'top_factor', type: 'bar', field: 'top_factor', labelKey: 'preferenceFactor' },
-        { id: 'first_cat', type: 'bar', field: 'first_cat', labelKey: 'firstCategory' },
-        { id: 'premium', type: 'bar', field: 'premium', labelKey: 'willingnessFee' }
+        { id: 'ever_booked_services_online', type: 'bar', field: 'ever_booked_services_online', labelKey: 'publicBookedBefore' },
+        { id: 'platforms_used', type: 'bar', field: 'platforms_used', mode: 'multi', labelKey: 'usedPlatforms' },
+        { id: 'why_not_use_apps', type: 'bar', field: 'why_not_use_apps', labelKey: 'barrierNo' },
+        { id: 'factor_rank_1', type: 'bar', field: 'factor_rank_1', labelKey: 'preferenceFactor' },
+        { id: 'category_try_first', type: 'bar', field: 'category_try_first', labelKey: 'firstCategory' },
+        { id: 'willingness_pay_5_10_aed', type: 'bar', field: 'willingness_pay_5_10_aed', labelKey: 'willingnessFee' }
       ],
       openFields: [
-        { key: 'platforms_other', label: () => `${t('other')} (${t('usedPlatforms')})` },
-        { key: 'barrier_other', label: () => `${t('other')} (${t('barrierNo')})` },
-        { key: 'top_factor_other', label: () => `${t('other')} (${t('preferenceFactor')})` },
-        { key: 'first_cat_other', label: () => `${t('other')} (${t('firstCategory')})` },
-        { key: 'premium_other', label: () => `${t('other')} (${t('willingnessFee')})` },
-        { key: 'why_tamam', labelKey: 'whyTamam' }
+        { key: 'platforms_other_text', label: () => `${t('other')} (${t('usedPlatforms')})` },
+        { key: 'why_not_other_text', label: () => `${t('other')} (${t('barrierNo')})` },
+        { key: 'factors_other_text', label: () => `${t('other')} (${t('preferenceFactor')})` },
+        { key: 'category_try_other_text', label: () => `${t('other')} (${t('firstCategory')})` },
+        { key: 'willingness_other_text', label: () => `${t('other')} (${t('willingnessFee')})` },
+        { key: 'choose_tamam_reason_text', labelKey: 'whyTamam' },
+        { key: 'admin_notes', labelKey: 'adminNotes' }
       ],
       columns: [
         { key: 'name', labelKey: 'customerName' },
         { key: 'email', labelKey: 'businessEmail' },
         { key: 'phone', labelKey: 'phoneNumber' },
-        { key: 'booked_before', labelKey: 'publicBookedBefore' },
-        { key: 'platforms', labelKey: 'usedPlatforms' },
-        { key: 'platforms_other', label: () => `${t('other')} (${t('usedPlatforms')})` },
-        { key: 'barrier', labelKey: 'barrierNo' },
-        { key: 'barrier_other', label: () => `${t('other')} (${t('barrierNo')})` },
-        { key: 'top_factor', labelKey: 'preferenceFactor' },
-        { key: 'top_factor_other', label: () => `${t('other')} (${t('preferenceFactor')})` },
-        { key: 'first_cat', labelKey: 'firstCategory' },
-        { key: 'first_cat_other', label: () => `${t('other')} (${t('firstCategory')})` },
-        { key: 'premium', labelKey: 'willingnessFee' },
-        { key: 'premium_other', label: () => `${t('other')} (${t('willingnessFee')})` },
-        { key: 'why_tamam', labelKey: 'whyTamam' },
+        { key: 'ever_booked_services_online', labelKey: 'publicBookedBefore' },
+        { key: 'platforms_used', labelKey: 'usedPlatforms' },
+        { key: 'platforms_other_text', label: () => `${t('other')} (${t('usedPlatforms')})` },
+        { key: 'why_not_use_apps', labelKey: 'barrierNo' },
+        { key: 'why_not_other_text', label: () => `${t('other')} (${t('barrierNo')})` },
+        { key: 'factor_rank_1', labelKey: 'preferenceFactor' },
+        { key: 'factors_other_text', label: () => `${t('other')} (${t('preferenceFactor')})` },
+        { key: 'category_try_first', labelKey: 'firstCategory' },
+        { key: 'category_try_other_text', label: () => `${t('other')} (${t('firstCategory')})` },
+        { key: 'willingness_pay_5_10_aed', labelKey: 'willingnessFee' },
+        { key: 'willingness_other_text', label: () => `${t('other')} (${t('willingnessFee')})` },
+        { key: 'choose_tamam_reason_text', labelKey: 'whyTamam' },
+        { key: 'admin_notes', labelKey: 'adminNotes' },
         { key: 'seconds', labelKey: 'durationLabel' },
         { key: 'ts', labelKey: 'timestampLabel' }
       ]
     }
   };
   function getFieldDefinition(kind, field) {
-    return SURVEY_CONFIGS[kind]?.fields?.find(f => f.key === field);
+    const actualKey = resolveFieldKey(kind, field);
+    return SURVEY_CONFIGS[kind]?.fields?.find(f => f.key === actualKey);
   }
 
   function getOptionLabel(kind, field, value) {
@@ -3983,7 +4222,10 @@
     grid.className = 'open-grid';
     section.appendChild(grid);
     fields.forEach(field => {
-      const list = records.map(r => ({ value: r[field.key], record: r })).filter(item => item.value && String(item.value).trim());
+      const list = records.map(r => ({ value: r[field.key], record: r })).filter(item => {
+        if (Array.isArray(item.value)) return item.value.length > 0;
+        return item.value && String(item.value).trim();
+      });
       if (!list.length) return;
       const block = document.createElement('div');
       block.className = 'open-item';
@@ -3999,13 +4241,14 @@
         const row = document.createElement('div');
         row.className = 'open-item-row';
         const text = document.createElement('span');
-        text.textContent = item.value;
+        const displayValue = formatValueForTable(kind, field.key, item.value) || '';
+        text.textContent = displayValue;
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'copy-btn';
         btn.dataset.i18n = 'copy';
         btn.textContent = t('copy');
-        btn.addEventListener('click', () => copyText(String(item.value)));
+        btn.addEventListener('click', () => copyText(displayValue));
         row.appendChild(text);
         row.appendChild(btn);
         block.appendChild(row);
@@ -4031,6 +4274,18 @@
       output = formatDate(value);
     } else if (key === 'seconds' && value !== undefined) {
       output = numberLabel(Number(value));
+    } else if (key === 'admin_notes' && typeof value === 'string') {
+      const parts = value.split('|').map(part => part.trim()).filter(Boolean);
+      output = parts.map(part => {
+        if (part.startsWith('submission_id=')) {
+          return `${t('submissionIdLabel')}: ${part.replace('submission_id=', '')}`;
+        }
+        if (part.startsWith('note=')) {
+          const note = part.replace('note=', '');
+          return `${t('noteLabel')}: ${note}`;
+        }
+        return part;
+      }).join(' · ');
     } else if (typeof value === 'string' && value.trim() === '') {
       return '';
     }
