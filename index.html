@@ -1893,15 +1893,6 @@
     }
   }
 
-  function ensureJSON(text) {
-    if (!text) return null;
-    try {
-      return JSON.parse(text);
-    } catch (error) {
-      throw new Error('Invalid JSON response');
-    }
-  }
-
   async function postToRemote(kind, record) {
     const payload = { kind, data: {} };
     SURVEY_CONFIGS[kind].recordFields.forEach(key => {
@@ -1923,22 +1914,17 @@
     }
     const response = await fetch(REMOTE_ENDPOINTS.submit, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
+      cache: 'no-store',
       credentials: 'omit'
     });
     if (!response.ok) {
       throw new Error(`Remote post failed: ${response.status}`);
     }
-    const raw = await response.text();
-    const json = ensureJSON(raw);
-    if (json && json.status && json.status !== 'ok') {
-      throw new Error(json.message || 'Remote submission rejected');
-    }
-    if (json && json.data && json.data.vendor && json.data.customer && json.data.public) {
-      applyRemoteSnapshot(json.data);
-    } else if (json && json.vendor && json.customer && json.public) {
-      applyRemoteSnapshot(json);
+    const json = await response.json().catch(() => ({ ok: false, error: 'Invalid response' }));
+    if (!json || json.ok !== true) {
+      throw new Error((json && json.error) || 'Remote submission rejected');
     }
     return json;
   }
@@ -1949,19 +1935,14 @@
     try {
       const response = await fetch(REMOTE_ENDPOINTS.list, {
         method: 'GET',
-        headers: { 'Accept': 'application/json' },
         cache: 'no-store',
         credentials: 'omit',
         signal: controller.signal
       });
       if (!response.ok) throw new Error(`Remote fetch failed: ${response.status}`);
-      const raw = await response.text();
-      const json = ensureJSON(raw) || {};
-      if (json && json.status && json.status !== 'ok' && !(json.vendor || json.customer || json.public)) {
-        throw new Error(json.message || 'Remote snapshot unavailable');
-      }
-      if (json && json.data && json.data.vendor) {
-        return json.data;
+      const json = await response.json();
+      if (!json || typeof json !== 'object') {
+        throw new Error('Remote snapshot unavailable');
       }
       return json;
     } finally {
@@ -4267,12 +4248,13 @@
     exportJSON(true);
     try {
       const response = await fetch(REMOTE_ENDPOINTS.reset, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reset' }),
+        method: 'GET',
+        cache: 'no-store',
         credentials: 'omit'
       });
       if (!response.ok) throw new Error(`Remote reset failed: ${response.status}`);
+      const json = await response.json();
+      if (!json || json.ok !== true) throw new Error(json && json.error ? json.error : 'Remote reset rejected');
     } catch (error) {
       logDebug('Remote reset failed', error);
       showToast(t('syncFailed'));
