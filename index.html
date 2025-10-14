@@ -297,7 +297,13 @@
     }
 
     .section-fade {
-      animation: fadeUp 280ms ease-out both;
+      opacity: 0;
+      transform: translate3d(0, 24px, 0);
+      transition: opacity 320ms ease, transform 320ms ease;
+    }
+    .section-fade.in-view {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
     }
     .hero-immersive {
       padding: 40px 16px 64px;
@@ -421,10 +427,6 @@
     @keyframes haloFloat {
       0%  { transform: translate3d(-4px, 0, 0) scale(1.02); opacity: .85; }
       100%{ transform: translate3d(4px, 2px, 0) scale(1.06); opacity: .95; }
-    }
-    @keyframes fadeUp {
-      0% { opacity: 0; transform: translate3d(0, 24px, 0); }
-      100% { opacity: 1; transform: translate3d(0, 0, 0); }
     }
     .cta-grid {
       margin-top: 32px;
@@ -1123,6 +1125,10 @@
       .hero-sub {
         animation: none !important;
       }
+      .section-fade {
+        opacity: 1 !important;
+        transform: none !important;
+      }
     }
 
     @media (max-width: 720px) {
@@ -1197,7 +1203,7 @@
       introTitle: "Why we're collecting data",
       introBody: 'To better understand how vendors, customers, and the public perceive Tamam\'s commission and subscription models, and to improve fairness and affordability for all.',
       heroTitle: 'Meet Tamam',
-      heroSub: 'Services on demand across Home, Health, Car, and Lifestyle.',
+      heroSub: 'A UAE-born platform connecting you to trusted home, car, health, and lifestyle services.',
       heroUnmute: 'Tap to unmute',
       heroAudioHint: 'Video is playing muted. Tap to enable sound.',
       heroAudioPlaying: 'Sound on. Enjoy the full experience.',
@@ -1384,7 +1390,7 @@
       durationLabel: 'Duration',
       timestampLabel: 'Submitted at',
       instagramAlt: 'Instagram icon',
-      legalNotice: 'Disclaimer: All data is securely stored and used only for Tamam research. We never share or sell user information.',
+      legalNotice: 'Privacy Notice: Your responses are strictly confidential. Tamam will never share or sell this data. The purpose of this survey is purely analytical to help us improve vendor offerings, pricing models, and customer experience.',
       '0': '0',
       '1': '1',
       '2': '2',
@@ -1407,7 +1413,7 @@
       introTitle: 'لماذا نجمع البيانات',
       introBody: 'لفهم أفضل لكيفية رؤية الشركاء والعملاء والجمهور لعمولات تمام ورسوم الاشتراك، ولتحسين العدالة وتكلفة الخدمة للجميع.',
       heroTitle: 'تعرّف على تمام',
-      heroSub: 'خدمات حسب الطلب في مجالات المنزل والصحة والسيارات ونمط الحياة.',
+      heroSub: 'منصة إماراتية تربطك بمزودي خدمات موثوقين في المنزل والصحة والسيارات ونمط الحياة.',
       heroUnmute: 'اضغط لتفعيل الصوت',
       heroAudioHint: 'يتم تشغيل الفيديو دون صوت. اضغط لتفعيل الصوت.',
       heroAudioPlaying: 'تم تشغيل الصوت. استمتع بالتجربة.',
@@ -1594,7 +1600,7 @@
       durationLabel: 'المدة',
       timestampLabel: 'وقت الإرسال',
       instagramAlt: 'أيقونة إنستغرام',
-      legalNotice: 'تنويه: تُحفظ جميع البيانات بأمان وتُستخدم فقط لأبحاث تمام. لا نشارك معلومات المستخدمين ولا نبيعها لأي طرف.',
+      legalNotice: 'إشعار الخصوصية: إجاباتك سرية تماماً. لن تشارك تمام هذه البيانات أو تبيعها. يُستخدم هذا الاستبيان فقط لتحسين عروض الشركاء، ونماذج التسعير، وتجربة العملاء.',
       '0': '٠',
       '1': '١',
       '2': '٢',
@@ -1660,6 +1666,32 @@
   document.documentElement.setAttribute('lang', state.lang === 'ar' ? 'ar' : 'en');
   document.getElementById('app-shell').setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
   document.documentElement.dataset.theme = state.theme;
+
+  const revealObserver = 'IntersectionObserver' in window ? new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.18, rootMargin: '0px 0px -10% 0px' }) : null;
+
+  function watchReveal(element) {
+    if (!element || element.classList.contains('in-view')) return;
+    if (revealObserver) {
+      revealObserver.observe(element);
+    } else {
+      element.classList.add('in-view');
+    }
+  }
+
+  function applyReveal(root) {
+    if (!root) return;
+    if (root.classList?.contains('section-fade')) {
+      watchReveal(root);
+    }
+    root.querySelectorAll?.('.section-fade').forEach(watchReveal);
+  }
 
   const t = (key, vars = {}) => {
     const str = I18N[state.lang][key] || key;
@@ -1861,6 +1893,15 @@
     }
   }
 
+  function ensureJSON(text) {
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      throw new Error('Invalid JSON response');
+    }
+  }
+
   async function postToRemote(kind, record) {
     const payload = { kind, data: {} };
     SURVEY_CONFIGS[kind].recordFields.forEach(key => {
@@ -1889,12 +1930,8 @@
     if (!response.ok) {
       throw new Error(`Remote post failed: ${response.status}`);
     }
-    let json = null;
-    try {
-      json = await response.json();
-    } catch (e) {
-      logDebug('Remote response parse skipped', e);
-    }
+    const raw = await response.text();
+    const json = ensureJSON(raw);
     if (json && json.status && json.status !== 'ok') {
       throw new Error(json.message || 'Remote submission rejected');
     }
@@ -1918,7 +1955,8 @@
         signal: controller.signal
       });
       if (!response.ok) throw new Error(`Remote fetch failed: ${response.status}`);
-      const json = await response.json();
+      const raw = await response.text();
+      const json = ensureJSON(raw) || {};
       if (json && json.status && json.status !== 'ok' && !(json.vendor || json.customer || json.public)) {
         throw new Error(json.message || 'Remote snapshot unavailable');
       }
@@ -1937,7 +1975,10 @@
     if (manual) showToast(t('syncingRemote'));
     try {
       const snapshot = await fetchRemoteData();
-      if (!snapshot || !snapshot.vendor || !snapshot.customer || !snapshot.public) {
+      const hasVendor = Array.isArray(resolveSnapshotList(snapshot, 'vendor'));
+      const hasCustomer = Array.isArray(resolveSnapshotList(snapshot, 'customer'));
+      const hasPublic = Array.isArray(resolveSnapshotList(snapshot, 'public'));
+      if (!snapshot || !hasVendor || !hasCustomer || !hasPublic) {
         throw new Error('Remote snapshot unavailable');
       }
       applyRemoteSnapshot(snapshot);
@@ -1954,11 +1995,18 @@
     }
   }
 
+  function resolveSnapshotList(snapshot, key) {
+    if (!snapshot) return [];
+    if (Array.isArray(snapshot[key])) return snapshot[key];
+    const match = Object.keys(snapshot).find(k => k.toLowerCase() === key);
+    return match && Array.isArray(snapshot[match]) ? snapshot[match] : [];
+  }
+
   function applyRemoteSnapshot(snapshot) {
     if (!snapshot) return;
-    const vendorRecords = (snapshot.vendor || []).map(entry => normalizeRemoteEntry('vendor', entry)).filter(Boolean);
-    const customerRecords = (snapshot.customer || []).map(entry => normalizeRemoteEntry('customer', entry)).filter(Boolean);
-    const publicRecords = (snapshot.public || []).map(entry => normalizeRemoteEntry('public', entry)).filter(Boolean);
+    const vendorRecords = resolveSnapshotList(snapshot, 'vendor').map(entry => normalizeRemoteEntry('vendor', entry)).filter(Boolean);
+    const customerRecords = resolveSnapshotList(snapshot, 'customer').map(entry => normalizeRemoteEntry('customer', entry)).filter(Boolean);
+    const publicRecords = resolveSnapshotList(snapshot, 'public').map(entry => normalizeRemoteEntry('public', entry)).filter(Boolean);
     const dedupe = (kind, list) => {
       const map = new Map();
       list.forEach(rec => {
@@ -2162,6 +2210,7 @@
     wrapper.appendChild(heading);
     wrapper.appendChild(paragraph);
     wrapper.appendChild(form);
+    applyReveal(wrapper);
     return wrapper;
   }
 
@@ -2359,9 +2408,9 @@
       updateSoundUI();
     };
 
-    localStorage.removeItem('tmm_unmute');
     const savedPref = localStorage.getItem(SOUND_STORAGE_KEY);
-    applyMutedState(!(savedPref === '1'));
+    const initialMuted = savedPref === null ? false : savedPref !== '1';
+    applyMutedState(initialMuted);
     requestAnimationFrame(() => {
       heroVideo.play().catch(err => {
         logDebug('Hero autoplay blocked', err);
@@ -2391,6 +2440,7 @@
     };
 
     soundBtn.addEventListener('click', toggleSound);
+    heroVideo.addEventListener('click', toggleSound);
 
     heroVideo.addEventListener('volumechange', () => {
       localStorage.setItem(SOUND_STORAGE_KEY, heroVideo.muted ? '0' : '1');
@@ -2418,6 +2468,7 @@
 
     applyI18n(view);
     container.appendChild(view);
+    applyReveal(view);
 
     state.home = {
       cleanup() {
@@ -2810,6 +2861,8 @@
   function normalizeRemoteEntry(kind, entry) {
     if (!entry) return null;
     const base = entry.data ? { ...entry.data } : { ...entry };
+    if (entry.id && !base.remote_id) base.remote_id = entry.id;
+    if (entry.remote_id && !base.remote_id) base.remote_id = entry.remote_id;
     base.ts = base.ts || entry.ts || entry.timestamp || '';
     base.seconds = base.seconds ?? entry.seconds ?? 0;
     const multi = REMOTE_MULTI_FIELDS[kind] || [];
@@ -3088,7 +3141,7 @@
     const view = document.createElement('section');
     view.className = 'view active';
     const card = document.createElement('div');
-    card.className = 'card survey-card';
+    card.className = 'card survey-card section-fade';
     const heading = document.createElement('h2');
     heading.className = 'section-title';
     heading.dataset.i18n = config.titleKey;
@@ -3173,6 +3226,7 @@
     card.appendChild(form);
     view.appendChild(card);
     container.appendChild(view);
+    applyReveal(view);
 
     surveyState.formEl = form;
     surveyState.progressEl = progressBar;
@@ -3268,7 +3322,7 @@
     const view = document.createElement('section');
     view.className = 'view active';
     const card = document.createElement('div');
-    card.className = 'card thanks';
+    card.className = 'card thanks section-fade';
     const title = document.createElement('h2');
     title.className = 'section-title';
     title.dataset.i18n = 'thanksTitle';
@@ -3288,6 +3342,7 @@
     view.appendChild(card);
     applyI18n(view);
     container.appendChild(view);
+    applyReveal(view);
   }
   function createSurveyRoute(hash, config, password) {
     registerRoute(hash, {
@@ -3301,6 +3356,7 @@
           });
           applyI18n(gate);
           container.appendChild(gate);
+          applyReveal(gate);
           return;
         }
         restoreDraft(config.kind);
@@ -3396,6 +3452,7 @@
           });
           applyI18n(gate);
           container.appendChild(gate);
+          applyReveal(gate);
           return;
         }
         renderResults(container);
@@ -3806,7 +3863,7 @@
   function renderKPIs(kind, records) {
     const kpis = RESULTS_MAP[kind].kpi(records);
     const section = document.createElement('div');
-    section.className = 'card results-section kpi-section';
+    section.className = 'card results-section kpi-section section-fade';
     const title = document.createElement('h3');
     title.className = 'section-title';
     title.dataset.i18n = 'resultsSummary';
@@ -3835,7 +3892,7 @@
 
   function renderCharts(kind, records) {
     const section = document.createElement('div');
-    section.className = 'card results-section charts-section';
+    section.className = 'card results-section charts-section section-fade';
     const title = document.createElement('h3');
     title.className = 'section-title';
     title.dataset.i18n = 'resultsCharts';
@@ -3923,7 +3980,7 @@
 
   function renderOpenResponses(kind, records) {
     const section = document.createElement('div');
-    section.className = 'card results-section open-section';
+    section.className = 'card results-section open-section section-fade';
     const title = document.createElement('h3');
     title.className = 'section-title';
     title.dataset.i18n = 'openResponses';
@@ -3999,7 +4056,7 @@
 
   function renderTable(kind, records) {
     const section = document.createElement('div');
-    section.className = 'card results-section table-section';
+    section.className = 'card results-section table-section section-fade';
     const header = document.createElement('div');
     header.className = 'section-title';
     header.dataset.i18n = 'tableTitle';
@@ -4144,14 +4201,28 @@
     URL.revokeObjectURL(url);
   }
 
-  function exportExcel() {
+  async function exportExcel() {
+    try {
+      const snapshot = await fetchRemoteData();
+      if (snapshot) {
+        applyRemoteSnapshot(snapshot);
+        state.remote.lastSync = new Date().toISOString();
+        state.remote.syncError = null;
+        updateRemoteStatus();
+      }
+    } catch (error) {
+      logDebug('Export prefetch failed', error);
+      showToast(t('syncFailed'));
+    }
     const wb = XLSX.utils.book_new();
     ['vendor','customer','public'].forEach(kind => {
       const data = prepareRecordsForExport(kind);
       const sheet = XLSX.utils.json_to_sheet(data);
       XLSX.utils.book_append_sheet(wb, sheet, kind.charAt(0).toUpperCase() + kind.slice(1));
     });
-    XLSX.writeFile(wb, 'tamam-research.xlsx');
+    const now = new Date();
+    const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    XLSX.writeFile(wb, `Tamam_Research_Results_${stamp}.xlsx`);
     showToast(t('exportReady'));
   }
 
@@ -4217,7 +4288,7 @@
     const view = document.createElement('section');
     view.className = 'view active';
     const card = document.createElement('div');
-    card.className = 'card dashboard-shell';
+    card.className = 'card dashboard-shell section-fade';
 
     const controls = document.createElement('div');
     controls.className = 'export-bar';
@@ -4308,6 +4379,7 @@
     card.appendChild(cardContent);
     view.appendChild(card);
     container.appendChild(view);
+    applyReveal(view);
 
     renderResultsTab(cardContent, state.results.tab);
     applyI18n(view);
@@ -4338,6 +4410,7 @@
     container.appendChild(renderOpenResponses(kind, records));
     container.appendChild(renderTable(kind, records));
     applyI18n(container);
+    applyReveal(container);
   }
   document.addEventListener('tamam:dataUpdated', () => {
     if (state.currentRoute === routes['#/surveys/results'] && state.passwordUnlocked.results) {
