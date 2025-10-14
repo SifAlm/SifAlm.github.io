@@ -1169,7 +1169,7 @@
   <div class="debug-panel" id="debug-panel"></div>
 
   <script>
-  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwh9f5f1-Md6JNkwKw-wicyHW1SD08rwWoJR6RlsoFQ1lxEhtSR4UTcIG9cnWogHDvz/exec';
+  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzszOvemrGVGrgbV9LZ0Xd6_uujyh4nGgremPoTf81HCFKT4Aybncd60Ni3nuSNz3Ec/exec';
   const DEBUG = false;
   const logDebug = (...args) => { if (DEBUG) console.log('[Tamam]', ...args); };
 
@@ -1914,8 +1914,6 @@
     }
     const response = await fetch(REMOTE_ENDPOINTS.submit, {
       method: 'POST',
-      mode: 'cors',
-      redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
       cache: 'no-store'
@@ -1936,10 +1934,8 @@
     try {
       const response = await fetch(REMOTE_ENDPOINTS.list, {
         method: 'GET',
-        mode: 'cors',
         cache: 'no-store',
-        signal: controller.signal,
-        headers: { 'Accept': 'application/json, text/plain, */*' }
+        signal: controller.signal
       });
       if (!response.ok) throw new Error(`Remote fetch failed: ${response.status}`);
       const contentType = response.headers.get('content-type') || '';
