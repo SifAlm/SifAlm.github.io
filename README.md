@@ -18,6 +18,18 @@ The cell will automatically:
 - emit `NOTES.txt` highlighting detections, blockers, and QA warnings;
 - drop annotated screenshots in `justlife_intel/shots/` for downstream QA.
 
+### Workbook layout
+
+`Justlife_CRM.xlsx` includes the following sheets so pricing, availability, and QA can be audited quickly:
+
+- **Services** – service × city roll-up with min/max/avg totals and coverage stats.
+- **Combinations** – one row per enumerated option set with fee/VAT breakdowns and screenshot references.
+- **AddOns** – upsell catalogue with pricing flags.
+- **Availability** – date/slot capture for the configured window (default 14 days).
+- **Offers** – captured offer badges and text.
+- **Errors** – failed URLs with stage, message, and screenshot path.
+- **Meta** – run KPIs, runtime, and version fingerprint.
+
 ### Configuration knobs
 
 The following environment variables can be set inside the Colab cell before running the script to adjust behaviour:
