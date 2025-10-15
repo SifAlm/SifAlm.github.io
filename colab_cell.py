@@ -1,118 +1,101 @@
-"""Google Colab one-cell runner for the Justlife competitive intelligence scraper."""
-
 import importlib
+import os
+import random
+import re
 import subprocess
 import sys
-from typing import List
+from collections import defaultdict
+from dataclasses import dataclass, asdict
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 
 def ensure_dependencies() -> None:
-    """Install runtime dependencies if they are missing."""
+    """Install all runtime dependencies required by the scraper."""
 
-    package_name_map = {
+    packages = {
         "playwright": "playwright",
-        "bs4": "beautifulsoup4",
-        "lxml": "lxml",
         "pandas": "pandas",
         "openpyxl": "openpyxl",
+        "bs4": "beautifulsoup4",
+        "lxml": "lxml",
         "tqdm": "tqdm",
         "fake_useragent": "fake_useragent",
         "nest_asyncio": "nest_asyncio",
         "requests": "requests",
+        "PIL": "pillow",
     }
-    to_install: List[str] = []
-    for module_name, package_name in package_name_map.items():
+    missing: List[str] = []
+    for module, package in packages.items():
         try:
-            importlib.import_module(module_name)
+            importlib.import_module(module)
         except ImportError:
-            to_install.append(package_name)
-    if to_install:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--quiet", *to_install])
+            missing.append(package)
+    if missing:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--quiet", *missing])
     subprocess.check_call([sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"])
 
 
 ensure_dependencies()
 
 import asyncio
-import json
-import math
-import os
-import random
-import re
+import contextlib
+import io
 import time
-from collections import defaultdict, deque
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, Iterable, Optional, Tuple
 
 import nest_asyncio
 import pandas as pd
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
+from PIL import Image, ImageDraw
 from playwright.async_api import TimeoutError as PlaywrightTimeout, async_playwright
-from tqdm import tqdm
 from openpyxl import Workbook
-from openpyxl.chart import BarChart, Reference, PieChart
-from openpyxl.formatting.rule import ColorScaleRule, FormulaRule
-from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
+from openpyxl.formatting.rule import ColorScaleRule, CellIsRule
+from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 nest_asyncio.apply()
 
+
+BASE_URL = "https://www.justlife.com/en-AE"
 OUTPUT_DIR = Path("justlife_intel")
 OUTPUT_DIR.mkdir(exist_ok=True)
+SHOTS_DIR = OUTPUT_DIR / "shots"
+SHOTS_DIR.mkdir(exist_ok=True)
 
-SERVICE_KEYWORDS = [
-    "clean", "therapy", "nursing", "salon", "laundry", "maid", "pest",
-    "tint", "wash", "plumb", "paint", "maintenance", "car", "home",
-    "health", "beauty", "wellness", "relocation", "moving", "steril"
-]
-EXCLUDED_SEGMENTS = ["blog", "terms", "privacy", "faq", "policies", "career", "contact"]
+SERVICE_URL_TARGET = 90
+DEFAULT_HEADERS = {
+    "accept-language": "en-AE,en;q=0.9",
+}
+
 PRICE_SELECTORS = [
+    "[data-testid*='total']",
     "[data-testid*='price']",
-    "[data-test*='price']",
-    "[class*='price']",
     "[class*='total']",
-    "[data-testid*='summary'] [class*='amount']",
+    "[class*='price']",
     "[class*='summary'] [class*='amount']",
 ]
-ADDON_SELECTORS = [
-    "[data-testid*='addon']",
-    "[class*='addon']",
-    "[class*='upsell']",
-    "[data-test*='upsell']",
-]
-AVAILABILITY_TRIGGER_TEXT = ["schedule", "slot", "time", "date", "book", "choose"]
-SLOT_SELECTORS = [
-    "[data-testid*='slot']",
-    "[class*='slot']",
-    "button:has-text('AM')",
-    "button:has-text('PM')",
-]
-# Soupsieve (used by BeautifulSoup) cannot parse Playwright-style pseudo selectors such as
-# `:has-text()`, so keep a sanitized variant for static parsing operations.
-BS_SLOT_SELECTORS = [selector for selector in SLOT_SELECTORS if ":" not in selector]
-OFFER_SELECTORS = [
-    "[data-testid*='offer']",
-    "[class*='offer']",
-    "[class*='discount']",
-]
+CONTROL_LABEL_HINTS = {
+    "HOURS_PROS": ["hour", "duration", "cleaner", "professional", "maid"],
+    "ROOM_MATERIAL": ["bedroom", "bathroom", "kitchen", "room", "material"],
+    "UNIT_QUANTITY": ["unit", "item", "piece", "appliance", "sofa"],
+    "AREA_BASED": ["sq", "area", "meter", "m²", "sqft"],
+    "FLAT_PACKAGE": ["package", "plan", "bundle", "basic", "premium"],
+}
+AVAILABILITY_TRIGGER_TEXT = ["schedule", "book", "time", "slot", "select date"]
 
 
 @dataclass
 class Config:
-    base_url: str = os.environ.get("BASE", "https://www.justlife.com/en-AE")
+    base_url: str = os.environ.get("BASE", BASE_URL)
     market: str = os.environ.get("MARKET", "dubai")
     days: int = int(os.environ.get("DAYS", "14"))
-    max_combinations: int = int(os.environ.get("MAX_COMBOS", "60"))
+    max_combos: int = int(os.environ.get("MAX_COMBOS", "60"))
     headless: bool = os.environ.get("HEADLESS", "1") == "1"
-    throttle_seconds: float = 1.5
-    jitter_seconds: float = 0.75
-    accept_language: str = "en-AE,en;q=0.9"
-    user_agent: Optional[str] = None
-    discovery_limit: int = 80
-    per_service_retry: int = 2
+    throttle_seconds: float = 1.1
+    jitter_seconds: float = 0.6
+    retries: int = 2
 
 
 @dataclass
@@ -144,21 +127,28 @@ class PriceRecord:
     page_id: str
     service_name: str
     model_type: str
-    dimensions: Dict[str, Any]
-    offer_state: str
-    offer_name: Optional[str]
-    discount_type: Optional[str]
-    discount_value: Optional[float]
-    base_price: float
-    fees_total: float
-    vat_amount: float
-    vat_percent: Optional[float]
-    grand_total: float
-    currency: str
-    pricing_source_url: str
-    collected_at: str
-    qa_flags: List[str]
-    selector_meta: Dict[str, Any]
+    hours: Optional[float] = None
+    pros: Optional[int] = None
+    bedrooms: Optional[int] = None
+    bathrooms: Optional[int] = None
+    kitchen_package: Optional[str] = None
+    appliance_combo: Optional[str] = None
+    package_name: Optional[str] = None
+    duration: Optional[str] = None
+    offer_state: str = "OFF"
+    offer_name: Optional[str] = None
+    discount_type: Optional[str] = None
+    discount_value: Optional[float] = None
+    base_price: Optional[float] = None
+    fees_total: Optional[float] = None
+    vat_amount: Optional[float] = None
+    vat_percent: Optional[float] = None
+    grand_total: Optional[float] = None
+    currency: Optional[str] = None
+    pricing_source_url: str = ""
+    collected_at: str = ""
+    qa_flags: str = ""
+    screenshot_ref: Optional[str] = None
 
 
 @dataclass
@@ -207,1231 +197,699 @@ class ElementRecord:
     normalized_text: str
 
 
-@dataclass
-class ControlOption:
-    control_group: str
-    option_label: str
-    option_code: str
-    selector: str
-    option_type: str
-    value: Optional[str]
-    is_default: bool
-    sort_index: int
+class RunState:
+    def __init__(self, config: Config) -> None:
+        self.config = config
+        self.pages: List[PageRecord] = []
+        self.options: List[OptionRecord] = []
+        self.prices: List[PriceRecord] = []
+        self.addons: List[AddonRecord] = []
+        self.availability: List[AvailabilityRecord] = []
+        self.offers: List[OfferRecord] = []
+        self.elements: List[ElementRecord] = []
+        self.notes: List[str] = []
+        self.errors: List[str] = []
+        self.screenshots: Dict[str, str] = {}
+        self.summary_counts = {
+            "services": 0,
+            "combos": 0,
+            "addons": 0,
+            "slots": 0,
+            "offers": 0,
+        }
 
+    def log_note(self, message: str) -> None:
+        print(message)
+        self.notes.append(message)
 
-@dataclass
-class Control:
-    group: str
-    control_type: str
-    options: List[ControlOption]
+    def log_error(self, message: str) -> None:
+        print(f"[ERROR] {message}")
+        self.errors.append(message)
 
-
-@dataclass
-class ServiceArtifacts:
-    page: PageRecord
-    options: List[OptionRecord]
-    prices: List[PriceRecord]
-    addons: List[AddonRecord]
-    availability: List[AvailabilityRecord]
-    offers: List[OfferRecord]
-    elements: List[ElementRecord]
-
-
-@dataclass
-class PipelineArtifacts:
-    pages: List[PageRecord] = field(default_factory=list)
-    options: List[OptionRecord] = field(default_factory=list)
-    prices: List[PriceRecord] = field(default_factory=list)
-    addons: List[AddonRecord] = field(default_factory=list)
-    availability: List[AvailabilityRecord] = field(default_factory=list)
-    offers: List[OfferRecord] = field(default_factory=list)
-    elements: List[ElementRecord] = field(default_factory=list)
-    notes: List[str] = field(default_factory=list)
-
-
-# Utility helpers
 
 def utc_now() -> str:
-    return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    return datetime.utcnow().isoformat(timespec="seconds") + "Z"
 
 
-def uuid5_url(url: str) -> str:
-    import uuid
-    return str(uuid.uuid5(uuid.NAMESPACE_URL, url))
+def slugify(text: str) -> str:
+    base = re.sub(r"[^a-zA-Z0-9]+", "-", text.strip().lower()).strip("-")
+    return base or "page"
 
 
-def normalize_space(value: str) -> str:
-    return re.sub(r"\s+", " ", value).strip()
+def canonicalize_url(url: str) -> str:
+    url = re.sub(r"(en-AE/)+", "en-AE/", url)
+    url = url.split("#")[0]
+    url = url.split("?")[0]
+    if url.endswith("//"):
+        url = url[:-1]
+    if url.endswith("/"):
+        url = url[:-1]
+    return url
 
 
-def canonicalize_url(url: str, base: str) -> str:
-    from urllib.parse import urlparse, urlunparse
-
-    if not url:
-        return url
-    parsed = urlparse(url)
-    scheme = parsed.scheme or "https"
-    netloc = parsed.netloc or urlparse(base).netloc
-    path = parsed.path or "/"
-    while "/en-AE/en-AE" in path:
-        path = path.replace("/en-AE/en-AE", "/en-AE")
-    while "//" in path:
-        path = path.replace("//", "/")
-    if not path.startswith("/"):
-        path = "/" + path
-    path = path.rstrip("/") or "/"
-    normalized = urlunparse((scheme, netloc, path, "", "", ""))
-    if not normalized.startswith("http"):
-        normalized = f"https://{netloc}{path}"
-    return normalized
+async def random_sleep(cfg: Config) -> None:
+    base = cfg.throttle_seconds
+    jitter = random.random() * cfg.jitter_seconds
+    await asyncio.sleep(base + jitter)
 
 
-def slugify(value: str) -> str:
-    value = normalize_space(value)
-    value = re.sub(r"[^0-9A-Za-z]+", "-", value)
-    value = value.strip("-")
-    return value.lower() or "value"
+async def take_screenshot(page, path: Path, highlight_rects: Optional[List[Dict[str, float]]] = None) -> None:
+    raw = await page.screenshot(full_page=True)
+    image = Image.open(io.BytesIO(raw)).convert("RGB")
+    if highlight_rects:
+        draw = ImageDraw.Draw(image)
+        for rect in highlight_rects:
+            x = rect.get("x", 0)
+            y = rect.get("y", 0)
+            width = rect.get("width", 0)
+            height = rect.get("height", 0)
+            draw.rectangle([x, y, x + width, y + height], outline="red", width=5)
+    image.save(path)
 
 
-def level_for_depth(depth: int) -> str:
-    if depth <= 0:
-        return "home"
-    if depth == 1:
-        return "category"
-    if depth == 2:
-        return "subcategory"
-    if depth == 3:
-        return "service"
-    return "flow"
-
-
-def throttle_delay(config: Config) -> float:
-    base = random.gauss(config.throttle_seconds, config.jitter_seconds / 2)
-    return max(0.2, base)
-
-
-def safe_float(value: Optional[str]) -> Optional[float]:
-    if value is None:
-        return None
-    try:
-        cleaned = value.replace(",", "").replace("AED", "").strip()
-        return float(re.findall(r"[0-9]+(?:\.[0-9]+)?", cleaned)[0])
-    except Exception:
-        return None
-
-
-def find_currency(text: str) -> Tuple[str, float]:
-    match = re.search(r"(AED|د.إ)\s*([0-9.,]+)", text)
-    if match:
-        value = float(match.group(2).replace(",", ""))
-        return match.group(1), value
-    numbers = re.findall(r"[0-9]+(?:\.[0-9]+)?", text)
-    if numbers:
-        return "AED", float(numbers[0])
-    return "AED", 0.0
-
-
-async def read_first_text(page, selectors: List[str]) -> str:
+async def gather_highlight_rects(page, selectors: Iterable[str]) -> List[Dict[str, float]]:
+    rects: List[Dict[str, float]] = []
     for selector in selectors:
         try:
-            locator = page.locator(selector).first
-            if await locator.count() == 0:
-                continue
-            text = normalize_space(await locator.inner_text())
-            if text:
-                return text
-        except Exception:
+            elements = await page.query_selector_all(selector)
+        except PlaywrightTimeout:
             continue
+        for el in elements:
+            with contextlib.suppress(Exception):
+                box = await el.bounding_box()
+                if box:
+                    rects.append(box)
+    return rects
+
+
+async def extract_links(page) -> List[str]:
+    links = await page.eval_on_selector_all("a", "elements => elements.map(el => el.href)")
+    return [href for href in links if isinstance(href, str) and href.startswith("https://www.justlife.com/en-AE")]
+
+
+def filter_service_links(links: Iterable[str]) -> List[str]:
+    filtered = []
+    for href in links:
+        url = canonicalize_url(href)
+        if any(excl in url.lower() for excl in ["/blog", "faq", "privacy", "terms", "policy", "sitemap", "cart", "contact", "login"]):
+            continue
+        if len(url.split("/")) <= 4:
+            continue
+        filtered.append(url)
+    return sorted(set(filtered))
+
+
+async def ensure_market(page, cfg: Config, state: RunState) -> None:
     try:
-        locator = page.locator("xpath=//*[contains(text(), 'AED')]").first
-        if await locator.count():
-            return normalize_space(await locator.inner_text())
-    except Exception:
-        pass
+        location_chip = await page.query_selector("[data-testid*='location']")
+        if location_chip:
+            text = (await location_chip.inner_text()).lower()
+            if cfg.market.lower() not in text:
+                await location_chip.click()
+                await asyncio.sleep(1)
+                input_box = await page.wait_for_selector("input[placeholder*='Search']", timeout=5000)
+                await input_box.fill(cfg.market)
+                await asyncio.sleep(0.5)
+                await page.keyboard.press("Enter")
+                await asyncio.sleep(2)
+    except PlaywrightTimeout:
+        state.log_note("Location chip not found; assuming default Dubai context")
+
+
+async def detect_model(page, state: RunState, page_id: str) -> Tuple[str, Dict[str, Any]]:
+    html = await page.content()
+    soup = BeautifulSoup(html, "lxml")
+    model_scores: Dict[str, float] = defaultdict(float)
+    group_evidence: Dict[str, List[str]] = defaultdict(list)
+    for model, hints in CONTROL_LABEL_HINTS.items():
+        for hint in hints:
+            matches = soup.find_all(string=re.compile(hint, re.I))
+            if matches:
+                model_scores[model] += len(matches)
+                for match in matches:
+                    snippet = match.strip()
+                    group_evidence[model].append(snippet[:80])
+    if not model_scores:
+        state.elements.append(
+            ElementRecord(page_id, "*", "model-detection", "no-hints", "no-hints")
+        )
+        return "OTHER", {}
+    best_model = max(model_scores, key=model_scores.get)
+    evidence = {best_model: group_evidence[best_model]}
+    for snippet in group_evidence[best_model][:3]:
+        state.elements.append(
+            ElementRecord(page_id, "text-match", "model-evidence", snippet, snippet.lower())
+        )
+    return best_model, evidence
+
+
+async def get_service_title(page) -> str:
+    for selector in ["h1", "h2", "[data-testid*='title']"]:
+        try:
+            el = await page.query_selector(selector)
+            if el:
+                title = await el.inner_text()
+                title = re.sub(r"\s+", " ", title).strip()
+                if title:
+                    return title
+        except PlaywrightTimeout:
+            continue
+    return "Justlife Service"
+
+
+async def wait_for_price_change(page, previous_text: str) -> str:
+    for _ in range(8):
+        for selector in PRICE_SELECTORS:
+            with contextlib.suppress(Exception):
+                el = await page.query_selector(selector)
+                if el:
+                    current = await el.inner_text()
+                    if current and current != previous_text:
+                        return current
+        await asyncio.sleep(1)
+    return previous_text
+
+
+def parse_price_text(text: str) -> Tuple[Optional[str], Optional[float]]:
+    if not text:
+        return None, None
+    text = text.replace("\n", " ")
+    currency_match = re.search(r"AED|د\.إ", text, re.I)
+    number_match = re.search(r"([0-9]+(?:,[0-9]{3})*(?:\.[0-9]+)?)", text.replace(",", ""))
+    currency = "AED" if currency_match else None
+    amount = float(number_match.group(1)) if number_match else None
+    return currency, amount
+
+
+async def enumerate_options(page, model_type: str, state: RunState, page_id: str) -> Tuple[List[Dict[str, Any]], Dict[str, List[Dict[str, Any]]]]:
+    option_groups: Dict[str, List[Dict[str, Any]]] = {}
+    records: List[Dict[str, Any]] = []
+    seen = set()
+    labels = await page.eval_on_selector_all("label", "els => els.map(el => el.innerText)")
+    for label in labels:
+        normalized = label.strip().lower()
+        if not normalized:
+            continue
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        if any(hint in normalized for hint in CONTROL_LABEL_HINTS.get(model_type, [])):
+            # attempt to find associated inputs
+            option_groups[label] = []
+    # fallback: look for button groups
+    buttons = await page.eval_on_selector_all("button", "els => els.map(el => ({text: el.innerText, dataTestId: el.dataset.testid || ''})) )")
+    for button in buttons:
+        text = (button.get("text") or "").strip()
+        if len(text) > 40 or len(text) <= 1:
+            continue
+        lowered = text.lower()
+        for model, hints in CONTROL_LABEL_HINTS.items():
+            if any(hint in lowered for hint in hints):
+                option_groups.setdefault(text, [])
+    for group_label in list(option_groups.keys()):
+        selector = f"label:has-text(\"{group_label}\")"
+        try:
+            input_container = await page.query_selector(selector)
+        except Exception:
+            input_container = None
+        options: List[Dict[str, Any]] = []
+        if input_container:
+            descendants = await input_container.query_selector_all("input, button, option")
+        else:
+            descendants = await page.query_selector_all("button, [role='option']")
+        for idx, desc in enumerate(descendants):
+            with contextlib.suppress(Exception):
+                text = await desc.inner_text()
+                text = re.sub(r"\s+", " ", text).strip()
+                if not text or len(text) > 50:
+                    continue
+                value = await desc.get_attribute("value") or await desc.get_attribute("data-value") or text
+                options.append({
+                    "label": text,
+                    "value": value,
+                    "index": idx,
+                })
+        if not options:
+            continue
+        option_groups[group_label] = options
+        for idx, opt in enumerate(options):
+            state.options.append(
+                OptionRecord(
+                    page_id=page_id,
+                    control_group=group_label,
+                    option_code=str(opt["value"]),
+                    option_label=opt["label"],
+                    option_type="button",
+                    is_default=(idx == 0),
+                    sort_index=idx,
+                )
+            )
+    if not option_groups:
+        state.log_note(f"No option groups detected for {page_id}")
+    # Build a set of combinations limited by max combos
+    combos: List[Dict[str, Any]] = []
+    keys = list(option_groups.keys())
+    if not keys:
+        return combos, option_groups
+    def backtrack(index: int, current: Dict[str, Any]) -> None:
+        if len(combos) >= state.config.max_combos:
+            return
+        if index >= len(keys):
+            combos.append(current.copy())
+            return
+        group = keys[index]
+        choices = option_groups[group]
+        subset = [choices[0]]
+        if len(choices) > 1:
+            subset.append(choices[-1])
+        mid = len(choices) // 2
+        if len(choices) > 2 and choices[mid] not in subset:
+            subset.append(choices[mid])
+        for choice in subset:
+            current[group] = choice
+            backtrack(index + 1, current)
+        current.pop(group, None)
+    backtrack(0, {})
+    return combos, option_groups
+
+
+async def capture_price(page, combos: List[Dict[str, Any]], model_type: str, state: RunState, page_id: str, service_name: str, evidence: Dict[str, Any]) -> None:
+    if not combos:
+        text = await get_price_text(page)
+        currency, amount = parse_price_text(text)
+        record = PriceRecord(
+            page_id=page_id,
+            service_name=service_name,
+            model_type=model_type,
+            base_price=amount,
+            grand_total=amount,
+            currency=currency,
+            pricing_source_url=page.url,
+            collected_at=utc_now(),
+            qa_flags="NO_COMBOS",
+        )
+        state.prices.append(record)
+        state.summary_counts["combos"] += 1
+        return
+    for combo in combos:
+        previous = await get_price_text(page)
+        for group_label, choice in combo.items():
+            await apply_option(page, group_label, choice)
+            await asyncio.sleep(1)
+        latest = await wait_for_price_change(page, previous)
+        currency, amount = parse_price_text(latest)
+        qa_flags = []
+        if amount is None:
+            qa_flags.append("NO_PRICE")
+        record = PriceRecord(
+            page_id=page_id,
+            service_name=service_name,
+            model_type=model_type,
+            base_price=amount,
+            grand_total=amount,
+            currency=currency,
+            pricing_source_url=page.url,
+            collected_at=utc_now(),
+            qa_flags=",".join(qa_flags),
+        )
+        for group_label, choice in combo.items():
+            normalized = group_label.lower()
+            value = choice["label"]
+            if "hour" in normalized:
+                record.hours = float(re.findall(r"\d+", value)[0]) if re.findall(r"\d+", value) else None
+            elif "professional" in normalized or "cleaner" in normalized:
+                record.pros = int(re.findall(r"\d+", value)[0]) if re.findall(r"\d+", value) else None
+            elif "bed" in normalized:
+                record.bedrooms = int(re.findall(r"\d+", value)[0]) if re.findall(r"\d+", value) else None
+            elif "bath" in normalized:
+                record.bathrooms = int(re.findall(r"\d+", value)[0]) if re.findall(r"\d+", value) else None
+            elif "package" in normalized:
+                record.package_name = value
+            elif "unit" in normalized or "item" in normalized or "piece" in normalized:
+                record.appliance_combo = value
+        state.prices.append(record)
+        state.summary_counts["combos"] += 1
+        await asyncio.sleep(0.5)
+
+
+async def apply_option(page, group_label: str, choice: Dict[str, Any]) -> None:
+    text = choice.get("label")
+    if not text:
+        return
+    locator = page.locator(f"text={text}")
+    try:
+        await locator.first.click(timeout=4000)
+    except PlaywrightTimeout:
+        with contextlib.suppress(Exception):
+            handle = await page.query_selector(f"[value='{choice.get('value')}']")
+            if handle:
+                await handle.click()
+
+
+async def get_price_text(page) -> str:
+    for selector in PRICE_SELECTORS:
+        try:
+            el = await page.query_selector(selector)
+            if el:
+                text = await el.inner_text()
+                if text:
+                    return text
+        except PlaywrightTimeout:
+            continue
     return ""
 
 
-async def wait_for_price_change(page, previous: str, timeout: float = 6.0) -> str:
-    start = time.time()
-    last = previous
-    while time.time() - start < timeout:
-        current = await read_first_text(page, PRICE_SELECTORS)
-        if current and normalize_space(current) != normalize_space(last):
-            return current
-        await asyncio.sleep(0.4)
-    return last
-
-
-async def extract_breakdown(page) -> Dict[str, Any]:
-    selectors = ["[data-testid*='summary']", "[class*='summary']", "[data-testid*='breakdown']", "[class*='breakdown']"]
-    for selector in selectors:
+async def capture_addons(page, page_id: str, state: RunState) -> None:
+    addons_locator = page.locator("text=/add-ons|extras/i")
+    if await addons_locator.count():
+        with contextlib.suppress(Exception):
+            await addons_locator.first.click()
+            await asyncio.sleep(1)
+    candidates = await page.query_selector_all("[data-testid*='addon'], [class*='addon'], [class*='upsell']")
+    for candidate in candidates:
         try:
-            locator = page.locator(selector).first
-            if await locator.count():
-                text = normalize_space(await locator.inner_text())
-                if text:
-                    return {"text": text}
+            text = await candidate.inner_text()
         except Exception:
             continue
-    return {}
-
-
-async def js_controls(page) -> List[Dict[str, Any]]:
-    script = """
-    () => {
-        const cssPath = (el) => {
-            if (!el) return null;
-            const path = [];
-            while (el && el.nodeType === 1 && path.length < 8) {
-                let selector = el.nodeName.toLowerCase();
-                if (el.id) {
-                    selector += '#' + CSS.escape(el.id);
-                    path.unshift(selector);
-                    break;
-                } else {
-                    let sibling = el;
-                    let nth = 1;
-                    while (sibling = sibling.previousElementSibling) {
-                        if (sibling.nodeName === el.nodeName) nth += 1;
-                    }
-                    selector += `:nth-of-type(${nth})`;
-                    path.unshift(selector);
-                    el = el.parentElement;
-                }
-            }
-            return path.join(' > ');
-        };
-
-        const controls = [];
-        const pushControl = (group, type, el, extra = {}) => {
-            if (!el) return;
-            const label = (el.innerText || el.textContent || '').trim();
-            if (!label) return;
-            const selector = cssPath(el);
-            if (!selector) return;
-            controls.push({
-                group,
-                type,
-                selector,
-                optionLabel: label,
-                value: el.value || el.getAttribute('data-value') || null,
-                meta: extra
-            });
-        };
-
-        const labelFor = (el) => {
-            if (!el) return null;
-            const labelledby = el.getAttribute('aria-labelledby');
-            if (labelledby) {
-                const labelEl = document.getElementById(labelledby);
-                if (labelEl) return (labelEl.innerText || labelEl.textContent || '').trim();
-            }
-            const ariaLabel = el.getAttribute('aria-label');
-            if (ariaLabel) return ariaLabel.trim();
-            const id = el.id;
-            if (id) {
-                const label = document.querySelector(`label[for="${CSS.escape(id)}"]`);
-                if (label) return (label.innerText || label.textContent || '').trim();
-            }
-            const prev = el.closest('div, section, article');
-            if (prev) {
-                const heading = prev.querySelector('h2, h3, h4, strong, p');
-                if (heading) {
-                    const text = (heading.innerText || heading.textContent || '').trim();
-                    if (text.length <= 80) return text;
-                }
-            }
-            return null;
-        };
-
-        const registerControl = (group, type, el, extra = {}) => {
-            pushControl(group || 'Options', type, el, extra);
-        };
-
-        document.querySelectorAll('select').forEach((selectEl, idx) => {
-            const group = labelFor(selectEl) || selectEl.name || `Select ${idx + 1}`;
-            Array.from(selectEl.options).forEach((opt, optIndex) => {
-                if (!opt.value && !opt.textContent.trim()) return;
-                const option = {
-                    group,
-                    type: 'select',
-                    selector: cssPath(selectEl),
-                    optionLabel: (opt.innerText || opt.textContent || '').trim() || opt.value,
-                    value: opt.value || opt.textContent.trim(),
-                    meta: { optionIndex: optIndex }
-                };
-                controls.push(option);
-            });
-        });
-
-        const clickableSelectors = [
-            "button",
-            "[role='button']",
-            "[role='option']",
-            "[data-testid*='option']",
-            "[class*='pill']",
-            "[class*='chip']",
-            "[class*='option']",
-            "[class*='selector']"
-        ];
-        clickableSelectors.forEach(sel => {
-            document.querySelectorAll(sel).forEach((el, idx) => {
-                if (!el || el.disabled || el.getAttribute('aria-hidden') === 'true') return;
-                if (!el.offsetParent) return;
-                const text = (el.innerText || el.textContent || '').trim();
-                if (!text || text.length > 80) return;
-                const groupEl = el.closest('[data-testid*="option"], [data-testid*="group"], [role="radiogroup"], [role="group"], [class*="options"], [class*="group"], section, article, div');
-                let group = null;
-                if (groupEl) {
-                    group = groupEl.getAttribute('data-testid') || groupEl.getAttribute('aria-label');
-                    if (!group) {
-                        const header = groupEl.querySelector('h2, h3, h4, strong, label');
-                        if (header) group = (header.innerText || header.textContent || '').trim();
-                    }
-                }
-                if (!group) group = `Choice ${idx + 1}`;
-                const selector = cssPath(el);
-                if (!selector) return;
-                controls.push({
-                    group,
-                    type: 'click',
-                    selector,
-                    optionLabel: text,
-                    value: null,
-                    meta: {}
-                });
-            });
-        });
-
-        return controls;
-    }
-    """
-    try:
-        return await page.evaluate(script)
-    except Exception:
-        return []
-
-
-class JustlifeScraper:
-    def __init__(self, config: Config):
-        self.config = config
-        self.playwright = None
-        self.browser = None
-        self.context = None
-        self.page = None
-        self.artifacts = PipelineArtifacts()
-        self.errors: List[str] = []
-
-    async def __aenter__(self):
-        ua = self.config.user_agent
-        if not ua:
-            try:
-                ua = UserAgent().chrome
-            except Exception:
-                ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
-        self.config.user_agent = ua
-        self.playwright = await async_playwright().start()
-        self.browser = await self.playwright.chromium.launch(headless=self.config.headless)
-        self.context = await self.browser.new_context(
-            locale="en-AE",
-            user_agent=self.config.user_agent,
-            extra_http_headers={"Accept-Language": self.config.accept_language},
-            viewport={"width": 1280, "height": 720},
+        normalized = re.sub(r"\s+", " ", text).strip()
+        if not normalized:
+            continue
+        currency, amount = parse_price_text(normalized)
+        name = normalized.split("AED")[0].strip()
+        record = AddonRecord(
+            page_id=page_id,
+            addon_name=name,
+            addon_description=normalized,
+            addon_price=amount,
+            currency=currency,
+            is_recommended="recommended" in normalized.lower(),
+            is_required="required" in normalized.lower(),
+            seen_on_step="pre-cart",
+            pricing_source_url="",
+            collected_at=utc_now(),
         )
-        self.page = await self.context.new_page()
-        self.page.set_default_timeout(45000)
-        return self
+        state.addons.append(record)
+        state.summary_counts["addons"] += 1
 
-    async def __aexit__(self, exc_type, exc, tb):
-        if self.context:
-            await self.context.close()
-        if self.browser:
-            await self.browser.close()
-        if self.playwright:
-            await self.playwright.stop()
 
-    async def navigate(self, url: str) -> bool:
-        for attempt in range(3):
-            try:
-                await self.page.goto(url, wait_until="domcontentloaded")
-                await asyncio.sleep(throttle_delay(self.config))
-                return True
-            except PlaywrightTimeout:
-                await asyncio.sleep(1.5)
-            except Exception as err:
-                self.errors.append(f"Navigation error {url}: {err}")
-                await asyncio.sleep(1.5)
-        return False
-
-    async def discover(self):
-        base = self.config.base_url.rstrip("/")
-        queue = deque([(canonicalize_url(base, base), None, 0)])
-        seen = set()
-        while queue and len(self.artifacts.pages) < self.config.discovery_limit:
-            url, parent_id, depth = queue.popleft()
-            normalized_url = canonicalize_url(url, base)
-            if normalized_url in seen:
-                continue
-            seen.add(normalized_url)
-            ok = await self.navigate(normalized_url)
-            if not ok:
-                self.artifacts.notes.append(f"Failed to navigate during discovery: {normalized_url}")
-                continue
-            await self.page.wait_for_timeout(500)
-            content = await self.page.content()
-            soup = BeautifulSoup(content, "lxml")
-            title = await self.extract_title()
-            controls = await js_controls(self.page)
-            model_type, has_addons, has_slots, notes, element_logs = await self.detect_model(controls)
-            page_id = uuid5_url(normalized_url)
-            level = level_for_depth(depth)
-            if model_type != "OTHER" and level in {"category", "subcategory"}:
-                level = "service"
-            page_record = PageRecord(
-                page_id=page_id,
-                parent_page_id=parent_id,
-                level=level,
-                url=normalized_url,
-                page_title_text=title or slugify(url.split("/")[-1]),
-                detected_model_type=model_type,
-                has_addons=has_addons,
-                has_slots=has_slots,
-                notes=notes,
-            )
-            self.artifacts.pages.append(page_record)
-            for log in element_logs:
-                log.page_id = page_id
-                self.artifacts.elements.append(log)
-            new_links = await self.extract_links(normalized_url)
-            for link in new_links:
-                if link not in seen:
-                    queue.append((link, page_id, depth + 1))
-
-    async def extract_title(self) -> str:
-        for selector in ["h1", "h2", "title"]:
-            try:
-                locator = self.page.locator(selector).first
-                if await locator.count():
-                    text = normalize_space(await locator.inner_text())
-                    if text:
-                        return text
-            except Exception:
-                continue
-        return normalize_space(await self.page.title())
-
-    async def extract_links(self, current_url: str) -> List[str]:
-        base = self.config.base_url.rstrip("/")
-        js_links = await self.page.evaluate(
-            """
-            () => {
-                const anchors = Array.from(document.querySelectorAll('a[href]'));
-                const items = [];
-                anchors.forEach(anchor => {
-                    const href = anchor.getAttribute('href');
-                    if (!href || href.startsWith('#') || href.toLowerCase().startsWith('javascript')) return;
-                    let absolute;
-                    try {
-                        absolute = new URL(href, window.location.origin).href;
-                    } catch (err) {
-                        return;
-                    }
-                    const text = (anchor.innerText || anchor.textContent || '').trim().toLowerCase();
-                    const meta = (anchor.getAttribute('data-testid') || anchor.className || '').toLowerCase();
-                    items.push({ href: absolute, text, meta });
-                });
-                return items;
-            }
-            """,
+async def capture_offers(page, page_id: str, state: RunState) -> None:
+    offer_nodes = await page.query_selector_all("[class*='offer'], [data-testid*='offer'], [class*='discount']")
+    for node in offer_nodes:
+        text = await node.inner_text()
+        normalized = re.sub(r"\s+", " ", text).strip()
+        if not normalized:
+            continue
+        currency, amount = parse_price_text(normalized)
+        record = OfferRecord(
+            page_id=page_id,
+            offer_name=normalized[:80],
+            offer_badge_text=normalized[:40],
+            description=normalized,
+            eligibility="",
+            discount_type="percent" if "%" in normalized else ("flat" if amount else None),
+            discount_value=amount,
+            stacking_rules="",
+            collected_at=utc_now(),
         )
-        links: List[str] = []
-        for item in js_links:
-            href = item.get("href")
-            if not href or not href.startswith(base):
-                continue
-            if any(segment in href.lower() for segment in EXCLUDED_SEGMENTS):
-                continue
-            text = item.get("text", "")
-            meta = item.get("meta", "")
-            if not any(keyword in href.lower() or keyword in text for keyword in SERVICE_KEYWORDS):
-                if "book" not in text and "book" not in meta and "service" not in text:
-                    continue
-            normalized = canonicalize_url(href, base)
-            if normalized == current_url:
-                continue
-            links.append(normalized)
-        return list(dict.fromkeys(links))
+        state.offers.append(record)
+        state.summary_counts["offers"] += 1
 
-    async def detect_model(self, controls: List[Dict[str, Any]]) -> Tuple[str, bool, bool, str, List[ElementRecord]]:
-        groups = [normalize_space(control.get("group", "")).lower() for control in controls]
-        options_text = [normalize_space(control.get("optionLabel", "")).lower() for control in controls]
-        detections: List[str] = []
 
-        def group_has(tokens: Iterable[str]) -> bool:
-            return any(any(token in group for token in tokens) for group in groups)
-
-        def option_has(tokens: Iterable[str]) -> bool:
-            return any(any(token in option for token in tokens) for option in options_text)
-
-        model = "OTHER"
-        if group_has(["hour", "duration"]) and option_has(["clean", "pro", "maid"]):
-            model = "HOURS_PROS"
-            detections.append("Detected HOURS_PROS via controls")
-        elif group_has(["bed", "room", "bath"]) or option_has(["bed", "bath"]):
-            model = "ROOM_MATERIAL"
-            detections.append("Detected ROOM_MATERIAL via controls")
-        elif group_has(["unit", "quantity", "piece", "item"]) or option_has(["unit", "piece", "item"]):
-            model = "UNIT_QUANTITY"
-            detections.append("Detected UNIT_QUANTITY via controls")
-        elif group_has(["area", "sqft", "square"]):
-            model = "AREA_BASED"
-            detections.append("Detected AREA_BASED via controls")
-        elif group_has(["package", "plan", "bundle"]):
-            model = "FLAT_PACKAGE"
-            detections.append("Detected FLAT_PACKAGE via controls")
-        else:
-            detections.append("No explicit model detected")
-
-        has_addons = await self.page.locator(", ".join(ADDON_SELECTORS)).count() > 0
-        has_slots = False
-        for text in AVAILABILITY_TRIGGER_TEXT:
-            locator = self.page.get_by_text(re.compile(text, re.I))
-            if await locator.count():
-                has_slots = True
-                break
-        if has_addons:
-            detections.append("Add-on elements present")
-        if has_slots:
-            detections.append("Potential availability controls")
-        element_logs = [
-            ElementRecord(
-                page_id="",
-                selector="controls",
-                element_role="detection",
-                raw_text=json.dumps(controls)[:2000],
-                normalized_text=", ".join(detections),
-            )
-        ]
-        return model, has_addons, has_slots, "; ".join(detections), element_logs
-
-    async def scrape_services(self):
-        service_pages = [
-            page
-            for page in self.artifacts.pages
-            if (page.level in {"service", "flow"} or page.detected_model_type != "OTHER")
-            and page.level != "home"
-        ]
-        for page_record in tqdm(service_pages, desc="Scraping services"):
-            success = False
-            for attempt in range(self.config.per_service_retry):
-                ok = await self.navigate(page_record.url)
-                if not ok:
-                    continue
-                try:
-                    artifacts = await self.capture_service(page_record)
-                    self.artifacts.options.extend(artifacts.options)
-                    self.artifacts.prices.extend(artifacts.prices)
-                    self.artifacts.addons.extend(artifacts.addons)
-                    self.artifacts.availability.extend(artifacts.availability)
-                    self.artifacts.offers.extend(artifacts.offers)
-                    self.artifacts.elements.extend(artifacts.elements)
-                    success = True
-                    break
-                except Exception as err:
-                    self.errors.append(f"Service capture failed {page_record.url}: {err}")
-                    await asyncio.sleep(1.0)
-            if not success:
-                self.artifacts.notes.append(f"Failed to capture service after retries: {page_record.url}")
-
-    async def capture_service(self, page_record: PageRecord) -> ServiceArtifacts:
-        option_controls = await self.build_controls(page_record)
-        price_records: List[PriceRecord] = []
-        option_records: List[OptionRecord] = []
-        element_records: List[ElementRecord] = []
-        combinations: List[List[ControlOption]] = [[]]
-        enumerated_controls: List[List[ControlOption]] = []
-        for control in option_controls:
-            sampled = self.sample_control_options(control, page_record.detected_model_type)
-            if not sampled:
-                continue
-            enumerated_controls.append(sampled)
-        for options in enumerated_controls:
-            new_combos: List[List[ControlOption]] = []
-            for prefix in combinations:
-                for option in options:
-                    new_combos.append(prefix + [option])
-            combinations = new_combos[: self.config.max_combinations]
-        if not combinations:
-            combinations = [[]]
-        visited_dimensions = set()
-        for control in option_controls:
-            for opt in control.options:
-                option_records.append(
-                    OptionRecord(
-                        page_id=page_record.page_id,
-                        control_group=control.group,
-                        option_code=opt.option_code,
-                        option_label=opt.option_label,
-                        option_type=opt.option_type,
-                        is_default=opt.is_default,
-                        sort_index=opt.sort_index,
-                    )
-                )
-        combinations = combinations[: self.config.max_combinations]
-        if combinations and combinations[0]:
-            combinations = [[]] + combinations
-        combinations = combinations[: self.config.max_combinations]
-        combo_progress = tqdm(combinations, desc=f"Combos {page_record.page_title_text}", leave=False)
-        for combo in combo_progress:
-            await self.navigate(page_record.url)
-            await asyncio.sleep(0.5)
-            dimensions: Dict[str, Any] = {}
-            selector_meta = {"controls": []}
-            baseline_price = await read_first_text(self.page, PRICE_SELECTORS)
-            last_price_text = baseline_price
-            for option in combo:
-                dimensions[option.control_group] = option.option_label
-                selector_meta["controls"].append({
-                    "group": option.control_group,
-                    "selector": option.selector,
-                    "label": option.option_label,
-                })
-                await self.apply_option(option)
+async def capture_availability(page, cfg: Config, page_id: str, state: RunState) -> None:
+    trigger = None
+    for text in AVAILABILITY_TRIGGER_TEXT:
+        locator = page.locator(f"text=/{text}/i")
+        if await locator.count():
+            trigger = locator.first
+            break
+    if not trigger:
+        return
+    with contextlib.suppress(Exception):
+        await trigger.click()
+        await asyncio.sleep(1)
+    for day_offset in range(cfg.days):
+        target_date = datetime.utcnow().date() + timedelta(days=day_offset)
+        date_str = target_date.strftime("%Y-%m-%d")
+        locator = page.locator(f"text='{target_date.day}'")
+        if await locator.count():
+            with contextlib.suppress(Exception):
+                await locator.nth(0).click()
                 await asyncio.sleep(0.5)
-                updated = await wait_for_price_change(self.page, last_price_text or "")
-                if normalize_space(updated) != normalize_space(last_price_text or ""):
-                    last_price_text = updated
-            key = tuple(sorted(dimensions.items()))
-            if key in visited_dimensions:
-                continue
-            visited_dimensions.add(key)
-            price_text = last_price_text or await read_first_text(self.page, PRICE_SELECTORS)
-            qa_flags: List[str] = []
-            if not price_text:
-                qa_flags.append("NO_PRICE")
-            currency, grand_total = find_currency(price_text)
-            breakdown = await extract_breakdown(self.page)
-            base_price = grand_total
-            fees = 0.0
-            vat = 0.0
-            vat_percent = None
-            if breakdown.get("text"):
-                numbers = [float(n.replace(",", "")) for n in re.findall(r"[0-9]+(?:\.[0-9]+)?", breakdown["text"])]
-                if numbers:
-                    base_price = numbers[0]
-                if len(numbers) >= 2:
-                    fees = numbers[1]
-                if len(numbers) >= 3:
-                    vat = numbers[2]
-                if vat and base_price:
-                    vat_percent = round((vat / max(base_price, 1)) * 100, 2)
-            else:
-                breakdown_text = await self.page.content()
-                if "vat" in breakdown_text.lower():
-                    numbers = [float(n.replace(",", "")) for n in re.findall(r"[0-9]+(?:\.[0-9]+)?", breakdown_text)]
-                    if len(numbers) >= 3:
-                        base_price, fees, vat = numbers[:3]
-                        vat_percent = round((vat / max(base_price, 1)) * 100, 2)
-            if grand_total and abs((base_price + fees + vat) - grand_total) > max(1.0, grand_total) * 0.02:
-                qa_flags.append("MATH_MISMATCH")
-            element_records.append(
-                ElementRecord(
-                    page_id=page_record.page_id,
-                    selector="price",
-                    element_role="price",
-                    raw_text=price_text,
-                    normalized_text=json.dumps(breakdown),
-                )
+        slots = await page.query_selector_all("[data-testid*='slot'], [class*='slot']")
+        if not slots:
+            continue
+        for slot in slots:
+            text = await slot.inner_text()
+            normalized = re.sub(r"\s+", " ", text).strip()
+            status = "available"
+            classes = await slot.get_attribute("class") or ""
+            if "disable" in classes.lower():
+                status = "disabled"
+            record = AvailabilityRecord(
+                page_id=page_id,
+                date_str=date_str,
+                time_slot_label=normalized,
+                slot_status=status,
+                lead_time_days=day_offset,
+                collected_at=utc_now(),
             )
-            price_records.append(
-                PriceRecord(
-                    page_id=page_record.page_id,
-                    service_name=page_record.page_title_text,
-                    model_type=page_record.detected_model_type,
-                    dimensions=dimensions,
-                    offer_state="OFF",
-                    offer_name=None,
-                    discount_type=None,
-                    discount_value=None,
-                    base_price=base_price,
-                    fees_total=fees,
-                    vat_amount=vat,
-                    vat_percent=vat_percent,
-                    grand_total=grand_total,
-                    currency=currency,
-                    pricing_source_url=page_record.url,
-                    collected_at=utc_now(),
-                    qa_flags=qa_flags,
-                    selector_meta=selector_meta,
-                )
-            )
-        addons = await self.capture_addons(page_record)
-        availability = await self.capture_availability(page_record)
-        offers = await self.capture_offers(page_record)
-        return ServiceArtifacts(
-            page=page_record,
-            options=option_records,
-            prices=price_records,
-            addons=addons,
-            availability=availability,
-            offers=offers,
-            elements=element_records,
+            state.availability.append(record)
+            state.summary_counts["slots"] += 1
+
+
+async def process_service(browser_page, url: str, state: RunState) -> None:
+    cfg = state.config
+    await browser_page.goto(url, wait_until="domcontentloaded", timeout=60000)
+    await random_sleep(cfg)
+    await ensure_market(browser_page, cfg, state)
+    await asyncio.sleep(2)
+    service_name = await get_service_title(browser_page)
+    page_id = slugify(service_name + "-" + url.split("/")[-1])
+    model_type, evidence = await detect_model(browser_page, state, page_id)
+    screenshot_path = SHOTS_DIR / f"service_{page_id}.png"
+    await take_screenshot(browser_page, screenshot_path)
+    state.screenshots[page_id] = str(screenshot_path)
+    combos, option_groups = await enumerate_options(browser_page, model_type, state, page_id)
+    await capture_price(browser_page, combos, model_type, state, page_id, service_name, evidence)
+    await capture_addons(browser_page, page_id, state)
+    await capture_offers(browser_page, page_id, state)
+    await capture_availability(browser_page, cfg, page_id, state)
+    state.summary_counts["services"] += 1
+    state.pages.append(
+        PageRecord(
+            page_id=page_id,
+            parent_page_id=None,
+            level="service",
+            url=url,
+            page_title_text=service_name,
+            detected_model_type=model_type,
+            has_addons=any(rec.page_id == page_id for rec in state.addons),
+            has_slots=any(rec.page_id == page_id for rec in state.availability),
+            notes=json.dumps(evidence)[:250],
         )
-
-    async def build_controls(self, page_record: PageRecord) -> List[Control]:
-        controls_map: Dict[str, List[ControlOption]] = defaultdict(list)
-        js_results = await js_controls(self.page)
-        for index, entry in enumerate(js_results):
-            group = normalize_space(entry.get("group") or "Options")
-            option_label = normalize_space(entry.get("optionLabel", ""))
-            if not option_label:
-                continue
-            option_type = entry.get("type") or "click"
-            selector = entry.get("selector")
-            value = entry.get("value")
-            option = ControlOption(
-                control_group=group,
-                option_label=option_label,
-                option_code=slugify(f"{group}-{option_label}"),
-                selector=selector,
-                option_type=option_type,
-                value=value,
-                is_default=index == 0,
-                sort_index=len(controls_map[group]),
-            )
-            controls_map[group].append(option)
-        controls: List[Control] = []
-        for group, options in controls_map.items():
-            if len(options) <= 1:
-                continue
-            controls.append(Control(group=group, control_type=options[0].option_type, options=options))
-        if not controls:
-            self.artifacts.notes.append(f"No controls detected on {page_record.url}")
-        return controls
-
-    def sample_control_options(self, control: Control, model_type: str) -> List[ControlOption]:
-        options = control.options
-        if len(options) <= 3:
-            return options
-        unique: Dict[str, ControlOption] = {}
-        for option in options:
-            if option.option_label not in unique:
-                unique[option.option_label] = option
-        deduped = list(unique.values())
-        if len(deduped) <= 3:
-            return deduped
-        selected: List[ControlOption] = []
-        indices = [0, len(deduped) // 2, len(deduped) - 1]
-        for idx in indices:
-            option = deduped[idx]
-            if option not in selected:
-                selected.append(option)
-        return selected
-
-    async def apply_option(self, option: ControlOption) -> None:
-        try:
-            if option.option_type == "select":
-                await self.page.select_option(option.selector, option.value)
-            else:
-                await self.page.locator(option.selector).click()
-        except Exception as err:
-            self.errors.append(f"Option interaction failed {option.option_label}: {err}")
-
-    async def capture_addons(self, page_record: PageRecord) -> List[AddonRecord]:
-        addons: List[AddonRecord] = []
-        try:
-            for trigger_text in ["Add-ons", "Add ons", "Extras", "Upgrade"]:
-                locator = self.page.get_by_text(re.compile(trigger_text, re.I))
-                if await locator.count():
-                    try:
-                        await locator.first.click()
-                        await asyncio.sleep(0.4)
-                    except Exception:
-                        continue
-        except Exception:
-            pass
-        content = await self.page.content()
-        soup = BeautifulSoup(content, "lxml")
-        for selector in ADDON_SELECTORS:
-            for block in soup.select(selector):
-                name = normalize_space(block.get_text(" "))[:120]
-                if not name:
-                    continue
-                price_match = re.search(r"(AED|د.إ)\s*([0-9.,]+)", name)
-                currency = None
-                price_value = None
-                if price_match:
-                    currency = price_match.group(1)
-                    price_value = float(price_match.group(2).replace(",", ""))
-                addons.append(
-                    AddonRecord(
-                        page_id=page_record.page_id,
-                        addon_name=name[:80],
-                        addon_description=name[:200],
-                        addon_price=price_value,
-                        currency=currency,
-                        is_recommended="recommended" in name.lower(),
-                        is_required="required" in name.lower(),
-                        seen_on_step="service",
-                        pricing_source_url=page_record.url,
-                        collected_at=utc_now(),
-                    )
-                )
-        return addons
-
-    async def capture_availability(self, page_record: PageRecord) -> List[AvailabilityRecord]:
-        records: List[AvailabilityRecord] = []
-        try:
-            trigger_found = False
-            for text in AVAILABILITY_TRIGGER_TEXT:
-                locator = self.page.get_by_text(re.compile(text, re.I))
-                if await locator.count():
-                    try:
-                        await locator.first.click()
-                        await asyncio.sleep(0.5)
-                        trigger_found = True
-                        break
-                    except Exception:
-                        continue
-            if not trigger_found:
-                return records
-            for day_offset in range(min(self.config.days, 14)):
-                date = datetime.utcnow().date() + timedelta(days=day_offset)
-                date_str = date.isoformat()
-                for selector in SLOT_SELECTORS:
-                    slots = self.page.locator(selector)
-                    count = await slots.count()
-                    for idx in range(count):
-                        slot = slots.nth(idx)
-                        try:
-                            label = normalize_space(await slot.inner_text())
-                        except Exception:
-                            continue
-                        if not label:
-                            continue
-                        class_name = await slot.get_attribute("class") or ""
-                        status = "disabled" if "disabled" in class_name.lower() else "available"
-                        records.append(
-                            AvailabilityRecord(
-                                page_id=page_record.page_id,
-                                date_str=date_str,
-                                time_slot_label=label,
-                                slot_status=status,
-                                lead_time_days=day_offset,
-                                collected_at=utc_now(),
-                            )
-                        )
-                next_btn = self.page.get_by_role("button", name=re.compile("next", re.I))
-                if await next_btn.count():
-                    try:
-                        await next_btn.click()
-                        await asyncio.sleep(0.4)
-                    except Exception:
-                        break
-                else:
-                    break
-        except Exception:
-            self.artifacts.notes.append(f"Availability capture failed for {page_record.url}")
-        return records
-
-    async def capture_offers(self, page_record: PageRecord) -> List[OfferRecord]:
-        offers: List[OfferRecord] = []
-        try:
-            content = await self.page.content()
-            soup = BeautifulSoup(content, "lxml")
-            for selector in OFFER_SELECTORS:
-                for block in soup.select(selector):
-                    text = normalize_space(block.get_text(" "))
-                    if not text:
-                        continue
-                    badge = ""
-                    desc = text
-                    if ":" in text:
-                        parts = text.split(":", 1)
-                        badge = parts[0]
-                        desc = parts[1]
-                    offers.append(
-                        OfferRecord(
-                            page_id=page_record.page_id,
-                            offer_name=badge or text[:60],
-                            offer_badge_text=badge,
-                            description=desc[:120],
-                            eligibility="",
-                            discount_type="percent" if "%" in text else None,
-                            discount_value=safe_float(text),
-                            stacking_rules="",
-                            collected_at=utc_now(),
-                        )
-                    )
-        except Exception:
-            self.artifacts.notes.append(f"Offer capture failed for {page_record.url}")
-        return offers
-
-    async def run(self) -> PipelineArtifacts:
-        await self.discover()
-        await self.scrape_services()
-        if self.errors:
-            unique_errors = list(dict.fromkeys(self.errors))[:10]
-            self.artifacts.notes.append("Top errors: " + " | ".join(unique_errors))
-        return self.artifacts
+    )
 
 
-class ExcelBuilder:
-    def __init__(self, output_dir: Path):
-        self.output_dir = output_dir
-        self.path = output_dir / "Justlife_CRM.xlsx"
-
-    def build(self, data: PipelineArtifacts, summary: Dict[str, Any]) -> Path:
-        workbook = Workbook()
-        self._build_readme(workbook, summary, data)
-        self._build_pages_sheet(workbook, data)
-        self._build_options_sheet(workbook, data)
-        self._build_prices_sheet(workbook, data)
-        self._build_addons_sheet(workbook, data)
-        self._build_availability_sheet(workbook, data)
-        self._build_offers_sheet(workbook, data)
-        self._build_elements_sheet(workbook, data)
-        workbook.save(self.path)
-        return self.path
-
-    def _style_table(self, ws, freeze: bool = True):
-        header_font = Font(bold=True, color="FFFFFF")
-        fill = PatternFill("solid", fgColor="1B4965")
-        if ws.max_row:
-            for cell in ws[1]:
-                cell.font = header_font
-                cell.fill = fill
-                cell.alignment = Alignment(horizontal="center", vertical="center")
-        if freeze:
-            ws.freeze_panes = "A2"
-        ws.auto_filter.ref = ws.dimensions
-        for column in range(1, ws.max_column + 1):
-            width = 14
-            for row in range(1, ws.max_row + 1):
-                value = ws.cell(row=row, column=column).value
-                if value is None:
-                    continue
-                width = max(width, min(60, len(str(value)) + 2))
-            ws.column_dimensions[get_column_letter(column)].width = width
-        zebra = PatternFill("solid", fgColor="F5F5F5")
-        for idx in range(2, ws.max_row + 1, 2):
-            for col in range(1, ws.max_column + 1):
-                ws.cell(row=idx, column=col).fill = zebra
-
-    def _build_readme(self, wb: Workbook, summary: Dict[str, Any], data: PipelineArtifacts):
-        ws = wb.active
-        ws.title = "README"
-        ws.append(["Tamam Intelligence – Justlife Competitive Intelligence Dashboard"])
-        ws.append(["Generated:", summary["timestamp"]])
-        ws.append(["Base URL:", summary["base_url"]])
-        ws.append(["Market:", summary["market"]])
-        ws.append(["Services scraped:", summary["services"]])
-        ws.append(["Price combinations:", summary["price_rows"]])
-        ws.append(["Add-ons captured:", summary["addons"]])
-        ws.append(["Availability rows:", summary["availability"]])
-        ws.append(["Offers:", summary["offers"]])
-        ws.append(["Notes:"])
-        notes_text = "\n".join(data.notes) if data.notes else "-"
-        ws.append([notes_text])
-        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, max_col=2):
-            for cell in row:
-                cell.alignment = Alignment(wrap_text=True, vertical="top")
-        ws.column_dimensions["A"].width = 40
-        ws.column_dimensions["B"].width = 60
-
-        # Charts
-        prices_by_model = defaultdict(int)
-        for price in data.prices:
-            prices_by_model[price.model_type] += 1
-        if prices_by_model:
-            start_row = ws.max_row + 2
-            ws.append([])
-            ws.append(["Model", "Price Rows"])
-            for model, count in prices_by_model.items():
-                ws.append([model, count])
-            chart = BarChart()
-            chart.title = "Price rows by model"
-            chart.add_data(Reference(ws, min_col=2, min_row=start_row + 1, max_row=ws.max_row), titles_from_data=False)
-            chart.set_categories(Reference(ws, min_col=1, min_row=start_row + 1, max_row=ws.max_row))
-            chart.height = 8
-            chart.width = 14
-            ws.add_chart(chart, f"E2")
-        addons_by_service = defaultdict(int)
-        for addon in data.addons:
-            addons_by_service[addon.page_id] += 1
-        if addons_by_service:
-            start_row = ws.max_row + 2
-            ws.append([])
-            ws.append(["Service", "Add-ons"])
-            for service_id, count in addons_by_service.items():
-                ws.append([service_id, count])
-            pie = PieChart()
-            pie.title = "Add-on volume by service"
-            pie.add_data(Reference(ws, min_col=2, min_row=start_row + 1, max_row=ws.max_row), titles_from_data=False)
-            pie.set_categories(Reference(ws, min_col=1, min_row=start_row + 1, max_row=ws.max_row))
-            pie.height = 8
-            pie.width = 8
-            ws.add_chart(pie, f"M2")
-
-    def _build_pages_sheet(self, wb: Workbook, data: PipelineArtifacts):
-        ws = wb.create_sheet("Services Summary")
-        rows = [
-            [
-                "page_id", "parent_page_id", "level", "url", "page_title_text",
-                "detected_model_type", "has_addons", "has_slots", "notes"
-            ]
-        ]
-        for page in data.pages:
-            rows.append([
-                page.page_id,
-                page.parent_page_id,
-                page.level,
-                page.url,
-                page.page_title_text,
-                page.detected_model_type,
-                page.has_addons,
-                page.has_slots,
-                page.notes,
-            ])
-        for row in rows:
-            ws.append(row)
-        self._style_table(ws)
-
-    def _build_options_sheet(self, wb: Workbook, data: PipelineArtifacts):
-        ws = wb.create_sheet("Options Matrix")
-        ws.append(["page_id", "control_group", "option_code", "option_label", "option_type", "is_default", "sort_index"])
-        for option in data.options:
-            ws.append([
-                option.page_id,
-                option.control_group,
-                option.option_code,
-                option.option_label,
-                option.option_type,
-                option.is_default,
-                option.sort_index,
-            ])
-        self._style_table(ws)
-
-    def _build_prices_sheet(self, wb: Workbook, data: PipelineArtifacts):
-        ws = wb.create_sheet("Price Matrix")
-        base_headers = [
-            "page_id", "service_name", "model_type", "offer_state", "offer_name",
-            "discount_type", "discount_value", "base_price", "fees_total",
-            "vat_amount", "vat_percent", "grand_total", "currency", "pricing_source_url",
-            "collected_at", "qa_flags", "selector_meta"
-        ]
-        dimension_keys: List[str] = []
-        for price in data.prices:
-            for key in price.dimensions.keys():
-                if key not in dimension_keys:
-                    dimension_keys.append(key)
-        headers = base_headers[:3] + dimension_keys + base_headers[3:]
-        ws.append(headers)
-        for price in data.prices:
-            row = [price.page_id, price.service_name, price.model_type]
-            for key in dimension_keys:
-                row.append(price.dimensions.get(key))
-            row.extend([
-                price.offer_state,
-                price.offer_name,
-                price.discount_type,
-                price.discount_value,
-                price.base_price,
-                price.fees_total,
-                price.vat_amount,
-                price.vat_percent,
-                price.grand_total,
-                price.currency,
-                price.pricing_source_url,
-                price.collected_at,
-                ",".join(price.qa_flags),
-                json.dumps(price.selector_meta, ensure_ascii=False),
-            ])
-            ws.append(row)
-        self._style_table(ws)
-        grand_total_col = headers.index("grand_total") + 1
-        qa_col = headers.index("qa_flags") + 1
-        offer_col = headers.index("offer_state") + 1
-        if ws.max_row > 1:
-            col_letter = get_column_letter(grand_total_col)
-            ws.conditional_formatting.add(
-                f"{col_letter}2:{col_letter}{ws.max_row}",
-                ColorScaleRule(start_type="min", start_color="F2F6FF", mid_type="percentile", mid_value=50, mid_color="B7D3FF", end_type="max", end_color="124E96"),
-            )
-            qa_letter = get_column_letter(qa_col)
-            ws.conditional_formatting.add(
-                f"{qa_letter}2:{qa_letter}{ws.max_row}",
-                FormulaRule(formula=[f"LEN(${qa_letter}2)>0"], fill=PatternFill("solid", fgColor="FFC7CE")),
-            )
-            offer_letter = get_column_letter(offer_col)
-            ws.conditional_formatting.add(
-                f"{offer_letter}2:{offer_letter}{ws.max_row}",
-                FormulaRule(formula=[f"${offer_letter}2=\"ON\""], fill=PatternFill("solid", fgColor="E2F0CB")),
-            )
-
-    def _build_addons_sheet(self, wb: Workbook, data: PipelineArtifacts):
-        ws = wb.create_sheet("Add-ons")
-        ws.append(["page_id", "addon_name", "addon_description", "addon_price", "currency", "is_recommended", "is_required", "seen_on_step", "pricing_source_url", "collected_at"])
-        for addon in data.addons:
-            ws.append([
-                addon.page_id,
-                addon.addon_name,
-                addon.addon_description,
-                addon.addon_price,
-                addon.currency,
-                addon.is_recommended,
-                addon.is_required,
-                addon.seen_on_step,
-                addon.pricing_source_url,
-                addon.collected_at,
-            ])
-        self._style_table(ws)
-
-    def _build_availability_sheet(self, wb: Workbook, data: PipelineArtifacts):
-        ws = wb.create_sheet("Availability")
-        ws.append(["page_id", "date_str", "time_slot_label", "slot_status", "lead_time_days", "collected_at"])
-        for record in data.availability:
-            ws.append([
-                record.page_id,
-                record.date_str,
-                record.time_slot_label,
-                record.slot_status,
-                record.lead_time_days,
-                record.collected_at,
-            ])
-        self._style_table(ws)
-
-    def _build_offers_sheet(self, wb: Workbook, data: PipelineArtifacts):
-        ws = wb.create_sheet("Offers")
-        ws.append(["page_id", "offer_name", "offer_badge_text", "description", "eligibility", "discount_type", "discount_value", "stacking_rules", "collected_at"])
-        for offer in data.offers:
-            ws.append([
-                offer.page_id,
-                offer.offer_name,
-                offer.offer_badge_text,
-                offer.description,
-                offer.eligibility,
-                offer.discount_type,
-                offer.discount_value,
-                offer.stacking_rules,
-                offer.collected_at,
-            ])
-        self._style_table(ws)
-
-    def _build_elements_sheet(self, wb: Workbook, data: PipelineArtifacts):
-        ws = wb.create_sheet("Elements")
-        ws.append(["page_id", "selector", "element_role", "raw_text", "normalized_text"])
-        for element in data.elements:
-            ws.append([
-                element.page_id,
-                element.selector,
-                element.element_role,
-                element.raw_text,
-                element.normalized_text,
-            ])
-        self._style_table(ws)
+async def discover_services(context_page, state: RunState) -> List[str]:
+    await context_page.goto(state.config.base_url, wait_until="domcontentloaded", timeout=60000)
+    await asyncio.sleep(3)
+    rects = await gather_highlight_rects(
+        context_page,
+        [
+            "section:has-text('Cleaning')",
+            "section:has-text('Salon')",
+            "section:has-text('Maintenance')",
+            "footer",
+        ],
+    )
+    home_shot = SHOTS_DIR / "home.png"
+    await take_screenshot(context_page, home_shot, rects)
+    state.screenshots["home"] = str(home_shot)
+    links = await extract_links(context_page)
+    filtered = filter_service_links(links)
+    state.log_note(f"Discovered {len(filtered)} candidate service URLs")
+    if len(filtered) < SERVICE_URL_TARGET:
+        state.log_note("Warning: fewer than target service URLs detected; continuing anyway")
+    return filtered
 
 
-async def main():
-    config = Config()
-    print("Configuration:", json.dumps(asdict(config), indent=2))
-    async with JustlifeScraper(config) as scraper:
-        artifacts = await scraper.run()
-    missing_core: List[str] = []
-    if not artifacts.prices:
-        missing_core.append("price data")
-    if not artifacts.options:
-        missing_core.append("option data")
-    if missing_core:
-        message = (
-            "Dynamic content blocked or selectors unresolved; "
-            + ", ".join(missing_core)
-            + " missing. Check Playwright availability and site accessibility."
-        )
-        artifacts.notes.append(message)
-        notes_path = OUTPUT_DIR / "NOTES.txt"
-        notes_path.write_text(message, encoding="utf-8")
-        print(f"WARNING: {message}")
-    summary = {
-        "timestamp": utc_now(),
-        "base_url": config.base_url,
-        "market": config.market,
-        "services": len([p for p in artifacts.pages if p.level in {"service", "flow"}]),
-        "price_rows": len(artifacts.prices),
-        "addons": len(artifacts.addons),
-        "availability": len(artifacts.availability),
-        "offers": len(artifacts.offers),
+def write_csv(path: Path, records: List[Dict[str, Any]]) -> None:
+    if not records:
+        df = pd.DataFrame()
+    else:
+        df = pd.DataFrame(records)
+    df.to_csv(path, index=False)
+
+
+def build_excel(state: RunState) -> Path:
+    workbook_path = OUTPUT_DIR / "Justlife_CRM.xlsx"
+    wb = Workbook()
+    def get_sheet(name: str):
+        if name in wb.sheetnames:
+            return wb[name]
+        else:
+            return wb.create_sheet(title=name)
+    # Summary sheet
+    summary_ws = wb.active
+    summary_ws.title = "Summary"
+    summary_ws.append(["Metric", "Value"])
+    summary_ws.append(["Services scraped", state.summary_counts["services"]])
+    summary_ws.append(["Price combinations", state.summary_counts["combos"]])
+    summary_ws.append(["Add-ons captured", state.summary_counts["addons"]])
+    summary_ws.append(["Availability slots", state.summary_counts["slots"]])
+    summary_ws.append(["Offers", state.summary_counts["offers"]])
+    for cell in summary_ws[1]:
+        cell.font = Font(bold=True)
+    summary_ws.freeze_panes = "A2"
+    # Additional sheets from pandas dataframes
+    sheet_specs = {
+        "Price Matrix": [PriceRecord, state.prices],
+        "Add-ons": [AddonRecord, state.addons],
+        "Availability": [AvailabilityRecord, state.availability],
+        "Offers": [OfferRecord, state.offers],
+        "Pages": [PageRecord, state.pages],
+        "Options": [OptionRecord, state.options],
+        "QA & Diagnostics": [ElementRecord, state.elements],
     }
-    csv_map = write_outputs(artifacts)
-    excel_path = ExcelBuilder(OUTPUT_DIR).build(artifacts, summary)
-    print("\nRun summary:")
-    for key, value in summary.items():
-        print(f"- {key}: {value}")
-    print("\nGenerated files:")
-    for name, path in csv_map.items():
-        print(f"- {name}: {path}")
-    print(f"- excel: {excel_path}")
+    for sheet_name, (_, records) in sheet_specs.items():
+        ws = get_sheet(sheet_name)
+        df = pd.DataFrame([asdict(r) for r in records]) if records else pd.DataFrame()
+        if df.empty:
+            ws.append(["No data captured"])
+            continue
+        ws.append(list(df.columns))
+        for row in df.itertuples(index=False):
+            ws.append(list(row))
+        ws.auto_filter.ref = ws.dimensions
+        ws.freeze_panes = "A2"
+        apply_table_style(ws)
+        if sheet_name == "Price Matrix" and df.shape[0] > 1:
+            apply_price_formatting(ws, df)
+    diagnostics_ws = get_sheet("QA & Diagnostics")
+    diagnostics_ws.freeze_panes = "A2"
+    # README sheet
+    readme_ws = get_sheet("README")
+    readme_ws.append(["Run timestamp", utc_now()])
+    readme_ws.append(["Base URL", state.config.base_url])
+    readme_ws.append(["Notes file", str(OUTPUT_DIR / "NOTES.txt")])
+    readme_ws.append(["Screenshots", str(SHOTS_DIR)])
+    readme_ws.append(["Errors", " | ".join(state.errors) if state.errors else "None"])
+    wb.save(workbook_path)
+    return workbook_path
+
+
+def apply_table_style(ws) -> None:
+    for column_cells in ws.columns:
+        max_length = 0
+        column = get_column_letter(column_cells[0].column)
+        for cell in column_cells:
+            try:
+                cell_value = str(cell.value)
+            except Exception:
+                cell_value = ""
+            if cell.row == 1:
+                cell.font = Font(bold=True)
+                cell.fill = PatternFill("solid", fgColor="F3F4F6")
+            max_length = max(max_length, len(cell_value))
+            cell.alignment = Alignment(wrap_text=True, vertical="top")
+        ws.column_dimensions[column].width = min(60, max_length + 2)
+
+
+def apply_price_formatting(ws, df: pd.DataFrame) -> None:
+    if "grand_total" in df.columns:
+        col_index = list(df.columns).index("grand_total") + 1
+        color_rule = ColorScaleRule(
+            start_type="percentile", start_value=10, start_color="F0F9FF",
+            mid_type="percentile", mid_value=50, mid_color="80CBC4",
+            end_type="percentile", end_value=90, end_color="004D40",
+        )
+        ws.conditional_formatting.add(f"{get_column_letter(col_index)}2:{get_column_letter(col_index)}{ws.max_row}", color_rule)
+    if "qa_flags" in df.columns:
+        qa_index = list(df.columns).index("qa_flags") + 1
+        ws.conditional_formatting.add(
+            f"{get_column_letter(qa_index)}2:{get_column_letter(qa_index)}{ws.max_row}",
+            CellIsRule(operator="notEqual", formula=['""'], fill=PatternFill("solid", fgColor="FFCDD2"))
+        )
+
+
+def write_notes(state: RunState) -> Path:
+    notes_path = OUTPUT_DIR / "NOTES.txt"
+    content = ["Justlife competitive intelligence run notes", "=" * 60, ""]
+    content.append(f"Timestamp: {utc_now()}")
+    content.append(f"Base URL: {state.config.base_url}")
+    content.append("")
+    content.append("Model decisions:")
+    for page in state.pages:
+        content.append(f"- {page.page_title_text} ({page.url}) -> {page.detected_model_type}")
+    if state.notes:
+        content.append("")
+        content.append("Additional notes:")
+        content.extend(f"* {note}" for note in state.notes)
+    if state.errors:
+        content.append("")
+        content.append("Errors:")
+        content.extend(f"* {err}" for err in state.errors)
+    notes_path.write_text("\n".join(content), encoding="utf-8")
+    return notes_path
+
+
+async def run_scraper() -> None:
+    cfg = Config()
+    ua = UserAgent()
+    cfg_user_agent = cfg.__dict__.setdefault("user_agent", ua.chrome)
+    state = RunState(cfg)
+    playwright = await async_playwright().start()
+    browser = await playwright.chromium.launch(headless=cfg.headless)
+    context = await browser.new_context(locale="en-AE", user_agent=cfg_user_agent, extra_http_headers=DEFAULT_HEADERS)
+    page = await context.new_page()
     try:
-        from google.colab import files
-        files.download(str(excel_path))
-    except Exception as err:
-        print(f"Download skipped: {err}")
-
-
-def write_outputs(artifacts: PipelineArtifacts) -> Dict[str, Path]:
-    csv_map: Dict[str, Path] = {}
-    csv_map["pages"] = OUTPUT_DIR / "pages.csv"
-    csv_map["options"] = OUTPUT_DIR / "options.csv"
-    csv_map["prices_raw"] = OUTPUT_DIR / "prices_raw.csv"
-    csv_map["addons"] = OUTPUT_DIR / "addons.csv"
-    csv_map["availability"] = OUTPUT_DIR / "availability.csv"
-    csv_map["offers"] = OUTPUT_DIR / "offers.csv"
-    csv_map["elements"] = OUTPUT_DIR / "elements.csv"
-    csv_map["notes"] = OUTPUT_DIR / "NOTES.txt"
-
-    def write_csv(path: Path, rows: List[Dict[str, Any]], headers: Optional[List[str]] = None):
-        df = pd.DataFrame(rows, columns=headers)
-        df.to_csv(path, index=False)
-
-    write_csv(csv_map["pages"], [asdict(page) for page in artifacts.pages])
-    write_csv(csv_map["options"], [asdict(option) for option in artifacts.options])
-    price_rows = []
-    for price in artifacts.prices:
-        row = {
-            "page_id": price.page_id,
-            "service_name": price.service_name,
-            "model_type": price.model_type,
-            "offer_state": price.offer_state,
-            "offer_name": price.offer_name,
-            "discount_type": price.discount_type,
-            "discount_value": price.discount_value,
-            "base_price": price.base_price,
-            "fees_total": price.fees_total,
-            "vat_amount": price.vat_amount,
-            "vat_percent": price.vat_percent,
-            "grand_total": price.grand_total,
-            "currency": price.currency,
-            "pricing_source_url": price.pricing_source_url,
-            "collected_at": price.collected_at,
-            "qa_flags": ",".join(price.qa_flags),
-            "selector_meta": json.dumps(price.selector_meta, ensure_ascii=False),
-        }
-        row.update(price.dimensions)
-        price_rows.append(row)
-    write_csv(csv_map["prices_raw"], price_rows)
-    write_csv(csv_map["addons"], [asdict(addon) for addon in artifacts.addons])
-    write_csv(csv_map["availability"], [asdict(record) for record in artifacts.availability])
-    write_csv(csv_map["offers"], [asdict(offer) for offer in artifacts.offers])
-    write_csv(csv_map["elements"], [asdict(element) for element in artifacts.elements])
-
-    notes_path = csv_map["notes"]
-    notes_lines = artifacts.notes or ["No additional notes"]
-    notes_path.write_text("\n".join(notes_lines), encoding="utf-8")
-    return csv_map
+        service_urls = await discover_services(page, state)
+        processed: set = set()
+        for url in service_urls:
+            if url in processed:
+                continue
+            processed.add(url)
+            try:
+                await process_service(page, url, state)
+            except Exception as exc:
+                state.log_error(f"Failed to process {url}: {exc}")
+            await random_sleep(cfg)
+    finally:
+        await context.close()
+        await browser.close()
+        await playwright.stop()
+    # Write outputs
+    pages_df = [asdict(record) for record in state.pages]
+    options_df = [asdict(record) for record in state.options]
+    prices_df = [asdict(record) for record in state.prices]
+    addons_df = [asdict(record) for record in state.addons]
+    availability_df = [asdict(record) for record in state.availability]
+    offers_df = [asdict(record) for record in state.offers]
+    elements_df = [asdict(record) for record in state.elements]
+    write_csv(OUTPUT_DIR / "pages.csv", pages_df)
+    write_csv(OUTPUT_DIR / "options.csv", options_df)
+    write_csv(OUTPUT_DIR / "prices_raw.csv", prices_df)
+    write_csv(OUTPUT_DIR / "addons.csv", addons_df)
+    write_csv(OUTPUT_DIR / "availability.csv", availability_df)
+    write_csv(OUTPUT_DIR / "offers.csv", offers_df)
+    write_csv(OUTPUT_DIR / "elements.csv", elements_df)
+    notes_path = write_notes(state)
+    workbook_path = build_excel(state)
+    print("Run summary")
+    print("============")
+    print(f"Services processed: {state.summary_counts['services']}")
+    print(f"Price combinations: {state.summary_counts['combos']}")
+    print(f"Add-ons captured: {state.summary_counts['addons']}")
+    print(f"Availability slots: {state.summary_counts['slots']}")
+    print(f"Offers captured: {state.summary_counts['offers']}")
+    print(f"Workbook: {workbook_path}")
+    print(f"Notes: {notes_path}")
+    print(f"Screenshots folder: {SHOTS_DIR}")
 
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        asyncio.run(run_scraper())
     except RuntimeError:
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(main())
+        loop.run_until_complete(run_scraper())

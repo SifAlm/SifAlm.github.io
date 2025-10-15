@@ -1,6 +1,6 @@
 # Tamam Intelligence – Justlife Competitive Intelligence Scraper
 
-This repository provides a single Google Colab cell that installs all dependencies, launches Playwright Chromium, crawls the Justlife UAE website, enumerates service configuration states, and exports boardroom-ready analytics.
+This repository provides a single Google Colab cell that installs all dependencies, launches Playwright Chromium, maps the Justlife UAE site, and exports structured intelligence outputs.
 
 ## Usage
 
@@ -14,9 +14,9 @@ The cell will:
 - crawl service pages under `https://www.justlife.com/en-AE` with throttled Playwright automation;
 - detect service models, enumerate option combinations (hours, packages, unit counts, etc.), and capture price breakdowns;
 - gather add-ons, availability slots, offers, and selector diagnostics;
-- generate CSV exports and a fully formatted `Justlife_CRM.xlsx` workbook with KPIs, conditional formatting, and charts;
+- generate CSV exports and a styled `Justlife_CRM.xlsx` workbook with filters, freeze panes, and conditional formatting;
 - emit `NOTES.txt` summarizing detections, blockers, and QA flags;
-- attempt to auto-download the Excel workbook to the local machine.
+- save annotated screenshots in `justlife_intel/shots/` for QA traceability.
 
 Environment variables can tweak behaviour when pasted into Colab:
 
