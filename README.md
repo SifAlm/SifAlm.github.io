@@ -1,29 +1,30 @@
-# Tamam Intelligence – Justlife Competitive Intelligence Scraper
+This repository ships a single Google Colab-ready cell that installs all dependencies, launches Playwright Chromium, navigates Justlife's booking flows, enumerates pricing combinations, and exports a board-grade intelligence workbook.
 
-This repository provides a single Google Colab cell that installs all dependencies, launches Playwright Chromium, maps the Justlife UAE site, and exports structured intelligence outputs.
-
-## Usage
+## Quick start
 
 1. Open a fresh Google Colab notebook.
-2. Copy the full contents of [`colab_cell.py`](./colab_cell.py).
-3. Paste it into a single Python cell in Colab and run it.
+2. Copy the entire contents of [`colab_cell.py`](./colab_cell.py).
+3. Paste the script into **one** Python cell and run it.
 
-The cell will:
+The cell will automatically:
 
 - install Playwright, Chromium, and data-science dependencies;
-- crawl service pages under `https://www.justlife.com/en-AE` with throttled Playwright automation;
-- detect service models, enumerate option combinations (hours, packages, unit counts, etc.), and capture price breakdowns;
-- gather add-ons, availability slots, offers, and selector diagnostics;
-- generate CSV exports and a styled `Justlife_CRM.xlsx` workbook with filters, freeze panes, and conditional formatting;
-- emit `NOTES.txt` summarizing detections, blockers, and QA flags;
-- save annotated screenshots in `justlife_intel/shots/` for QA traceability.
+- crawl `https://www.justlife.com/en-AE` with polite throttling, harvesting homepage, footer, and sitemap links;
+- drive "Book now" CTAs to reach live checkout widgets, enforce Dubai as the active city, and close blocking modals;
+- detect option groups (hours × pros, packages, unit quantities, etc.), click combinations, and wait for price updates before recording totals, VAT, and fees;
+- enumerate package sections with `Add +` buttons, hours/professionals selectors, and bundle cards, logging selector evidence along the way;
+- capture add-ons, availability slots (next 14 days), and offer badges where present;
+- save CSV exports plus a styled `Justlife_CRM.xlsx` workbook (freeze panes, auto filters, conditional formats);
+- emit `NOTES.txt` highlighting detections, blockers, and QA warnings;
+- drop annotated screenshots in `justlife_intel/shots/` for downstream QA.
 
-Environment variables can tweak behaviour when pasted into Colab:
+### Configuration knobs
 
-- `BASE` – Base URL (default `https://www.justlife.com/en-AE`).
-- `MARKET` – Market slug (default `dubai`).
-- `DAYS` – Availability capture horizon (default `14`).
-- `MAX_COMBOS` – Maximum option combinations per service (default `60`).
-- `HEADLESS` – Set to `0` to run the browser non-headless.
+The following environment variables can be set inside the Colab cell before running the script to adjust behaviour:
 
-All generated outputs are placed in a `justlife_intel/` directory within the Colab runtime and listed in the cell logs.
+- `HEADLESS` – set to `0` to watch the browser.
+- `DAYS_AHEAD` – number of calendar days to enumerate for availability (default `14`).
+- `MAX_COMBOS` – per-service cap on combination enumeration (default `60`).
+- `BASE_URL` – override the Justlife base URL (default `https://www.justlife.com/en-AE`).
+
+All generated artifacts live in the `justlife_intel/` folder of the Colab runtime and are listed in the run summary printed at the end of execution.
