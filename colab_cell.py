@@ -380,7 +380,10 @@ class JustlifeScraper:
                 return
             if canonical not in candidates:
                 candidates[canonical] = ServiceCandidate(
-                    url=canonical, source=source, is_checkout="/checkout" in canonical, city=extract_city_from_url(canonical)
+                    url=canonical,
+                    source=source,
+                    is_checkout="/checkout" in canonical,
+                    city=extract_city_from_url(canonical),
                 )
                 self.discovery_sources[source] += 1
 
@@ -393,24 +396,63 @@ class JustlifeScraper:
                 return None
             return None
 
+        def harvest_links(soup: BeautifulSoup, source: str, root: Optional[str] = None) -> None:
+            if not soup:
+                return
+            anchors = soup.select("a[href]")
+            for link in anchors:
+                href_raw = link.get("href")
+                if not href_raw:
+                    continue
+                href = urljoin(root or BASE_URL, href_raw)
+                text = link.get_text(" ", strip=True)
+                aria = link.get("aria-label") or ""
+                classes = " ".join(link.get("class") or [])
+                context = " ".join([text.lower(), aria.lower(), classes.lower()])
+                parent_text = ""
+                parent = link.parent
+                depth = 0
+                while parent is not None and depth < 2:
+                    if getattr(parent, "name", None) in {"section", "div", "li"}:
+                        heading = parent.find(["h2", "h3", "h4", "h5"], string=True)
+                        if heading:
+                            parent_text += " " + heading.get_text(" ", strip=True).lower()
+                    parent = getattr(parent, "parent", None)
+                    depth += 1
+
+                text_matches = SERVICE_KEYWORDS.search(text) or SERVICE_KEYWORDS.search(context) or SERVICE_KEYWORDS.search(parent_text)
+                href_matches = SERVICE_KEYWORDS.search(href) or "/checkout" in href
+
+                if not (text_matches or href_matches):
+                    continue
+
+                if link.find_parent("footer"):
+                    register(href, "footer")
+                elif link.find_parent("nav"):
+                    register(href, "nav")
+                else:
+                    register(href, source)
+
         home_html = fetch(BASE_URL)
         if home_html:
             soup = BeautifulSoup(home_html, "lxml")
-            for link in soup.select("a[href]"):
-                href = urljoin(BASE_URL, link.get("href"))
-                text = link.get_text(strip=True).lower()
-                if "services" in text:
-                    register(href, "home")
-                if link.find_parent("footer"):
-                    register(href, "footer")
-                if link.find_parent(lambda tag: tag.name in {"section", "div"} and "category" in (tag.get("class") or [])):
-                    register(href, "category")
+            harvest_links(soup, "home", BASE_URL)
+            # Footer specific extraction to capture dense services cloud
+            footer = soup.find("footer")
+            if footer:
+                harvest_links(footer, "footer", BASE_URL)
+            # Mega menu or category carousels often live under nav sections
+            for section in soup.select("section"):
+                harvest_links(section, "section", BASE_URL)
 
         sitemap_html = fetch(f"{BASE_URL}/sitemap.xml")
         if sitemap_html and "<urlset" in sitemap_html:
             soup = BeautifulSoup(sitemap_html, "xml")
             for loc in soup.find_all("loc"):
                 register(loc.text.strip(), "sitemap")
+
+        if len(candidates) < 50:
+            self.log("[WARN] Discovery found fewer than 50 candidates; consider relaxing filters or verifying page structure.")
 
         discovered = list(candidates.values())
         self.log(f"Discovery collected {len(discovered)} candidate URLs")
