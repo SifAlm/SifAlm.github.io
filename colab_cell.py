@@ -397,7 +397,20 @@ async def enumerate_options(page, model_type: str, state: RunState, page_id: str
             # attempt to find associated inputs
             option_groups[label] = []
     # fallback: look for button groups
-    buttons = await page.eval_on_selector_all("button", "els => els.map(el => ({text: el.innerText, dataTestId: el.dataset.testid || ''})) )")
+    buttons: List[Dict[str, Any]] = []
+    with contextlib.suppress(Exception):
+        for el in await page.query_selector_all("button"):
+            text = ""
+            data_test_id = ""
+            with contextlib.suppress(Exception):
+                raw_text = await el.inner_text()
+                text = re.sub(r"\s+", " ", raw_text or "").strip()
+            with contextlib.suppress(Exception):
+                attr = await el.get_attribute("data-testid")
+                if attr:
+                    data_test_id = attr
+            if text:
+                buttons.append({"text": text, "dataTestId": data_test_id})
     for button in buttons:
         text = (button.get("text") or "").strip()
         if len(text) > 40 or len(text) <= 1:
