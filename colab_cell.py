@@ -143,11 +143,6 @@ SERVICE_KEYWORDS = re.compile(
     r"(clean|maid|deep|move|villa|apartment|sofa|carpet|mattress|curtain|ac|pest|laundry|salon|spa|wax|brow|lash|nail|men|women|pet|plumb|electric|handyman|doctor|nurse|lab|physio|iv|oxygen|pack)",
     re.IGNORECASE,
 )
-EXCLUDE_PATTERNS = re.compile(
-    r"/(?:dubai|abu-dhabi|sharjah|ajman)(?:/|$)|/my-account/|/faq|/terms|/privacy|/career|/sitemap|/blog|/what-|/how-",
-    re.IGNORECASE,
-)
-
 RANDOM_SLEEP = (0.45, 1.05)
 
 
@@ -325,15 +320,67 @@ def parse_price(value: str) -> Optional[float]:
 
 
 def looks_like_service(url: str, context: str = "") -> bool:
+    """Heuristic to decide whether a discovered link likely represents a bookable service."""
+
     if not url.startswith(BASE_URL):
         return False
-    if EXCLUDE_PATTERNS.search(url):
+
+    parsed = urlparse(url)
+    path = parsed.path.lower().strip("/")
+
+    if not path:
         return False
-    if SERVICE_KEYWORDS.search(url):
+
+    segments = [seg for seg in path.split("/") if seg]
+
+    # Paths should always begin with the locale prefix
+    if not segments or segments[0] != "en-ae":
+        return False
+
+    remainder = segments[1:]
+    if not remainder:
+        return False
+
+    # Strip the city prefix but keep deeper service slugs intact
+    if remainder[0] in CITY_PRIORITY:
+        if len(remainder) == 1:
+            return False
+        remainder = remainder[1:]
+
+    if not remainder:
+        return False
+
+    slug = "/".join(remainder)
+
+    # Explicitly skip known non-service sections
+    for banned in (
+        "faq",
+        "terms",
+        "privacy",
+        "career",
+        "sitemap",
+        "blog",
+        "about",
+        "press",
+        "support",
+        "help",
+        "my-account",
+        "login",
+    ):
+        if slug.startswith(banned):
+            return False
+
+    # Checkout URLs are always service flows
+    if "/checkout" in slug:
+        return True
+
+    if SERVICE_KEYWORDS.search(slug):
         return True
     if context and SERVICE_KEYWORDS.search(context):
         return True
-    return False
+
+    # Fallback: treat multi-hyphen slugs as service detail pages
+    return slug.count("-") >= 1
 
 
 def extract_city_from_url(url: str) -> Optional[str]:
