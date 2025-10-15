@@ -287,10 +287,25 @@ def slugify(value: str) -> str:
 
 
 def canonicalize_url(url: str) -> str:
-    url = url.split("#", 1)[0]
-    url = re.sub(r"/en-AE/(en-AE/)+", "/en-AE/", url)
-    url = re.sub(r"//+", "/", url)
-    return url
+    if not url:
+        return ""
+    url = url.split("#", 1)[0].strip()
+    base_parts = urlparse(BASE_URL)
+    joined = urljoin(BASE_URL, url)
+    parsed = urlparse(joined)
+
+    scheme = parsed.scheme or base_parts.scheme or "https"
+    netloc = parsed.netloc or base_parts.netloc
+    path = re.sub(r"/en-AE/(en-AE/)+", "/en-AE/", parsed.path or "/")
+    path = re.sub(r"/+", "/", path)
+    if not path.startswith("/"):
+        path = f"/{path}"
+
+    normalized = f"{scheme}://{netloc}{path}"
+    query = parsed.query
+    if query:
+        normalized = f"{normalized}?{query}"
+    return normalized.rstrip("/")
 
 
 def random_delay() -> float:
