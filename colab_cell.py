@@ -10,6 +10,7 @@ from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+from urllib.parse import urljoin
 
 
 def ensure_dependencies() -> None:
@@ -68,6 +69,35 @@ SERVICE_URL_TARGET = 90
 DEFAULT_HEADERS = {
     "accept-language": "en-AE,en;q=0.9",
 }
+
+CTA_TEXT_PATTERNS = [
+    "book",
+    "schedule",
+    "continue",
+    "checkout",
+    "select date",
+    "select time",
+    "get started",
+    "next",
+]
+
+BOOKING_WIDGET_PROBES = [
+    "select",
+    "[data-testid*='hour']",
+    "[data-testid*='duration']",
+    "[data-testid*='professional']",
+    "[data-testid*='bed']",
+    "[data-testid*='bath']",
+    "[data-testid*='package']",
+    "[data-testid*='quantity']",
+    "[data-testid*='area']",
+    "[data-testid*='slot']",
+    "[role='radiogroup']",
+    "[role='combobox']",
+    "button[aria-pressed]",
+    "input[type='number']",
+    "input[type='radio']",
+]
 
 PRICE_SELECTORS = [
     "[data-testid*='total']",
@@ -295,6 +325,7 @@ class RunState:
             "offers": 0,
         }
         self.discovery_sources: Dict[str, int] = defaultdict(int)
+        self.discovery_totals: Dict[str, int] = defaultdict(int)
 
     def log_note(self, message: str) -> None:
         print(message)
@@ -458,6 +489,73 @@ async def ensure_market(page, cfg: Config, state: RunState) -> None:
         state.log_note("Location chip not found; assuming default Dubai context")
 
 
+async def has_booking_widget(page) -> bool:
+    for selector in BOOKING_WIDGET_PROBES + PRICE_SELECTORS:
+        try:
+            handle = await page.query_selector(selector)
+        except Exception:
+            handle = None
+        if handle:
+            return True
+    return False
+
+
+async def reach_booking_widget(page, url: str, cfg: Config, state: RunState, page_id: str) -> bool:
+    if await has_booking_widget(page):
+        return True
+    original_url = page.url
+    anchors = page.locator("a[href*='/checkout/']")
+    count = await anchors.count()
+    for idx in range(min(count, 5)):
+        href = await anchors.nth(idx).get_attribute("href")
+        if not href:
+            continue
+        target = urljoin(original_url, href)
+        try:
+            await page.goto(target, wait_until="networkidle", timeout=60000)
+            await random_sleep(cfg)
+            await ensure_market(page, cfg, state)
+        except Exception as exc:
+            state.log_error(f"Checkout navigation failed for {page_id}: {exc}")
+            await page.goto(original_url, wait_until="networkidle", timeout=60000)
+            continue
+        if await has_booking_widget(page):
+            state.discovery_totals["checkout"] += 1
+            state.log_note(f"Reached checkout via href for {page_id}: {target}")
+            return True
+        await page.goto(original_url, wait_until="networkidle", timeout=60000)
+    LOWER = "translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"
+    for pattern in CTA_TEXT_PATTERNS:
+        locator = page.locator(
+            "xpath="
+            "//a[contains(" + LOWER + ", " + xpath_literal(pattern) + ")] | "
+            "//button[contains(" + LOWER + ", " + xpath_literal(pattern) + ")] | "
+            "//*[@role='button'][contains(" + LOWER + ", " + xpath_literal(pattern) + ")]"
+        )
+        attempts = min(await locator.count(), 3)
+        for idx in range(attempts):
+            try:
+                button = locator.nth(idx)
+                await button.scroll_into_view_if_needed()
+                with contextlib.suppress(Exception):
+                    await button.click()
+                with contextlib.suppress(Exception):
+                    await page.wait_for_load_state("networkidle", timeout=60000)
+                await random_sleep(cfg)
+                if await has_booking_widget(page):
+                    state.log_note(f"Reached widget via CTA '{pattern}' for {page_id}")
+                    return True
+            except Exception as exc:
+                state.log_error(f"CTA click failed for {page_id}: {exc}")
+            finally:
+                if not await has_booking_widget(page):
+                    with contextlib.suppress(Exception):
+                        await page.goto(original_url, wait_until="networkidle", timeout=60000)
+                        await random_sleep(cfg)
+                        await ensure_market(page, cfg, state)
+    return await has_booking_widget(page)
+
+
 async def detect_model(page, state: RunState, page_id: str) -> Tuple[str, Dict[str, Any]]:
     model_scores: Dict[str, int] = defaultdict(int)
     evidence: Dict[str, List[Dict[str, str]]] = defaultdict(list)
@@ -591,6 +689,11 @@ def parse_breakdown(snippets: List[str]) -> Dict[str, Optional[float]]:
 async def enumerate_options(page, model_type: str, state: RunState, page_id: str) -> Tuple[List[Dict[str, Any]], Dict[str, List[Dict[str, Any]]]]:
     option_groups: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     hints = CONTROL_LABEL_HINTS.get(model_type, [])
+    if not hints:
+        flat_hints: List[str] = []
+        for entries in CONTROL_LABEL_HINTS.values():
+            flat_hints.extend(entries)
+        hints = sorted(set(flat_hints))
     interactive_handles = await page.query_selector_all("[data-testid]")
     for handle in interactive_handles:
         try:
@@ -705,6 +808,9 @@ async def enumerate_options(page, model_type: str, state: RunState, page_id: str
                 break
     if not option_groups:
         state.log_note(f"No option groups detected for {page_id}")
+        state.elements.append(
+            ElementRecord(page_id, "*", "option-discovery", "no-groups", "no-groups")
+        )
     combos: List[Dict[str, Any]] = []
     keys = list(option_groups.keys())
     if not keys:
@@ -728,6 +834,10 @@ async def enumerate_options(page, model_type: str, state: RunState, page_id: str
         mid_index = len(choices) // 2
         if len(choices) > 2 and choices[mid_index] not in subset:
             subset.append(choices[mid_index])
+        for idx in (1, 2):
+            if idx < len(choices) and choices[idx] not in subset:
+                subset.append(choices[idx])
+        subset = subset[:5]
         for choice in subset:
             current[group] = choice
             backtrack(index + 1, current)
@@ -989,15 +1099,39 @@ async def process_service(browser_page, url: str, state: RunState) -> None:
     await browser_page.goto(url, wait_until="domcontentloaded", timeout=60000)
     await random_sleep(cfg)
     await ensure_market(browser_page, cfg, state)
-    await asyncio.sleep(2)
+    await asyncio.sleep(1)
+    page_stub = slugify(url.rsplit("/", 1)[-1])
+    widget_present = await reach_booking_widget(browser_page, url, cfg, state, page_stub)
     service_name = await get_service_title(browser_page)
-    page_id = slugify(service_name + "-" + url.split("/")[-1])
-    model_type, evidence = await detect_model(browser_page, state, page_id)
+    composite_id = f"{service_name}-{page_stub}" if service_name else page_stub
+    page_id = slugify(composite_id)
     screenshot_path = SHOTS_DIR / f"service_{page_id}.png"
     await take_screenshot(browser_page, screenshot_path)
     state.screenshots[page_id] = str(screenshot_path)
+    if not widget_present:
+        state.discovery_totals["skipped"] += 1
+        state.log_note(f"Booking widget missing for {url}")
+        state.elements.append(
+            ElementRecord(page_id, url, "widget-check", "not-found", "not-found")
+        )
+        state.pages.append(
+            PageRecord(
+                page_id=page_id,
+                parent_page_id=None,
+                level="service",
+                url=url,
+                page_title_text=service_name or url,
+                detected_model_type="OTHER",
+                has_addons=False,
+                has_slots=False,
+                notes="NO_WIDGET",
+            )
+        )
+        return
+    state.discovery_totals["bookable"] += 1
+    model_type, evidence = await detect_model(browser_page, state, page_id)
     combos, option_groups = await enumerate_options(browser_page, model_type, state, page_id)
-    await capture_price(browser_page, combos, model_type, state, page_id, service_name, evidence)
+    await capture_price(browser_page, combos, model_type, state, page_id, service_name or url, evidence)
     await capture_addons(browser_page, page_id, state)
     await capture_offers(browser_page, page_id, state)
     await capture_availability(browser_page, cfg, page_id, state)
@@ -1008,13 +1142,23 @@ async def process_service(browser_page, url: str, state: RunState) -> None:
             parent_page_id=None,
             level="service",
             url=url,
-            page_title_text=service_name,
+            page_title_text=service_name or url,
             detected_model_type=model_type,
             has_addons=any(rec.page_id == page_id for rec in state.addons),
             has_slots=any(rec.page_id == page_id for rec in state.availability),
-            notes=json.dumps(evidence)[:250],
+            notes=json.dumps(evidence)[:250] if evidence else "",
         )
     )
+
+
+async def extract_sitemap_links(page) -> List[str]:
+    sitemap_url = urljoin(BASE_URL + "/", "sitemap")
+    try:
+        await page.goto(sitemap_url, wait_until="domcontentloaded", timeout=60000)
+    except Exception:
+        return []
+    entries = await extract_links(page)
+    return [href for href, _ in entries]
 
 
 async def discover_services(context_page, state: RunState) -> List[str]:
@@ -1033,14 +1177,27 @@ async def discover_services(context_page, state: RunState) -> List[str]:
     await take_screenshot(context_page, home_shot, rects)
     state.screenshots["home"] = str(home_shot)
     link_entries = await extract_links(context_page)
+    candidate_links = [href for href, _ in link_entries if href]
     for _, source in link_entries:
         state.discovery_sources[source] += 1
-    filtered = filter_service_links(href for href, _ in link_entries)
+    filtered = filter_service_links(candidate_links)
+    if len(filtered) < SERVICE_URL_TARGET:
+        sitemap_links = await extract_sitemap_links(context_page)
+        if sitemap_links:
+            state.discovery_sources["sitemap"] += len(sitemap_links)
+            candidate_links.extend(sitemap_links)
+            filtered = filter_service_links(candidate_links)
+        await context_page.goto(state.config.base_url, wait_until="domcontentloaded", timeout=60000)
+    filtered = sorted(set(filtered))
+    checkout_targets = [url for url in filtered if "/checkout/" in url]
+    state.discovery_totals["discovered"] = len(filtered)
+    state.discovery_totals["checkout"] = len(checkout_targets)
     breakdown = ", ".join(f"{src}:{count}" for src, count in sorted(state.discovery_sources.items()))
     state.log_note(f"Discovery breakdown -> {breakdown}")
     state.log_note(f"Discovered {len(filtered)} candidate service URLs")
     if len(filtered) < SERVICE_URL_TARGET:
         state.log_note("Warning: fewer than target service URLs detected; continuing anyway")
+    state.log_note(f"Direct checkout targets identified: {len(checkout_targets)}")
     return filtered
 
 
@@ -1184,6 +1341,7 @@ async def run_scraper() -> None:
                 await process_service(page, url, state)
             except Exception as exc:
                 state.log_error(f"Failed to process {url}: {exc}")
+                state.discovery_totals["skipped"] += 1
             await random_sleep(cfg)
     finally:
         await context.close()
@@ -1208,7 +1366,10 @@ async def run_scraper() -> None:
     workbook_path = build_excel(state)
     print("Run summary")
     print("============")
-    print(f"Services processed: {state.summary_counts['services']}")
+    discovered = state.discovery_totals.get("discovered", 0)
+    bookable = state.discovery_totals.get("bookable", 0)
+    skipped = state.discovery_totals.get("skipped", 0)
+    print(f"Discovered URLs: {discovered}   Bookable targets: {bookable}   Skipped (not bookable): {skipped}")
     print(f"Price combinations: {state.summary_counts['combos']}")
     print(f"Add-ons captured: {state.summary_counts['addons']}")
     print(f"Availability slots: {state.summary_counts['slots']}")
