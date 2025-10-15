@@ -58,6 +58,7 @@ from fake_useragent import UserAgent
 from PIL import Image, ImageDraw
 from playwright.async_api import (
     Browser,
+    BrowserContext,
     ElementHandle,
     Locator,
     Page,
@@ -323,12 +324,16 @@ def parse_price(value: str) -> Optional[float]:
         return None
 
 
-def looks_like_service(url: str) -> bool:
+def looks_like_service(url: str, context: str = "") -> bool:
     if not url.startswith(BASE_URL):
         return False
     if EXCLUDE_PATTERNS.search(url):
         return False
-    return bool(SERVICE_KEYWORDS.search(url))
+    if SERVICE_KEYWORDS.search(url):
+        return True
+    if context and SERVICE_KEYWORDS.search(context):
+        return True
+    return False
 
 
 def extract_city_from_url(url: str) -> Optional[str]:
@@ -371,12 +376,12 @@ class JustlifeScraper:
         print(message)
 
     # ------------------------------------------------------------------
-    def discover_urls(self) -> List[ServiceCandidate]:
+    async def discover_urls(self, browser: Browser) -> List[ServiceCandidate]:
         candidates: Dict[str, ServiceCandidate] = {}
 
-        def register(url: str, source: str) -> None:
+        def register(url: str, source: str, context: str = "") -> None:
             canonical = canonicalize_url(url)
-            if not looks_like_service(canonical):
+            if not looks_like_service(canonical, context):
                 return
             if canonical not in candidates:
                 candidates[canonical] = ServiceCandidate(
@@ -387,6 +392,51 @@ class JustlifeScraper:
                 )
                 self.discovery_sources[source] += 1
 
+        context = await browser.new_context(
+            user_agent=USER_AGENT,
+            locale="en-AE",
+            extra_http_headers={"accept-language": "en-AE"},
+        )
+        context.set_default_timeout(15000)
+        page = await context.new_page()
+        try:
+            await page.goto(BASE_URL, wait_until="networkidle", timeout=60000)
+            await page.wait_for_timeout(1200)
+            await self.ensure_location(page)
+            await self.close_modals(page)
+
+            async def collect(selector: str, source: str) -> None:
+                try:
+                    anchors: List[Dict[str, Any]] = await page.eval_on_selector_all(
+                        selector,
+                        "els => els.map(el => ({\n                            href: el.href || '',\n                            text: (el.innerText || '').trim(),\n                            aria: el.getAttribute('aria-label') || '',\n                            classes: el.className || ''\n                        }))",
+                    )
+                except Exception:
+                    return
+                for anchor in anchors:
+                    href = anchor.get("href") or ""
+                    if not href:
+                        continue
+                    context_text = " ".join(
+                        filter(
+                            None,
+                            [
+                                (anchor.get("text") or "").lower(),
+                                (anchor.get("aria") or "").lower(),
+                                (anchor.get("classes") or "").lower(),
+                            ],
+                        )
+                    )
+                    register(href, source, context_text)
+
+            await collect("nav a[href]", "nav")
+            await collect("footer a[href]", "footer")
+            await collect("section a[href]", "section")
+            await collect("a[href*='/en-AE/']", "home")
+        finally:
+            await page.close()
+            await context.close()
+
         def fetch(url: str) -> Optional[str]:
             try:
                 resp = requests.get(url, timeout=30, headers={"User-Agent": USER_AGENT, "accept-language": "en-AE"})
@@ -396,63 +446,16 @@ class JustlifeScraper:
                 return None
             return None
 
-        def harvest_links(soup: BeautifulSoup, source: str, root: Optional[str] = None) -> None:
-            if not soup:
-                return
-            anchors = soup.select("a[href]")
-            for link in anchors:
-                href_raw = link.get("href")
-                if not href_raw:
-                    continue
-                href = urljoin(root or BASE_URL, href_raw)
-                text = link.get_text(" ", strip=True)
-                aria = link.get("aria-label") or ""
-                classes = " ".join(link.get("class") or [])
-                context = " ".join([text.lower(), aria.lower(), classes.lower()])
-                parent_text = ""
-                parent = link.parent
-                depth = 0
-                while parent is not None and depth < 2:
-                    if getattr(parent, "name", None) in {"section", "div", "li"}:
-                        heading = parent.find(["h2", "h3", "h4", "h5"], string=True)
-                        if heading:
-                            parent_text += " " + heading.get_text(" ", strip=True).lower()
-                    parent = getattr(parent, "parent", None)
-                    depth += 1
-
-                text_matches = SERVICE_KEYWORDS.search(text) or SERVICE_KEYWORDS.search(context) or SERVICE_KEYWORDS.search(parent_text)
-                href_matches = SERVICE_KEYWORDS.search(href) or "/checkout" in href
-
-                if not (text_matches or href_matches):
-                    continue
-
-                if link.find_parent("footer"):
-                    register(href, "footer")
-                elif link.find_parent("nav"):
-                    register(href, "nav")
-                else:
-                    register(href, source)
-
-        home_html = fetch(BASE_URL)
-        if home_html:
-            soup = BeautifulSoup(home_html, "lxml")
-            harvest_links(soup, "home", BASE_URL)
-            # Footer specific extraction to capture dense services cloud
-            footer = soup.find("footer")
-            if footer:
-                harvest_links(footer, "footer", BASE_URL)
-            # Mega menu or category carousels often live under nav sections
-            for section in soup.select("section"):
-                harvest_links(section, "section", BASE_URL)
-
         sitemap_html = fetch(f"{BASE_URL}/sitemap.xml")
         if sitemap_html and "<urlset" in sitemap_html:
             soup = BeautifulSoup(sitemap_html, "xml")
             for loc in soup.find_all("loc"):
-                register(loc.text.strip(), "sitemap")
+                register(loc.text.strip(), "sitemap", "sitemap")
 
         if len(candidates) < 50:
-            self.log("[WARN] Discovery found fewer than 50 candidates; consider relaxing filters or verifying page structure.")
+            self.log(
+                "[WARN] Discovery found fewer than 50 candidates; verify filters and widget availability."
+            )
 
         discovered = list(candidates.values())
         self.log(f"Discovery collected {len(discovered)} candidate URLs")
@@ -631,9 +634,11 @@ class JustlifeScraper:
         header = addon_headers.first
         await header.scroll_into_view_if_needed()
         container = header.locator("xpath=ancestor::section[1]")
-        cards = container.locator(".//div[contains(@class,'card') or contains(@class,'addon')]")
+        if await container.count() == 0:
+            container = header
+        cards = container.locator("xpath=.//div[contains(@class,'card') or contains(@class,'addon')]")
         if await cards.count() == 0:
-            cards = container.locator(".//li")
+            cards = container.locator("xpath=.//li")
         for idx in range(await cards.count()):
             card = cards.nth(idx)
             with contextlib.suppress(Exception):
@@ -726,21 +731,25 @@ class JustlifeScraper:
     async def enumerate_sections(self, page: Page, page_id: str, service_name: str, service_url: str) -> Tuple[List[str], int]:
         section_titles: List[str] = []
         price_rows = 0
-        sections = page.locator("xpath=//section[.//button[contains(translate(text(),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'add')]]")
+        sections = page.locator(
+            "xpath=//section[.//button[contains(translate(text(),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'add')]]"
+        )
         sections_count = await sections.count()
         for idx in range(sections_count):
             if self.combos_attempted[page_id] >= MAX_COMBOS_PER_SERVICE:
                 break
             section = sections.nth(idx)
             try:
-                title_locator = section.locator(".//h2|.//h3|.//h4|.//p")
+                title_locator = section.locator("xpath=.//h2 | .//h3 | .//h4 | .//p")
                 section_name = f"Section {idx+1}"
                 if await title_locator.count() > 0:
                     section_name = (await title_locator.first.inner_text()).strip() or section_name
                 section_titles.append(section_name)
-                cards = section.locator(".//div[contains(@class,'card') or contains(@class,'tile') or contains(@data-testid,'card')]")
+                cards = section.locator(
+                    "xpath=.//div[contains(@class,'card') or contains(@class,'tile') or contains(@data-testid,'card')]"
+                )
                 if await cards.count() == 0:
-                    cards = section.locator(".//li")
+                    cards = section.locator("xpath=.//li")
                 for card_index in range(min(await cards.count(), 10)):
                     if self.combos_attempted[page_id] >= MAX_COMBOS_PER_SERVICE:
                         break
@@ -974,8 +983,9 @@ class JustlifeScraper:
         return titles, price_rows
 
     # ------------------------------------------------------------------
-    async def process_service(self, browser: Browser, candidate: ServiceCandidate) -> None:
-        page = await browser.new_page(user_agent=USER_AGENT, locale="en-AE")
+    async def process_service(self, context: BrowserContext, candidate: ServiceCandidate) -> None:
+        page = await context.new_page()
+        page.set_default_timeout(15000)
         page_id = short_uuid(candidate.url)
         try:
             await page.goto(candidate.url, wait_until="networkidle", timeout=60000)
@@ -1040,14 +1050,23 @@ class JustlifeScraper:
 
     # ------------------------------------------------------------------
     async def run(self) -> None:
-        candidates = self.discover_urls()
-        kept = candidates[:500]
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=HEADLESS)
-            for candidate in kept:
-                await self.process_service(browser, candidate)
-                await asyncio.sleep(random_delay())
-            await browser.close()
+            candidates = await self.discover_urls(browser)
+            kept = candidates[:500]
+            context = await browser.new_context(
+                user_agent=USER_AGENT,
+                locale="en-AE",
+                extra_http_headers={"accept-language": "en-AE"},
+            )
+            context.set_default_timeout(15000)
+            try:
+                for candidate in kept:
+                    await self.process_service(context, candidate)
+                    await asyncio.sleep(random_delay())
+            finally:
+                await context.close()
+                await browser.close()
         self.summary_stats["services"] = len(self.pages)
         self.summary_stats["prices"] = len(self.prices)
         self.summary_stats["addons"] = len(self.addons)
@@ -1222,75 +1241,466 @@ class JustlifeScraper:
     ) -> None:
         wb = Workbook()
         wb.remove(wb.active)
+        run_timestamp = utc_now()
 
         def add_sheet(name: str, df: pd.DataFrame, freeze: bool = True, currency_cols: Optional[List[str]] = None) -> None:
             ws = wb.create_sheet(name[:31])
-            for col_idx, column_name in enumerate(df.columns, 1):
-                ws.cell(row=1, column=col_idx, value=column_name)
-                ws.cell(row=1, column=col_idx).font = Font(bold=True)
-                ws.cell(row=1, column=col_idx).fill = PatternFill("solid", fgColor="DDEBF7")
-            for row_idx, (_, row) in enumerate(df.iterrows(), start=2):
+            data = df.copy()
+            if data.empty and data.columns.size == 0:
+                data = pd.DataFrame({"Notice": ["No data captured"]})
+            for col_idx, column_name in enumerate(data.columns, 1):
+                header_cell = ws.cell(row=1, column=col_idx, value=column_name)
+                header_cell.font = Font(bold=True)
+                header_cell.fill = PatternFill("solid", fgColor="DDEBF7")
+                header_cell.alignment = Alignment(horizontal="center")
+            for row_idx, (_, row) in enumerate(data.iterrows(), start=2):
                 for col_idx, value in enumerate(row, start=1):
                     ws.cell(row=row_idx, column=col_idx, value=value)
             if freeze:
                 ws.freeze_panes = "A2"
-            for col_idx in range(1, len(df.columns) + 1):
-                ws.column_dimensions[get_column_letter(col_idx)].width = 18
+            for col_idx in range(1, len(data.columns) + 1):
+                ws.column_dimensions[get_column_letter(col_idx)].width = 20
             if currency_cols:
                 for column in currency_cols:
-                    if column in df.columns:
-                        idx = list(df.columns).index(column) + 1
-                        for row_idx in range(2, len(df) + 2):
+                    if column in data.columns:
+                        idx = list(data.columns).index(column) + 1
+                        for row_idx in range(2, len(data) + 2):
                             cell = ws.cell(row=row_idx, column=idx)
                             cell.number_format = "#,##0.00"
             ws.auto_filter.ref = ws.dimensions
 
-        summary_rows = [
-            {
-                "metric": "Services processed",
-                "value": len(pages),
-            },
-            {
-                "metric": "Price combinations",
-                "value": len(prices),
-            },
-            {
-                "metric": "Add-ons captured",
-                "value": len(addons),
-            },
-            {
-                "metric": "Availability slots",
-                "value": len(availability),
-            },
-            {
-                "metric": "Offers",
-                "value": len(offers),
-            },
-        ]
-        summary_df = pd.DataFrame(summary_rows)
-        add_sheet("Executive_Summary", summary_df, freeze=False)
-        add_sheet("Services", pages)
-        add_sheet("Pricing_Matrix", prices, currency_cols=["base_price", "fees_total", "vat_amount", "grand_total"])
-        add_sheet("Addons", addons, currency_cols=["addon_price"])
-        add_sheet("Availability", availability)
-        add_sheet("Offers", offers)
-        add_sheet("Pages", pages)
-        add_sheet("Options", options)
-        add_sheet("Selectors_Trace", elements)
-        add_sheet("Error_Logs", errors)
+        def first_non_empty(series: pd.Series) -> Optional[str]:
+            for value in series:
+                if pd.notna(value) and str(value).strip():
+                    return str(value).strip()
+            return None
 
-        price_sheet = wb["Pricing_Matrix"]
-        if price_sheet.max_row > 1 and price_sheet.max_column >= 19:
-            grand_total_col = list(prices.columns).index("grand_total") + 1
-            color_scale = ColorScaleRule(start_type="min", start_color="F8F9FA", mid_type="percentile", mid_value=50, mid_color="FFF2CC", end_type="max", end_color="F4B084")
-            price_sheet.conditional_formatting.add(
-                f"{get_column_letter(grand_total_col)}2:{get_column_letter(grand_total_col)}{price_sheet.max_row}",
+        services_sheet = pd.DataFrame(
+            columns=[
+                "Service Name",
+                "City",
+                "Category",
+                "Checkout URL",
+                "Description",
+                "Duration",
+                "Base Price",
+                "Price AED",
+                "Discount",
+                "Currency",
+                "Add-ons",
+                "Combinations JSON",
+                "Available Slots",
+                "Special Offers",
+                "Scrape Timestamp",
+            ]
+        )
+
+        if not pages.empty:
+            services_base = pages.copy()
+            services_base["city"] = services_base["url"].apply(lambda u: extract_city_from_url(u) or "")
+
+            if not prices.empty:
+                price_stats = (
+                    prices.groupby("page_id").agg(
+                        base_price_min=("base_price", "min"),
+                        grand_total_min=("grand_total", "min"),
+                        grand_total_avg=("grand_total", "mean"),
+                    )
+                ).reset_index()
+                duration_map = (
+                    prices.groupby("page_id")["duration"].apply(first_non_empty).reset_index(name="duration")
+                )
+                discount_map = (
+                    prices.groupby("page_id")["discount_value"].apply(first_non_empty).reset_index(name="discount_value")
+                )
+                currency_map = (
+                    prices.groupby("page_id")["currency"].apply(first_non_empty).reset_index(name="currency")
+                )
+                def sanitize(value: Any) -> Any:
+                    return None if pd.isna(value) else value
+
+                combos_json = (
+                    prices.groupby("page_id")
+                    .apply(
+                        lambda df: json.dumps(
+                            [
+                                {
+                                    "model_type": sanitize(row.get("model_type")),
+                                    "hours": sanitize(row.get("hours")),
+                                    "pros": sanitize(row.get("pros")),
+                                    "bedrooms": sanitize(row.get("bedrooms")),
+                                    "bathrooms": sanitize(row.get("bathrooms")),
+                                    "kitchen_package": sanitize(row.get("kitchen_package")),
+                                    "appliance_combo": sanitize(row.get("appliance_combo")),
+                                    "package_name": sanitize(row.get("package_name")),
+                                    "duration": sanitize(row.get("duration")),
+                                    "grand_total": sanitize(row.get("grand_total")),
+                                }
+                                for _, row in df.iterrows()
+                            ],
+                            ensure_ascii=False,
+                        )
+                    )
+                    .reset_index(name="combinations_json")
+                )
+                combos_count = (
+                    prices.groupby("page_id").size().reset_index(name="combination_count")
+                )
+            else:
+                price_stats = pd.DataFrame(columns=["page_id", "base_price_min", "grand_total_min", "grand_total_avg"])
+                duration_map = pd.DataFrame(columns=["page_id", "duration"])
+                discount_map = pd.DataFrame(columns=["page_id", "discount_value"])
+                currency_map = pd.DataFrame(columns=["page_id", "currency"])
+                combos_json = pd.DataFrame(columns=["page_id", "combinations_json"])
+                combos_count = pd.DataFrame(columns=["page_id", "combination_count"])
+
+            if not addons.empty:
+                addons_group = (
+                    addons.groupby("page_id")["addon_name"]
+                    .apply(lambda s: ", ".join(sorted({name.strip() for name in s if isinstance(name, str) and name.strip()})))
+                    .reset_index(name="addon_names")
+                )
+            else:
+                addons_group = pd.DataFrame(columns=["page_id", "addon_names"])
+
+            if not availability.empty:
+                availability_group = (
+                    availability.groupby("page_id")["time_slot_label"].count().reset_index(name="available_slots")
+                )
+            else:
+                availability_group = pd.DataFrame(columns=["page_id", "available_slots"])
+
+            if not offers.empty:
+                offers_group = (
+                    offers.groupby("page_id")["offer_name"]
+                    .apply(lambda s: ", ".join(sorted({name.strip() for name in s if isinstance(name, str) and name.strip()})))
+                    .reset_index(name="offer_names")
+                )
+            else:
+                offers_group = pd.DataFrame(columns=["page_id", "offer_names"])
+
+            services_enriched = (
+                services_base.merge(price_stats, on="page_id", how="left")
+                .merge(duration_map, on="page_id", how="left")
+                .merge(discount_map, on="page_id", how="left")
+                .merge(currency_map, on="page_id", how="left")
+                .merge(combos_json, on="page_id", how="left")
+                .merge(combos_count, on="page_id", how="left")
+                .merge(addons_group, on="page_id", how="left")
+                .merge(availability_group, on="page_id", how="left")
+                .merge(offers_group, on="page_id", how="left")
+            )
+
+            services_enriched["Base Price"] = services_enriched.get("base_price_min")
+            services_enriched["Price AED"] = services_enriched.get("grand_total_min")
+            services_enriched.loc[
+                services_enriched["Base Price"].isna(), "Base Price"
+            ] = services_enriched["Price AED"]
+            services_enriched["Currency"] = services_enriched.get("currency")
+            services_enriched.loc[
+                services_enriched["Currency"].isna() & services_enriched["Price AED"].notna(), "Currency"
+            ] = "AED"
+
+            available_slots_series = services_enriched.get("available_slots")
+            if available_slots_series is None:
+                available_slots_series = pd.Series([0] * len(services_enriched))
+            available_slots_series = pd.to_numeric(available_slots_series, errors="coerce").fillna(0).astype(int)
+
+            services_sheet = services_enriched.assign(
+                **{
+                    "Service Name": services_enriched["page_title_text"],
+                    "City": services_enriched["city"],
+                    "Category": services_enriched["detected_model_type"],
+                    "Checkout URL": services_enriched["url"],
+                    "Description": services_enriched["notes"],
+                    "Duration": services_enriched.get("duration"),
+                    "Discount": services_enriched.get("discount_value"),
+                    "Add-ons": services_enriched.get("addon_names"),
+                    "Combinations JSON": services_enriched.get("combinations_json"),
+                    "Available Slots": available_slots_series,
+                    "Special Offers": services_enriched.get("offer_names"),
+                    "Scrape Timestamp": run_timestamp,
+                }
+            )[
+                [
+                    "Service Name",
+                    "City",
+                    "Category",
+                    "Checkout URL",
+                    "Description",
+                    "Duration",
+                    "Base Price",
+                    "Price AED",
+                    "Discount",
+                    "Currency",
+                    "Add-ons",
+                    "Combinations JSON",
+                    "Available Slots",
+                    "Special Offers",
+                    "Scrape Timestamp",
+                ]
+            ]
+
+            for column in ["Base Price", "Price AED"]:
+                services_sheet[column] = pd.to_numeric(services_sheet[column], errors="coerce")
+
+        combinations_sheet = pd.DataFrame(
+            columns=[
+                "service_id",
+                "service_name",
+                "service_url",
+                "combination_key",
+                "model_type",
+                "hours",
+                "num_professionals",
+                "bedrooms",
+                "bathrooms",
+                "kitchen_package",
+                "appliance_combo",
+                "package_name",
+                "duration",
+                "base_price",
+                "fees_total",
+                "vat_amount",
+                "vat_percent",
+                "grand_total",
+                "currency",
+                "offer_state",
+                "offer_name",
+                "discount_type",
+                "discount_value",
+                "qa_flags",
+                "collected_at",
+                "screenshot_ref",
+            ]
+        )
+
+        if not prices.empty:
+            combinations_enriched = prices.merge(
+                pages[["page_id", "page_title_text", "url"]], on="page_id", how="left"
+            )
+
+            def build_key(row: pd.Series) -> str:
+                parts: List[str] = []
+                for label, column in [
+                    ("hours", "hours"),
+                    ("pros", "pros"),
+                    ("bedrooms", "bedrooms"),
+                    ("bathrooms", "bathrooms"),
+                    ("kitchen", "kitchen_package"),
+                    ("combo", "appliance_combo"),
+                    ("package", "package_name"),
+                    ("duration", "duration"),
+                ]:
+                    if column in row and pd.notna(row[column]) and str(row[column]).strip():
+                        parts.append(f"{label}={row[column]}")
+                return " | ".join(parts) if parts else "default"
+
+            combinations_enriched = combinations_enriched.assign(
+                service_id=combinations_enriched["page_id"],
+                service_name=combinations_enriched["service_name"].fillna(combinations_enriched["page_title_text"]),
+                service_url=combinations_enriched["pricing_source_url"],
+                combination_key=combinations_enriched.apply(build_key, axis=1),
+                num_professionals=combinations_enriched["pros"],
+            )
+
+            combinations_sheet = combinations_enriched[
+                [
+                    "service_id",
+                    "service_name",
+                    "service_url",
+                    "combination_key",
+                    "model_type",
+                    "hours",
+                    "num_professionals",
+                    "bedrooms",
+                    "bathrooms",
+                    "kitchen_package",
+                    "appliance_combo",
+                    "package_name",
+                    "duration",
+                    "base_price",
+                    "fees_total",
+                    "vat_amount",
+                    "vat_percent",
+                    "grand_total",
+                    "currency",
+                    "offer_state",
+                    "offer_name",
+                    "discount_type",
+                    "discount_value",
+                    "qa_flags",
+                    "collected_at",
+                    "screenshot_ref",
+                ]
+            ]
+
+        addons_sheet = pd.DataFrame(
+            columns=[
+                "service_id",
+                "service_name",
+                "service_url",
+                "addon_name",
+                "addon_description",
+                "min_qty",
+                "max_qty",
+                "unit_price",
+                "currency",
+                "is_recommended",
+                "is_required",
+                "extracted_utc",
+            ]
+        )
+
+        if not addons.empty:
+            addons_enriched = addons.merge(
+                pages[["page_id", "page_title_text", "url"]], on="page_id", how="left"
+            )
+            addons_sheet = addons_enriched.assign(
+                service_id=addons_enriched["page_id"],
+                service_name=addons_enriched["page_title_text"],
+                service_url=addons_enriched["pricing_source_url"],
+                min_qty=None,
+                max_qty=None,
+                unit_price=addons_enriched["addon_price"],
+                extracted_utc=addons_enriched["collected_at"],
+            )[
+                [
+                    "service_id",
+                    "service_name",
+                    "service_url",
+                    "addon_name",
+                    "addon_description",
+                    "min_qty",
+                    "max_qty",
+                    "unit_price",
+                    "currency",
+                    "is_recommended",
+                    "is_required",
+                    "extracted_utc",
+                ]
+            ]
+
+        availability_sheet = pd.DataFrame(
+            columns=[
+                "service_id",
+                "service_name",
+                "service_url",
+                "date",
+                "time_label",
+                "status",
+                "lead_time_days",
+                "captured_utc",
+            ]
+        )
+
+        if not availability.empty:
+            availability_enriched = availability.merge(
+                pages[["page_id", "page_title_text", "url"]], on="page_id", how="left"
+            )
+            availability_sheet = availability_enriched.assign(
+                service_id=availability_enriched["page_id"],
+                service_name=availability_enriched["page_title_text"],
+                service_url=availability_enriched["url"],
+                date=availability_enriched["date_str"],
+                time_label=availability_enriched["time_slot_label"],
+                status=availability_enriched["slot_status"],
+                captured_utc=availability_enriched["collected_at"],
+            )[
+                [
+                    "service_id",
+                    "service_name",
+                    "service_url",
+                    "date",
+                    "time_label",
+                    "status",
+                    "lead_time_days",
+                    "captured_utc",
+                ]
+            ]
+
+        errors_sheet = pd.DataFrame(
+            columns=["service_id", "service_name", "url", "context", "message", "screenshot"]
+        )
+
+        if not errors.empty:
+            errors_enriched = errors.merge(
+                pages[["page_id", "page_title_text"]], on="page_id", how="left"
+            )
+            errors_sheet = errors_enriched.assign(
+                service_id=errors_enriched["page_id"],
+                service_name=errors_enriched["page_title_text"],
+            )[
+                ["service_id", "service_name", "url", "context", "message", "screenshot"]
+            ]
+
+        offers_sheet = pd.DataFrame(
+            columns=[
+                "page_id",
+                "offer_name",
+                "offer_badge_text",
+                "description",
+                "eligibility",
+                "discount_type",
+                "discount_value",
+                "stacking_rules",
+                "collected_at",
+            ]
+        )
+        if not offers.empty:
+            offers_sheet = offers
+
+        selectors_sheet = pd.DataFrame(
+            columns=["page_id", "selector", "element_role", "raw_text", "normalized_text"]
+        )
+        if not elements.empty:
+            selectors_sheet = elements
+
+        meta_rows = [
+            {"Metric": "Run Timestamp", "Value": run_timestamp},
+            {"Metric": "Services processed", "Value": len(pages)},
+            {"Metric": "Price combinations", "Value": len(prices)},
+            {"Metric": "Add-ons captured", "Value": len(addons)},
+            {"Metric": "Availability slots", "Value": len(availability)},
+            {"Metric": "Offers captured", "Value": len(offers)},
+        ]
+        for source, count in sorted(self.discovery_sources.items()):
+            meta_rows.append({"Metric": f"Discovery::{source}", "Value": count})
+        meta_sheet = pd.DataFrame(meta_rows)
+
+        add_sheet("Services", services_sheet, currency_cols=["Base Price", "Price AED"])
+        add_sheet("Combinations", combinations_sheet, currency_cols=["base_price", "fees_total", "vat_amount", "grand_total"])
+        add_sheet("AddOns", addons_sheet, currency_cols=["unit_price"])
+        add_sheet("Availability", availability_sheet)
+        add_sheet("Errors", errors_sheet)
+        add_sheet("Meta", meta_sheet, freeze=False)
+        add_sheet("Offers", offers_sheet)
+        add_sheet("Selectors_Trace", selectors_sheet)
+
+        combo_ws = wb["Combinations"]
+        if "grand_total" in combinations_sheet.columns and combinations_sheet.shape[0] > 0:
+            grand_col_index = list(combinations_sheet.columns).index("grand_total") + 1
+            color_scale = ColorScaleRule(
+                start_type="min",
+                start_color="F8F9FA",
+                mid_type="percentile",
+                mid_value=50,
+                mid_color="FFF2CC",
+                end_type="max",
+                end_color="F4B084",
+            )
+            combo_ws.conditional_formatting.add(
+                f"{get_column_letter(grand_col_index)}2:{get_column_letter(grand_col_index)}{combo_ws.max_row}",
                 color_scale,
             )
-            qa_col = list(prices.columns).index("qa_flags") + 1
-            qa_rule = CellIsRule(operator="notEqual", formula=["\"\""], fill=PatternFill("solid", fgColor="FFC7CE"))
-            price_sheet.conditional_formatting.add(
-                f"{get_column_letter(qa_col)}2:{get_column_letter(qa_col)}{price_sheet.max_row}",
+            qa_index = list(combinations_sheet.columns).index("qa_flags") + 1
+            qa_rule = CellIsRule(
+                operator="notEqual",
+                formula=["\"\""],
+                fill=PatternFill("solid", fgColor="FFC7CE"),
+            )
+            combo_ws.conditional_formatting.add(
+                f"{get_column_letter(qa_index)}2:{get_column_letter(qa_index)}{combo_ws.max_row}",
                 qa_rule,
             )
 
