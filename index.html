@@ -561,6 +561,12 @@
       font-weight: 500;
     }
     .field-description { color: var(--text-muted); font-size: 0.95rem; }
+    .field-hint {
+      font-size: 0.75rem;
+      color: var(--fg-muted-contrast);
+      font-style: italic;
+      margin: -2px 0 4px;
+    }
     .field-input, select, textarea {
       width: 100%;
       padding: 12px 14px;
@@ -1302,6 +1308,7 @@
       averageOrderValue: 'Average Order Value (AED)',
       averageProfitMargin: 'Average Profit Margin (%)',
       typicalMonthlyOrders: 'Typical Monthly Orders (across all channels)',
+      sensitiveHelper: 'We understand this information can be sensitive, but sharing it helps us tailor the perfect package and offer the best possible support for your business.',
       range0_10: '0–10',
       range10_20: '10–20',
       range20_40: '20–40',
@@ -1516,6 +1523,7 @@
       averageOrderValue: 'متوسط قيمة الطلب (درهم)',
       averageProfitMargin: 'متوسط هامش الربح (%)',
       typicalMonthlyOrders: 'عدد الطلبات الشهري المعتاد (جميع القنوات)',
+      sensitiveHelper: 'ندرك أن هذه المعلومات قد تكون حساسة، لكن مشاركتها تساعدنا على تخصيص العرض المثالي وتقديم أفضل دعم ممكن لعملك.',
       range0_10: '0–10',
       range10_20: '10–20',
       range20_40: '20–40',
@@ -2773,14 +2781,15 @@
             wrapper.dataset.stickySource = 'commission';
           }
         },
-        { key: 'aov', type: 'number', labelKey: 'averageOrderValue', required: true },
-        { key: 'avg_profit', type: 'number', labelKey: 'averageProfitMargin', required: true },
+        { key: 'aov', type: 'number', labelKey: 'averageOrderValue', required: false, helperKey: 'sensitiveHelper' },
+        { key: 'avg_profit', type: 'number', labelKey: 'averageProfitMargin', required: false, helperKey: 'sensitiveHelper' },
         {
           key: 'orders_all',
           type: 'choice',
           mode: 'single',
           labelKey: 'typicalMonthlyOrders',
-          required: true,
+          required: false,
+          helperKey: 'sensitiveHelper',
           options: [
             { value: '0-10', labelKey: 'range0_10' },
             { value: '10-20', labelKey: 'range10_20' },
@@ -3233,6 +3242,14 @@
     }
     wrapper.appendChild(label);
 
+    if (config.helperKey) {
+      const hint = document.createElement('p');
+      hint.className = 'field-hint';
+      hint.dataset.i18n = config.helperKey;
+      hint.textContent = t(config.helperKey);
+      wrapper.appendChild(hint);
+    }
+
     if (config.type === 'text' || config.type === 'email' || config.type === 'tel' || config.type === 'number') {
       const input = createInput(config.key, config.type);
       bindFieldValue(input, surveyKind, config.key);
@@ -3266,7 +3283,6 @@
         otherWrap.style.display = 'none';
         otherWrap.dataset.otherFor = config.key;
         otherWrap.dataset.otherKey = otherKey;
-        otherWrap.dataset.required = 'false';
         const otherInput = createOtherInput(otherKey);
         otherInput.disabled = true;
         otherInput.addEventListener('input', () => {
@@ -3368,7 +3384,11 @@
         }
       });
       wrapper.style.display = shouldShow ? 'block' : 'none';
-      wrapper.dataset.required = shouldShow ? 'true' : 'false';
+      if (shouldShow) {
+        wrapper.dataset.required = 'true';
+      } else {
+        delete wrapper.dataset.required;
+      }
       const input = wrapper.querySelector('input');
       if (input) {
         if (shouldShow) {
@@ -3654,6 +3674,30 @@
     applyReveal(view);
   }
   function createSurveyRoute(hash, config, password) {
+    const renderUnlockedSurvey = (target, options = {}) => {
+      target.innerHTML = '';
+      if (!options.skipRestore) {
+        restoreDraft(config.kind);
+      }
+      mountSurvey(target, config);
+      if (alreadyCompleted(config.kind)) {
+        const info = document.createElement('div');
+        info.className = 'field-description';
+        info.dataset.i18n = 'alreadySubmitted';
+        info.textContent = t('alreadySubmitted');
+        const form = target.querySelector('form');
+        if (form) {
+          form.insertBefore(info, form.firstChild);
+          const submit = form.querySelector('button[type="submit"]');
+          if (submit) {
+            submit.disabled = true;
+            submit.style.opacity = '0.6';
+            submit.style.cursor = 'not-allowed';
+          }
+        }
+      }
+    };
+
     registerRoute(hash, {
       mount(container) {
         container.innerHTML = '';
@@ -3661,34 +3705,17 @@
           const gate = createPasswordGate(password.titleKey, password.promptKey, password.code);
           gate.addEventListener('password-ok', () => {
             state.passwordUnlocked[config.kind] = true;
-            setRoute(hash);
-            scheduleFrame(() => setRoute(hash));
-            setTimeout(() => setRoute(hash), 40);
-            setTimeout(() => setRoute(hash), 160);
+            renderUnlockedSurvey(container);
+            scheduleFrame(() => renderUnlockedSurvey(container, { skipRestore: true }));
+            setTimeout(() => renderUnlockedSurvey(container, { skipRestore: true }), 40);
+            setTimeout(() => renderUnlockedSurvey(container, { skipRestore: true }), 160);
           });
           applyI18n(gate);
           container.appendChild(gate);
           applyReveal(gate);
           return;
         }
-        restoreDraft(config.kind);
-        mountSurvey(container, config);
-        if (alreadyCompleted(config.kind)) {
-          const info = document.createElement('div');
-          info.className = 'field-description';
-          info.dataset.i18n = 'alreadySubmitted';
-          info.textContent = t('alreadySubmitted');
-          const form = container.querySelector('form');
-          if (form) {
-            form.insertBefore(info, form.firstChild);
-            const submit = form.querySelector('button[type="submit"]');
-            if (submit) {
-              submit.disabled = true;
-              submit.style.opacity = '0.6';
-              submit.style.cursor = 'not-allowed';
-            }
-          }
-        }
+        renderUnlockedSurvey(container);
       },
       unmount() {
         clearInterval(state.timers[config.kind]);
