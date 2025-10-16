@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+frontend/node_modules/
+frontend/dist/
+frontend/release/
+.runtime/
+runtime/
+.DS_Store
+.idea/
+.vscode/
+*.pyc
