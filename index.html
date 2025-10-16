@@ -1195,6 +1195,31 @@
   const DEBUG = false;
   const logDebug = (...args) => { if (DEBUG) console.log('[Tamam]', ...args); };
 
+  const storage = {
+    get(key) {
+      try {
+        return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+      } catch (error) {
+        logDebug('Storage get failed', key, error);
+        return null;
+      }
+    },
+    set(key, value) {
+      try {
+        if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
+      } catch (error) {
+        logDebug('Storage set failed', key, error);
+      }
+    },
+    remove(key) {
+      try {
+        if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
+      } catch (error) {
+        logDebug('Storage remove failed', key, error);
+      }
+    }
+  };
+
   const REMOTE_ENDPOINTS = {
     submit: GOOGLE_APPS_SCRIPT_URL,
     list: GOOGLE_APPS_SCRIPT_URL,
@@ -1268,6 +1293,7 @@
       phoneNumber: 'Phone Number',
       primaryCategory: 'Primary Service Category',
       home: 'Home',
+      maintenance: 'Maintenance',
       health: 'Health',
       car: 'Car',
       lifestyle: 'Lifestyle / Wellness',
@@ -1481,6 +1507,7 @@
       phoneNumber: 'رقم الهاتف',
       primaryCategory: 'الفئة الرئيسية للخدمة',
       home: 'خدمات المنزل',
+      maintenance: 'الصيانة',
       health: 'الصحة',
       car: 'السيارات',
       lifestyle: 'نمط الحياة / العافية',
@@ -1645,6 +1672,7 @@
 
   const COMMISSION_BANDS = {
     home: '15–20%',
+    maintenance: '15%',
     car: '15–20%',
     health: '25–30%',
     lifestyle: '20–25%'
@@ -1668,8 +1696,8 @@
   const DEVICE_ID_KEY = 'tmm_device_id';
 
   const state = {
-    lang: localStorage.getItem(STORAGE_KEYS.lang) || 'en',
-    theme: localStorage.getItem(STORAGE_KEYS.theme) || 'light',
+    lang: storage.get(STORAGE_KEYS.lang) || 'en',
+    theme: storage.get(STORAGE_KEYS.theme) || 'light',
     currentRoute: null,
     routes: {},
     timers: {},
@@ -1731,11 +1759,11 @@
 
   function getDeviceId() {
     if (state.deviceId) return state.deviceId;
-    let stored = localStorage.getItem(DEVICE_ID_KEY);
+    let stored = storage.get(DEVICE_ID_KEY);
     if (!stored) {
       const generated = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `dev-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       stored = generated;
-      localStorage.setItem(DEVICE_ID_KEY, stored);
+      storage.set(DEVICE_ID_KEY, stored);
     }
     state.deviceId = stored;
     return stored;
@@ -1827,12 +1855,12 @@
 
   function autosave(kind) {
     const entry = state.surveys[kind];
-    localStorage.setItem(STORAGE_KEYS.drafts[kind], JSON.stringify(entry.data));
+    storage.set(STORAGE_KEYS.drafts[kind], JSON.stringify(entry.data));
     logDebug('Draft saved', kind, entry.data);
   }
 
   function restoreDraft(kind) {
-    const raw = localStorage.getItem(STORAGE_KEYS.drafts[kind]);
+    const raw = storage.get(STORAGE_KEYS.drafts[kind]);
     if (!raw) return;
     try {
       const data = JSON.parse(raw);
@@ -1843,15 +1871,15 @@
   }
 
   function handleCompletion(kind) {
-    localStorage.setItem(STORAGE_KEYS.completed[kind], 'true');
+    storage.set(STORAGE_KEYS.completed[kind], 'true');
   }
 
   function alreadyCompleted(kind) {
-    return localStorage.getItem(STORAGE_KEYS.completed[kind]) === 'true';
+    return storage.get(STORAGE_KEYS.completed[kind]) === 'true';
   }
 
   function resetDraft(kind) {
-    localStorage.removeItem(STORAGE_KEYS.drafts[kind]);
+    storage.remove(STORAGE_KEYS.drafts[kind]);
     state.surveys[kind].data = {};
   }
 
@@ -2211,7 +2239,7 @@
     input.className = 'field-input option-other';
     input.placeholder = t(placeholderKey || 'otherPlaceholder');
     input.dataset.fieldKey = fieldKey;
-    input.required = true;
+    input.required = false;
     input.dataset.requiredInput = 'true';
     return input;
   }
@@ -2573,7 +2601,7 @@
       updateSoundUI();
     };
 
-    const savedPref = localStorage.getItem(SOUND_STORAGE_KEY);
+    const savedPref = storage.get(SOUND_STORAGE_KEY);
     const initialMuted = savedPref === null ? false : savedPref !== '1';
     applyMutedState(initialMuted);
     requestAnimationFrame(() => {
@@ -2581,7 +2609,7 @@
         logDebug('Hero autoplay blocked', err);
         if (!heroVideo.muted) {
           applyMutedState(true);
-          localStorage.setItem(SOUND_STORAGE_KEY, '0');
+          storage.set(SOUND_STORAGE_KEY, '0');
         }
       });
     });
@@ -2601,14 +2629,14 @@
       } else {
         showToast(t('heroAudioHint'));
       }
-      localStorage.setItem(SOUND_STORAGE_KEY, heroVideo.muted ? '0' : '1');
+      storage.set(SOUND_STORAGE_KEY, heroVideo.muted ? '0' : '1');
     };
 
     soundBtn.addEventListener('click', toggleSound);
     heroVideo.addEventListener('click', toggleSound);
 
     heroVideo.addEventListener('volumechange', () => {
-      localStorage.setItem(SOUND_STORAGE_KEY, heroVideo.muted ? '0' : '1');
+      storage.set(SOUND_STORAGE_KEY, heroVideo.muted ? '0' : '1');
       updateSoundUI();
     });
 
@@ -2717,6 +2745,7 @@
           required: true,
           options: [
             { value: 'home', labelKey: 'home' },
+            { value: 'maintenance', labelKey: 'maintenance' },
             { value: 'health', labelKey: 'health' },
             { value: 'car', labelKey: 'car' },
             { value: 'lifestyle', labelKey: 'lifestyle' }
@@ -3218,8 +3247,9 @@
         otherWrap.style.display = 'none';
         otherWrap.dataset.otherFor = config.key;
         otherWrap.dataset.otherKey = otherKey;
-        otherWrap.dataset.required = 'true';
+        otherWrap.dataset.required = 'false';
         const otherInput = createOtherInput(otherKey);
+        otherInput.disabled = true;
         otherInput.addEventListener('input', () => {
           state.surveys[surveyKind].data[otherKey] = otherInput.value;
           autosave(surveyKind);
@@ -3308,10 +3338,18 @@
         }
       });
       wrapper.style.display = shouldShow ? 'block' : 'none';
+      wrapper.dataset.required = shouldShow ? 'true' : 'false';
+      const input = wrapper.querySelector('input');
+      if (input) {
+        input.required = shouldShow;
+        input.disabled = !shouldShow;
+        if (!shouldShow) {
+          input.value = '';
+          if (typeof input.blur === 'function') input.blur();
+        }
+      }
       if (!shouldShow) {
         survey.data[otherKey] = '';
-        const input = wrapper.querySelector('input');
-        if (input) input.value = '';
       }
     });
     autosave(surveyKind);
@@ -3420,9 +3458,13 @@
         showToast(t('alreadySubmitted'));
         return;
       }
-      if (!validateForm(form)) return;
       submit.disabled = true;
       submit.classList.add('is-loading');
+      if (!validateForm(form)) {
+        submit.disabled = false;
+        submit.classList.remove('is-loading');
+        return;
+      }
       const seconds = Math.round((Date.now() - (state.surveys[kind].start || Date.now())) / 1000);
       const record = { ...state.surveys[kind].data };
       Object.keys(record).forEach(key => {
@@ -3582,6 +3624,9 @@
           gate.addEventListener('password-ok', () => {
             state.passwordUnlocked[config.kind] = true;
             setRoute(hash);
+            if (typeof requestAnimationFrame === 'function') {
+              requestAnimationFrame(() => setRoute(hash));
+            }
           });
           applyI18n(gate);
           container.appendChild(gate);
@@ -3720,7 +3765,7 @@
   document.getElementById('theme-toggle').addEventListener('click', () => {
     state.theme = state.theme === 'light' ? 'dark' : 'light';
     document.documentElement.dataset.theme = state.theme;
-    localStorage.setItem(STORAGE_KEYS.theme, state.theme);
+    storage.set(STORAGE_KEYS.theme, state.theme);
     updateThemeToggle();
     if (state.currentRoute === routes['#/surveys/results'] && state.passwordUnlocked.results) {
       const view = app.querySelector('.dashboard-grid');
@@ -3730,7 +3775,7 @@
 
   document.getElementById('lang-toggle').addEventListener('click', () => {
     state.lang = state.lang === 'en' ? 'ar' : 'en';
-    localStorage.setItem(STORAGE_KEYS.lang, state.lang);
+    storage.set(STORAGE_KEYS.lang, state.lang);
     document.documentElement.setAttribute('lang', state.lang === 'ar' ? 'ar' : 'en');
     document.getElementById('app-shell').setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
     updateHeaderTexts();
@@ -3739,8 +3784,8 @@
     if (state.currentRoute && state.currentRoute.onLang) state.currentRoute.onLang();
   });
   function clearAllStorage() {
-    Object.values(STORAGE_KEYS.drafts).forEach(key => localStorage.removeItem(key));
-    Object.values(STORAGE_KEYS.completed).forEach(key => localStorage.removeItem(key));
+    Object.values(STORAGE_KEYS.drafts).forEach(storage.remove);
+    Object.values(STORAGE_KEYS.completed).forEach(storage.remove);
     state.passwordUnlocked = {};
     state.remote.records = { vendor: [], customer: [], public: [] };
     state.remote.lastSync = null;
