@@ -504,7 +504,10 @@ def index() -> str:
                     const card = document.createElement('div');
                     card.className = 'card';
                     const title = document.createElement('h3');
-                    title.innerText = `Probe ${result.probe_id}`;
+                    title.innerText = 'Probe';
+                    if (result && result.probe_id) {{
+                        title.innerText = 'Probe ' + result.probe_id;
+                    }}
                     card.appendChild(title);
                     const list = document.createElement('ul');
                     result.candidates.forEach(c => {{
@@ -553,6 +556,12 @@ def index() -> str:
     </body>
     </html>
     """
+
+
+@app.get("/health")
+def health() -> Dict[str, str]:
+    """Lightweight health check used by monitors and tests."""
+    return {"status": "ok"}
 
 
 @app.post("/upload_set")
