@@ -1,0 +1,4794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tamam Research Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f7fb;
+      --bg-gradient: linear-gradient(180deg, rgba(228,235,255,0.9), rgba(241,247,255,0.9));
+      --surface: rgba(255,255,255,0.72);
+      --surface-dark: rgba(24,24,32,0.72);
+      --border: rgba(255,255,255,0.4);
+      --text: #10121a;
+      --text-muted: rgba(16,18,26,0.65);
+      --fg-contrast: #1f2348;
+      --fg-muted-contrast: rgba(31,35,72,0.7);
+      --primary: #5766ff;
+      --primary-soft: rgba(87,102,255,0.14);
+      --shadow: 0 18px 45px rgba(45,55,85,0.16);
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --focus: 0 0 0 3px rgba(87,102,255,0.35);
+      --transition: 220ms ease;
+      --scrollbar: rgba(87,102,255,0.35);
+    }
+    [data-theme="dark"] {
+      --bg: #0f111b;
+      --bg-gradient: linear-gradient(180deg, rgba(18,20,34,0.94), rgba(17,19,32,0.88));
+      --surface: rgba(32,36,55,0.65);
+      --surface-dark: rgba(18,20,34,0.85);
+      --border: rgba(255,255,255,0.12);
+      --text: #f7f8fc;
+      --text-muted: rgba(247,248,252,0.7);
+      --fg-contrast: #f2f3ff;
+      --fg-muted-contrast: rgba(242,243,255,0.7);
+      --primary: #8a9bff;
+      --primary-soft: rgba(138,155,255,0.18);
+      --shadow: 0 18px 45px rgba(6,7,12,0.6);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-gradient), var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 320ms ease, color 320ms ease;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(119,130,255,0.28), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(179,120,255,0.22), transparent 45%);
+      pointer-events: none;
+      z-index: -1;
+    }
+    @keyframes floatPulse {
+      0% { transform: translateY(0); }
+      45% { transform: translateY(-6px); }
+      100% { transform: translateY(0); }
+    }
+    @keyframes shimmerSweep {
+      0% { transform: translateX(-120%); opacity: 0; }
+      40% { opacity: 0.6; }
+      100% { transform: translateX(120%); opacity: 0; }
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes fadeLift {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+    img { max-width: 100%; display: block; }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      align-items: center;
+      transition: direction var(--transition);
+    }
+    .app-header,
+    nav,
+    main {
+      width: min(1200px, 100%);
+      box-sizing: border-box;
+      margin: 0 auto;
+    }
+    .app-header {
+      padding: 24px clamp(16px, 5vw, 48px) 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-title {
+      font-size: clamp(24px, 3vw, 32px);
+      font-weight: 600;
+    }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .icon-button {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid transparent;
+      background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(232,236,255,0.86));
+      color: var(--fg-contrast);
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0 8px 18px rgba(45,55,85,0.16);
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .icon-button::after {
+      content: "";
+      position: absolute;
+      inset: -30% 10%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.5), transparent);
+      transform: translateX(-120%);
+      animation: shimmerSweep 5s linear infinite;
+      pointer-events: none;
+    }
+    [data-theme="dark"] .icon-button {
+      background: linear-gradient(145deg, rgba(40,44,70,0.95), rgba(26,28,46,0.9));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 10px 20px rgba(6,8,22,0.6);
+    }
+    .icon-button:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+    .icon-button:hover {
+      transform: translateY(-2px);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6), 0 12px 22px rgba(45,55,85,0.18);
+    }
+    .icon-button:active {
+      transform: translateY(0);
+      opacity: 0.9;
+    }
+    .lang-toggle {
+      min-width: 78px;
+      padding: 10px 18px;
+      border-radius: 22px;
+      border: 1px solid transparent;
+      background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(232,236,255,0.86));
+      color: var(--fg-contrast);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0 10px 20px rgba(45,55,85,0.16);
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .lang-toggle::after {
+      content: "";
+      position: absolute;
+      inset: -30% 15%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.5), transparent);
+      transform: translateX(-120%);
+      animation: shimmerSweep 6s linear infinite;
+      pointer-events: none;
+    }
+    [data-theme="dark"] .lang-toggle {
+      background: linear-gradient(145deg, rgba(40,44,70,0.95), rgba(26,28,46,0.9));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14), 0 12px 24px rgba(6,8,22,0.6);
+    }
+    .lang-toggle:focus-visible { outline: none; box-shadow: var(--focus); }
+    .lang-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6), 0 14px 26px rgba(45,55,85,0.18);
+    }
+    .lang-toggle:active {
+      transform: translateY(0);
+      opacity: 0.92;
+    }
+
+    nav {
+      padding: 0 clamp(16px, 5vw, 48px) 16px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .nav-link {
+      padding: 10px 16px;
+      background: var(--surface);
+      border-radius: 999px;
+      box-shadow: inset 0 0 0 1px var(--border), 0 8px 16px rgba(45,55,85,0.12);
+      font-weight: 500;
+      transition: background var(--transition), color var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+    .nav-link:hover,
+    .nav-link:focus-visible {
+      transform: translateY(-2px);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35), 0 14px 24px rgba(45,55,85,0.16);
+    }
+    .nav-link[aria-current="true"] {
+      background: var(--primary);
+      color: white;
+    }
+
+    main {
+      flex: 1;
+      padding: clamp(24px, 5vw, 48px) clamp(16px, 4vw, 48px) 80px;
+    }
+    .view {
+      display: none;
+      animation: fadeLift 260ms ease;
+    }
+    .view.active {
+      display: grid;
+      gap: clamp(24px, 4vw, 40px);
+      width: 100%;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      position: relative;
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      border-radius: var(--radius-lg);
+      padding: clamp(20px, 3vw, 32px);
+      box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+      display: grid;
+      gap: clamp(16px, 2vw, 24px);
+      overflow: hidden;
+      transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease, background 240ms ease;
+      will-change: transform;
+    }
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(135,150,255,0.18), transparent 55%),
+                  radial-gradient(circle at 80% 80%, rgba(183,130,255,0.18), transparent 55%);
+      opacity: 0;
+      transition: opacity 260ms ease;
+      pointer-events: none;
+    }
+    .card:hover,
+    .card:focus-within {
+      transform: translateY(-6px);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.45), 0 26px 48px rgba(60,70,120,0.24);
+    }
+    .card:hover::after,
+    .card:focus-within::after {
+      opacity: 1;
+    }
+    .card-muted {
+      background: var(--surface-dark);
+    }
+    .section-title {
+      font-size: clamp(24px, 3vw, 32px);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .section-subtitle {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .intro {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 32px;
+      max-width: 960px;
+      width: 100%;
+      justify-self: center;
+    }
+    .intro.card {
+      background: linear-gradient(135deg, rgba(255,255,255,0.82), rgba(232,238,255,0.9));
+    }
+    [data-theme="dark"] .intro.card {
+      background: linear-gradient(135deg, rgba(30,32,52,0.88), rgba(38,40,64,0.88));
+    }
+
+    .section-fade {
+      opacity: 0;
+      transform: translate3d(0, 24px, 0);
+      transition: opacity 320ms ease, transform 320ms ease;
+    }
+    .section-fade.in-view {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+    .hero-immersive {
+      padding: 40px 16px 64px;
+      display: grid;
+      place-items: center;
+      gap: 20px;
+    }
+    .hero-title {
+      font-size: clamp(22px, 2.8vw, 28px);
+      font-weight: 700;
+      letter-spacing: .2px;
+      text-align: center;
+      margin: 0;
+      opacity: 0;
+      transform: translateY(6px);
+      animation: titleIn .6s ease forwards;
+    }
+    .hero-sub {
+      font-size: clamp(15px, 2.4vw, 18px);
+      text-align: center;
+      margin: 0;
+      color: var(--fg-muted-contrast);
+      max-width: 420px;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: titleIn .6s ease forwards;
+      animation-delay: .08s;
+    }
+    .hero-hint {
+      text-align: center;
+      display: block;
+      color: var(--fg-muted-contrast);
+      font-size: clamp(13px, 2vw, 14px);
+    }
+    .video-shell {
+      position: relative;
+      width: min(92vw, 420px);
+      display: grid;
+      place-items: center;
+    }
+    .video-halo {
+      position: absolute;
+      inset: -10%;
+      z-index: 0;
+      filter: blur(28px) saturate(110%);
+      pointer-events: none;
+      background:
+        radial-gradient(60% 90% at 30% 20%, rgba(120,80,255,.20), transparent 60%),
+        radial-gradient(70% 100% at 70% 80%, rgba(0,200,255,.18), transparent 70%),
+        radial-gradient(50% 60% at 50% 50%, rgba(0,140,255,.12), transparent 60%);
+      animation: haloFloat 10s ease-in-out infinite alternate;
+      opacity: .9;
+    }
+    [data-theme="dark"] .video-halo {
+      filter: blur(32px) saturate(140%);
+    }
+    .video-frame {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      aspect-ratio: 9 / 16;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow:
+        0 12px 36px rgba(0,0,0,.25),
+        0 2px 8px rgba(0,0,0,.12);
+      background: rgba(255,255,255,.08);
+      backdrop-filter: blur(6px);
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    [data-theme="dark"] .video-frame {
+      background: rgba(32,36,55,.28);
+    }
+    .video-frame:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 18px 44px rgba(0,0,0,.28),
+        0 3px 10px rgba(0,0,0,.16);
+    }
+    .video-frame video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .unmute {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 14px;
+      line-height: 1;
+      background: rgba(255,255,255,.75);
+      color: #111;
+      border: none;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+      box-shadow: 0 4px 14px rgba(0,0,0,.2);
+    }
+    .unmute:hover { transform: translateY(-1px) scale(1.02); }
+    [data-theme="dark"] .unmute {
+      background: rgba(255,255,255,.18);
+      color: #f5f6ff;
+    }
+    [data-theme="dark"] .unmute:hover {
+      background: rgba(255,255,255,.22);
+    }
+    .unmute:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+    .unmute[hidden] { display: none; }
+    @media (min-width: 720px) {
+      .video-shell { width: clamp(360px, 24vw, 460px); }
+    }
+    @keyframes titleIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes haloFloat {
+      0%  { transform: translate3d(-4px, 0, 0) scale(1.02); opacity: .85; }
+      100%{ transform: translate3d(4px, 2px, 0) scale(1.06); opacity: .95; }
+    }
+    .cta-grid {
+      margin-top: 32px;
+      display: grid;
+      gap: 20px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(232,238,255,0.92));
+      border-radius: var(--radius-lg);
+      padding: clamp(20px, 3vw, 32px);
+      box-shadow: inset 0 0 0 1px var(--border), var(--shadow);
+      position: relative;
+      overflow: hidden;
+      transition: transform 240ms ease, box-shadow 240ms ease;
+    }
+    .cta-grid::before {
+      content: "";
+      position: absolute;
+      inset: -40% 10%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.35), rgba(255,255,255,0));
+      transform: translateX(-120%);
+      animation: shimmerSweep 7s linear infinite;
+      pointer-events: none;
+    }
+    .cta-grid:hover,
+    .cta-grid:focus-within {
+      transform: translateY(-6px);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.45), 0 28px 48px rgba(60,70,120,0.24);
+    }
+    .cta-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      align-items: center;
+    }
+    .cta-stack {
+      display: grid;
+      gap: 16px;
+    }
+    [data-theme="dark"] .cta-grid {
+      background: linear-gradient(135deg, rgba(32,36,58,0.92), rgba(20,22,38,0.88));
+    }
+    .cta-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+    .cta-buttons a { transition: transform var(--transition), box-shadow var(--transition); }
+    .cta-buttons a:hover { transform: translateY(-2px); box-shadow: 0 14px 24px rgba(45,55,85,0.22); }
+    .cta-buttons a:active { transform: translateY(0); }
+    .store-badge {
+      height: 44px;
+      width: auto;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+    .cta-links {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .cta-link {
+      padding: 10px 18px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(232,236,255,0.86));
+      border-radius: 999px;
+      font-weight: 600;
+      color: var(--fg-contrast);
+      border: 1px solid rgba(255,255,255,0.6);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 22px rgba(45,55,85,0.16);
+      transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+    [data-theme="dark"] .cta-link {
+      background: linear-gradient(145deg, rgba(40,44,70,0.95), rgba(26,28,46,0.9));
+      border: 1px solid rgba(255,255,255,0.18);
+      color: var(--fg-contrast);
+      box-shadow: 0 12px 26px rgba(6,8,22,0.6);
+    }
+    .cta-link svg {
+      width: 18px;
+      height: 18px;
+    }
+    .cta-link span { font-weight: 600; }
+    .cta-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(45,55,85,0.2);
+    }
+    .cta-link:active {
+      transform: translateY(0);
+      opacity: 0.95;
+    }
+    .legal-footer {
+      margin: clamp(36px, 6vw, 60px) auto 0;
+      padding: clamp(18px, 3vw, 24px) clamp(16px, 3vw, 28px);
+      width: min(100%, 880px);
+      text-align: center;
+      font-size: 14px;
+      color: var(--fg-muted-contrast);
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(224,232,255,0.74));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.38), 0 24px 54px rgba(46,56,96,0.18);
+    }
+    [data-theme="dark"] .legal-footer {
+      background: linear-gradient(135deg, rgba(30,34,56,0.88), rgba(20,22,38,0.9));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 0 26px 60px rgba(6,8,18,0.62);
+    }
+
+    form {
+      display: grid;
+      gap: 24px;
+    }
+    form[hidden] {
+      display: none !important;
+    }
+    .field-group {
+      display: grid;
+      gap: 8px;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .field-group:focus-within {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 30px rgba(80,90,150,0.18);
+    }
+    .field-label {
+      font-weight: 500;
+    }
+    .field-description { color: var(--text-muted); font-size: 0.95rem; }
+    .field-hint {
+      font-size: 0.75rem;
+      color: var(--fg-muted-contrast);
+      font-style: italic;
+      margin: -2px 0 4px;
+    }
+    .field-input, select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(120,130,200,0.25);
+      background: rgba(255,255,255,0.65);
+      color: inherit;
+      transition: border var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+    [data-theme="dark"] .field-input,
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea {
+      background: rgba(24,26,40,0.9);
+      border: 1px solid rgba(140,150,255,0.3);
+    }
+    .field-input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+      border-color: var(--primary);
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    .options {
+      display: grid;
+      gap: 10px;
+    }
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.5);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      border: 1px solid rgba(120,130,200,0.22);
+      transition: border var(--transition), background var(--transition), box-shadow var(--transition), transform var(--transition);
+    }
+    [data-theme="dark"] .option-item {
+      background: rgba(24,26,40,0.7);
+      border-color: rgba(140,150,255,0.3);
+    }
+    .option-item:hover,
+    .option-item:focus-within {
+      border-color: rgba(109,123,255,0.65);
+      box-shadow: 0 10px 24px rgba(70,80,140,0.18);
+      transform: translateY(-2px);
+    }
+    .progress-bar {
+      height: 10px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-inner {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #6d7bff, #a78bfa);
+      transition: width 200ms ease;
+    }
+    .sticky-banner {
+      position: sticky;
+      top: 16px;
+      z-index: 5;
+      background: linear-gradient(120deg, rgba(106,125,255,0.85), rgba(171,123,255,0.75));
+      color: white;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 16px 32px rgba(70,70,120,0.28);
+    }
+
+    .status-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      align-items: center;
+    }
+
+    .survey-card form {
+      max-width: 760px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .survey-card form .field-group {
+      background: rgba(255,255,255,0.45);
+      padding: 12px 14px 16px;
+      border-radius: var(--radius-md);
+      box-shadow: inset 0 0 0 1px rgba(120,130,200,0.15);
+      gap: 12px;
+    }
+    [data-theme="dark"] .survey-card form .field-group {
+      background: rgba(28,30,46,0.7);
+      box-shadow: inset 0 0 0 1px rgba(140,150,255,0.2);
+    }
+
+    .survey-card form .field-group .options {
+      background: transparent;
+      padding: 0;
+    }
+
+    .survey-card form .option-item {
+      background: rgba(255,255,255,0.7);
+    }
+    [data-theme="dark"] .survey-card form .option-item {
+      background: rgba(32,34,54,0.85);
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    .btn {
+      padding: 12px 20px;
+      border-radius: 999px;
+      border: none;
+      font-weight: 600;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .btn.is-loading {
+      pointer-events: none;
+      opacity: 0.75;
+      position: relative;
+    }
+    .btn.is-loading::after {
+      content: '';
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      animation: spin 0.8s linear infinite;
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #6d7bff, #b388ff);
+      color: white;
+      box-shadow: 0 12px 24px rgba(109,123,255,0.35);
+    }
+    .btn-primary:focus-visible { outline: none; box-shadow: var(--focus); }
+    .btn-primary:hover { transform: translateY(-1px); }
+
+    .toast-container {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      left: auto;
+      display: grid;
+      gap: 8px;
+      z-index: 1000;
+    }
+    [dir="rtl"] .toast-container {
+      right: auto;
+      left: 16px;
+    }
+    .toast {
+      background: rgba(25,28,45,0.88);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(12,14,25,0.45);
+      animation: slideIn 220ms ease;
+    }
+    @keyframes slideIn {
+      from { opacity:0; transform: translateY(-10px); }
+      to { opacity:1; transform: translateY(0); }
+    }
+
+    .thanks {
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+      display: grid;
+      gap: 12px;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: none;
+      font-weight: 500;
+    }
+    .tab-btn.active { background: var(--primary); color: white; }
+
+    .dashboard-grid {
+      display: grid;
+      gap: clamp(24px, 4vw, 40px);
+    }
+    .results-section {
+      display: grid;
+      gap: 20px;
+    }
+    .dashboard-shell {
+      background: linear-gradient(135deg, rgba(255,255,255,0.86), rgba(236,240,255,0.9));
+    }
+    [data-theme="dark"] .dashboard-shell {
+      background: linear-gradient(135deg, rgba(26,28,46,0.9), rgba(36,38,60,0.9));
+    }
+    .dashboard-shell .dashboard-grid {
+      margin-top: 8px;
+    }
+    .kpi-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+    .kpi-card {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.55);
+      box-shadow: inset 0 0 0 1px var(--border);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    [data-theme="dark"] .kpi-card {
+      background: rgba(24,26,40,0.75);
+    }
+    .kpi-card:hover,
+    .kpi-card:focus-within {
+      transform: translateY(-4px);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35), 0 18px 36px rgba(60,70,120,0.2);
+    }
+    .charts-grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+    .chart-card {
+      background: rgba(255,255,255,0.6);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: inset 0 0 0 1px var(--border);
+      display: grid;
+      gap: 12px;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    [data-theme="dark"] .chart-card {
+      background: rgba(24,26,40,0.82);
+    }
+    .chart-card:hover,
+    .chart-card:focus-within {
+      transform: translateY(-4px);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35), 0 20px 38px rgba(60,70,120,0.22);
+    }
+    .chart-card h4 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .chart-card canvas {
+      width: 100% !important;
+      height: 220px !important;
+    }
+    .open-grid {
+      display: grid;
+      gap: 16px;
+    }
+    .open-item {
+      background: rgba(255,255,255,0.6);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+    [data-theme="dark"] .open-item {
+      background: rgba(24,26,40,0.82);
+    }
+    .open-item h4 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .open-item-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .open-item-row span {
+      flex: 1 1 220px;
+      line-height: 1.4;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 0.9rem;
+    }
+    .copy-btn {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: none;
+      background: var(--primary-soft);
+      color: var(--primary);
+      cursor: pointer;
+      font-weight: 500;
+    }
+    [data-theme="dark"] .copy-btn {
+      background: rgba(98,110,220,0.25);
+      color: var(--text);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(120,130,200,0.2);
+    }
+    th {
+      text-align: left;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    tbody tr {
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    tbody tr:hover {
+      background: rgba(108,122,255,0.08);
+    }
+    [data-theme="dark"] tbody tr:hover {
+      background: rgba(108,122,255,0.18);
+    }
+    .empty-row,
+    .empty-row:hover {
+      cursor: default;
+      background: transparent;
+    }
+    [dir="rtl"] th, [dir="rtl"] td {
+      text-align: right;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+      background: rgba(255,255,255,0.55);
+      border-radius: var(--radius-md);
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+    
+    .search-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,18,28,0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal {
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      max-width: min(640px, 94vw);
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 48px rgba(12,15,35,0.4);
+      animation: fadeLift 280ms ease;
+    }
+    .modal-close {
+      position: sticky;
+      top: 0;
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+      background: inherit;
+    }
+    .modal-close button {
+      border: none;
+      background: rgba(255,255,255,0.4);
+      border-radius: 999px;
+      padding: 8px 12px;
+      transition: background var(--transition), transform var(--transition);
+    }
+    .modal-close button:hover,
+    .modal-close button:focus-visible {
+      background: rgba(109,123,255,0.35);
+      transform: translateY(-1px);
+    }
+
+    .password-gate {
+      display: grid;
+      gap: 16px;
+      max-width: 400px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .export-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .remote-tools {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(140deg, rgba(255,255,255,0.68), rgba(229,237,255,0.72));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.45), 0 18px 30px rgba(60,70,110,0.16);
+      position: relative;
+      overflow: hidden;
+    }
+    .remote-tools::after {
+      content: "";
+      position: absolute;
+      inset: -40% 30%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.55), transparent);
+      animation: shimmerSweep 7s linear infinite;
+      pointer-events: none;
+    }
+    [data-theme="dark"] .remote-tools {
+      background: linear-gradient(140deg, rgba(38,42,70,0.82), rgba(22,24,44,0.78));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 18px 30px rgba(6,8,18,0.6);
+    }
+
+    .remote-status {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      animation: fadeLift 260ms ease;
+    }
+    .remote-status strong {
+      font-weight: 600;
+      color: var(--fg-contrast);
+    }
+    .remote-status .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 0 4px rgba(87,102,255,0.18);
+    }
+    .remote-status[data-state="idle"] .status-dot {
+      background: rgba(120,130,160,0.8);
+      box-shadow: 0 0 0 4px rgba(120,130,160,0.16);
+    }
+    .remote-status[data-state="syncing"] .status-dot {
+      animation: pulseDot 1.6s ease infinite;
+    }
+    .remote-status[data-state="synced"] .status-dot {
+      background: #4ad395;
+      box-shadow: 0 0 0 4px rgba(74,211,149,0.2);
+    }
+    .remote-status[data-state="error"] .status-dot {
+      background: #ff7b7b;
+      box-shadow: 0 0 0 4px rgba(255,123,123,0.25);
+    }
+    .remote-status[data-state="ready"] .status-dot {
+      background: #6d7bff;
+      box-shadow: 0 0 0 4px rgba(109,123,255,0.25);
+    }
+    .remote-banner {
+      flex: 1 1 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 4px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(120deg, rgba(255,255,255,0.75), rgba(229,239,255,0.72));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6);
+    }
+    [data-theme="dark"] .remote-banner {
+      background: linear-gradient(120deg, rgba(38,44,74,0.85), rgba(28,30,52,0.8));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+    }
+    .remote-banner span {
+      font-weight: 600;
+      color: var(--fg-contrast);
+    }
+    .remote-banner button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-weight: 600;
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 12px 24px rgba(87,102,255,0.26);
+      transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
+    }
+    .remote-banner button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 32px rgba(87,102,255,0.32);
+    }
+    .remote-banner button:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+    .remote-banner button:active {
+      transform: translateY(0);
+      opacity: 0.9;
+    }
+    @keyframes pulseDot {
+      0% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.3); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 0.9; }
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    .remote-config {
+      max-width: 420px;
+    }
+
+    .debug-panel {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      display: none;
+      gap: 8px;
+      z-index: 200;
+    }
+    .debug-panel.active { display: grid; }
+    [dir="rtl"] .debug-panel {
+      right: auto;
+      left: 16px;
+    }
+    .debug-panel button {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(0,0,0,0.55);
+      color: white;
+      font-size: 12px;
+    }
+
+    ::-webkit-scrollbar {
+      height: 10px;
+      width: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--scrollbar);
+      border-radius: 999px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+      .video-halo {
+        animation: none !important;
+      }
+      .hero-title,
+      .hero-sub {
+        animation: none !important;
+      }
+      .section-fade {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .app-header { padding: 20px 16px 12px; }
+      nav { padding: 0 16px 16px; }
+      main { padding: 24px 16px 64px; }
+      .intro { gap: 12px; }
+      .cta-buttons { flex-direction: column; align-items: stretch; }
+      .cta-links { justify-content: center; }
+      .control-group { gap: 8px; }
+      .icon-button { width: 40px; height: 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <header class="app-header">
+      <div class="brand-group">
+        <div class="brand-title" data-i18n="headerTitle">Tamam Research Portal</div>
+      </div>
+      <div class="control-group">
+        <button class="icon-button" id="theme-toggle" aria-label="Toggle theme">🌞</button>
+        <button class="lang-toggle" id="lang-toggle" aria-label="Switch language">AR</button>
+      </div>
+    </header>
+    <nav id="nav"></nav>
+    <main id="app"></main>
+  </div>
+
+  <div class="toast-container" id="toast-container" role="status" aria-live="polite"></div>
+  <div class="modal-backdrop" id="modal-backdrop" aria-modal="true" role="dialog" hidden>
+    <div class="modal" role="document">
+      <div class="modal-close"><button id="modal-close" data-i18n="close">Close</button></div>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <div class="debug-panel" id="debug-panel"></div>
+
+  <script>
+  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzszOvemrGVGrgbV9LZ0Xd6_uujyh4nGgremPoTf81HCFKT4Aybncd60Ni3nuSNz3Ec/exec';
+  const DEBUG = false;
+  const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const scheduleFrame = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (fn) => setTimeout(fn, 16);
+  const logDebug = (...args) => { if (DEBUG) console.log('[Tamam]', ...args); };
+
+  const storage = {
+    get(key) {
+      try {
+        return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+      } catch (error) {
+        logDebug('Storage get failed', key, error);
+        return null;
+      }
+    },
+    set(key, value) {
+      try {
+        if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
+      } catch (error) {
+        logDebug('Storage set failed', key, error);
+      }
+    },
+    remove(key) {
+      try {
+        if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
+      } catch (error) {
+        logDebug('Storage remove failed', key, error);
+      }
+    }
+  };
+
+  const REMOTE_ENDPOINTS = {
+    submit: GOOGLE_APPS_SCRIPT_URL,
+    list: GOOGLE_APPS_SCRIPT_URL,
+    reset: `${GOOGLE_APPS_SCRIPT_URL}?mode=reset`
+  };
+
+  const NAV_ITEMS = [
+    { hash: '#/surveys', key: 'navHome' },
+    { hash: '#/surveys/vendors', key: 'navVendors' },
+    { hash: '#/surveys/customers', key: 'navCustomers' },
+    { hash: '#/surveys/public', key: 'navPublic' },
+    { hash: '#/surveys/results', key: 'navResults' }
+  ];
+  const REMOTE_MULTI_FIELDS = {
+    vendor: ['expectations'],
+    customer: ['categories_used', 'increase_usage_factors'],
+    public: ['platforms_used']
+  };
+
+  const I18N = {
+    en: {
+      headerTitle: 'Tamam Research Portal',
+      navHome: 'Overview',
+      navVendors: 'Vendor Survey',
+      navCustomers: 'Customer Survey',
+      navPublic: 'Public Survey',
+      navResults: 'Results Dashboard',
+      introTitle: "Why we're collecting data",
+      introBody: 'To better understand how vendors, customers, and the public perceive Tamam\'s commission and subscription models, and to improve fairness and affordability for all.',
+      heroTitle: 'Meet Tamam',
+      heroSub: 'A UAE-born platform connecting you to trusted home, car, health, and lifestyle services.',
+      heroUnmute: 'Tap to unmute',
+      heroAudioHint: 'Video is playing muted. Tap to enable sound.',
+      heroAudioPlaying: 'Sound on. Enjoy the full experience.',
+      heroAudioUnavailable: 'Unable to enable sound automatically.',
+      getTamam: 'Get Tamam & Follow Us',
+      ctaDownload: 'Download the Tamam app',
+      ctaFollow: 'Follow Tamam online',
+      website: 'Website',
+      instagram: 'Instagram',
+      linktree: 'Linktree',
+      passwordPrompt: 'Enter access code',
+      submitPassword: 'Continue',
+      invalidPassword: 'Invalid password.',
+      submit: 'Submit survey',
+      savedDraft: 'Draft saved.',
+      restoredDraft: 'Draft restored.',
+      alreadySubmitted: 'You already submitted this survey on this device.',
+      submitted: 'Submitted',
+      submittedSynced: 'Submitted & synced.',
+      submittedOffline: 'Submitted (offline). We\'ll sync automatically.',
+      timerLabel: 'Time spent',
+      progressLabel: 'Progress',
+      required: 'Required',
+      optional: 'Optional',
+      otherPlaceholder: 'Please specify',
+      loading: 'Loading…',
+      thanksTitle: 'Thank you for your insight',
+      thanksBody: 'We appreciate your time—your responses will shape how Tamam evolves for our community.',
+      backHome: 'Back to overview',
+      adminNotes: 'Admin notes',
+      submissionIdLabel: 'Submission ID',
+      noteLabel: 'Note',
+      surveyVendorTitle: 'Vendor Partnership Survey',
+      surveyCustomerTitle: 'Customer Experience Survey',
+      surveyPublicTitle: 'Public Sentiment Survey',
+      vendorBanner: 'Commission structure for your category: {range} commission per order + AED 75/month subscription.',
+      vendorHelper: 'Consider the above commission + AED 75/month when answering fee questions.',
+      companyName: 'Company Name',
+      businessEmail: 'Business Email',
+      phoneNumber: 'Phone Number',
+      primaryCategory: 'Primary Service Category',
+      home: 'Home',
+      maintenance: 'Maintenance',
+      health: 'Health',
+      car: 'Car',
+      lifestyle: 'Lifestyle / Wellness',
+      averageOrderValue: 'Average Order Value (AED)',
+      averageProfitMargin: 'Average Profit Margin (%)',
+      typicalMonthlyOrders: 'Typical Monthly Orders (across all channels)',
+      sensitiveHelper: 'We understand this information can be sensitive, but sharing it helps us tailor the perfect package and offer the best possible support for your business.',
+      range0_10: '0–10',
+      range10_20: '10–20',
+      range20_40: '20–40',
+      range40_80: '40–80',
+      range80p: '80+',
+      other: 'Other',
+      vendorProfitableVolume: 'At what monthly order volume from Tamam would the above model be profitable for you?',
+      orders5_10: '5–10 orders',
+      orders10_20: '10–20 orders',
+      orders20_40: '20–40 orders',
+      orders40p: '40+ orders',
+      vendorMinStay: 'Minimum number of Tamam orders per month to justify staying subscribed',
+      orders1_5: '1–5 orders',
+      vendorScenario1: 'If Tamam generates AED 5,000–10,000 per month for your business, is the model acceptable?',
+      vendorScenario2: 'If Tamam generates AED 10,000–20,000 per month for your business, is the model acceptable?',
+      vendorScenario3: 'If Tamam generates AED 20,000+ per month for your business, is the model acceptable?',
+      acceptable: 'Acceptable',
+      neutral: 'Neutral',
+      notAcceptable: 'Not acceptable',
+      vendorExpect: 'What would you expect from Tamam to justify these fees?',
+      expectVolume: 'Guaranteed customer volume',
+      expectMarketing: 'Better marketing & visibility',
+      expectPremium: 'Access to premium customers',
+      expectTools: 'Business tools (analytics, scheduling, payments)',
+      expectPayout: 'Faster payouts',
+      leaveReason: 'What is the biggest reason you would leave the platform even if you have orders?',
+      leaveCommission: 'High commission',
+      leaveVolume: 'Low customer volume',
+      leaveSupport: 'Poor vendor support',
+      leaveCompetitor: 'Better competitor offers',
+      recommend: 'Would you recommend Tamam to other businesses?',
+      yes: 'Yes',
+      no: 'No',
+      anythingElse: 'Anything else we should consider?',
+      customerName: 'Your Name',
+      usageFrequency: 'How often do you use Tamam?',
+      weekly: 'Weekly',
+      monthly: 'Monthly',
+      rarely: 'Rarely',
+      usedCategories: 'Which service categories have you used most?',
+      lifestyle: 'Lifestyle',
+      easeBooking: 'How easy was your last booking?',
+      veryDifficult: '1 (Very difficult)',
+      score2: '2',
+      score3: '3',
+      score4: '4',
+      veryEasy: '5 (Very easy)',
+      recommendScore: 'How likely are you to recommend Tamam to a friend or colleague?',
+      timeSave: 'Compared to calling vendors, Tamam saves you time:',
+      muchMore: 'Much more',
+      slightlyMore: 'Slightly more',
+      same: 'Same',
+      less: 'Less',
+      moneySave: 'Compared to alternatives, Tamam saves you money:',
+      futureServices: 'Which additional services would you like Tamam to offer?',
+      useMore: 'What would make you use Tamam more frequently?',
+      lowerCost: 'Lower cost',
+      moreVariety: 'More variety',
+      fasterBooking: 'Faster booking',
+      betterSupport: 'Better customer support',
+      loyalty: 'Loyalty rewards/discounts',
+      publicBookedBefore: 'Have you booked services online before (home, car, health, lifestyle)?',
+      yesBooked: 'Yes',
+      noBooked: 'No',
+      usedPlatforms: 'If Yes, which platforms have you used?',
+      platformTamam: 'Tamam',
+      platformUrban: 'Urban Company',
+      platformCafu: 'cafu',
+      platformJustlife: 'justlife',
+      barrierNo: 'If No, why haven\'t you used apps for services?',
+      barrierExpensive: 'Too expensive',
+      barrierTrust: 'Don\'t trust apps',
+      barrierCall: 'Prefer calling vendors directly',
+      barrierUnknown: 'Didn\'t know about them',
+      preferenceFactor: 'When booking services, what factors matter most to you?',
+      factorPrice: 'Price',
+      factorSpeed: 'Speed of service',
+      factorQuality: 'Quality of vendor',
+      factorTrust: 'Trust & safety',
+      factorEase: 'Ease of use',
+      firstCategory: 'If you were to try Tamam, which category would you try first?',
+      willingnessFee: 'Would you pay a small fee (AED 5–10) for the convenience of booking via Tamam?',
+      maybe: 'Maybe',
+      whyTamam: 'What would make you choose Tamam over other options?',
+      passwordVendorTitle: 'Vendor access',
+      passwordCustomerTitle: 'Customer access',
+      passwordResultsTitle: 'Dashboard access',
+      timerSeconds: '{seconds}s',
+      progressValue: '{done}/{total} answered',
+      exportExcel: 'Export Excel',
+      exportJSON: 'Export JSON',
+      importJSON: 'Import JSON',
+      backupReset: 'Backup & Reset',
+      confirmReset: 'Export a backup and clear all responses globally?',
+      refreshData: 'Refresh data',
+      syncingRemote: 'Syncing live data…',
+      syncComplete: 'Live responses updated.',
+      syncFailed: 'Unable to sync live data.',
+      remoteStatusSyncing: 'Syncing live data…',
+      remoteStatusIdle: 'Live sync idle — waiting for updates.',
+      remoteStatusSynced: 'Last sync: {time}',
+      remoteStatusReady: 'Live data ready.',
+      resultsSummary: 'Performance snapshot',
+      resultsCharts: 'Trends & distributions',
+      chartsEmpty: 'Charts will appear once submissions arrive.',
+      selectFile: 'Select JSON file…',
+      kpiTotal: 'Total responses',
+      kpiAvgAOV: 'Avg order value',
+      kpiAvgProfit: 'Avg profit %',
+      kpiAvgSeconds: 'Avg seconds',
+      kpiAvgNps: 'Avg NPS score',
+      kpiAvgEase: 'Avg ease rating',
+      kpiWilling: '% willing to pay fee',
+      kpiNps: 'NPS distribution',
+      kpiBookedBefore: '% booked services online',
+      tabVendors: 'Vendors',
+      tabCustomers: 'Customers',
+      tabPublic: 'Public',
+      openResponses: 'Open responses & Other',
+      tableTitle: 'All submissions',
+      searchPlaceholder: 'Search by name, email, phone, category…',
+      sortDate: 'Sort by date',
+      sortName: 'Sort by name',
+      copy: 'Copy',
+      copied: 'Copied',
+      close: 'Close',
+      restoreConfirm: 'Draft restored.',
+      timeSpent: 'Time spent',
+      resultsEmpty: 'No submissions yet.',
+      clearData: 'Clear Local Data',
+      dumpData: 'Dump DB',
+      importSuccess: 'Data imported.',
+      resetDone: 'Portal data cleared.',
+      exportReady: 'Download started.',
+      invalidFile: 'Invalid file.',
+      passwordPromptVendor: 'Enter the vendor survey password to continue.',
+      passwordPromptCustomer: 'Enter the customer survey password to continue.',
+      passwordPromptResults: 'Enter the dashboard password to continue.',
+      durationLabel: 'Duration',
+      timestampLabel: 'Submitted at',
+      instagramAlt: 'Instagram icon',
+      legalNotice: 'Privacy Notice: Your responses are strictly confidential. Tamam will never share or sell this data. The purpose of this survey is purely analytical to help us improve vendor offerings, pricing models, and customer experience.',
+      '0': '0',
+      '1': '1',
+      '2': '2',
+      '3': '3',
+      '4': '4',
+      '5': '5',
+      '6': '6',
+      '7': '7',
+      '8': '8',
+      '9': '9',
+      '10': '10'
+    },
+    ar: {
+      headerTitle: 'بوابة بحوث تمام',
+      navHome: 'نظرة عامة',
+      navVendors: 'استبيان الشركاء',
+      navCustomers: 'استبيان العملاء',
+      navPublic: 'استبيان الجمهور',
+      navResults: 'لوحة النتائج',
+      introTitle: 'لماذا نجمع البيانات',
+      introBody: 'لفهم أفضل لكيفية رؤية الشركاء والعملاء والجمهور لعمولات تمام ورسوم الاشتراك، ولتحسين العدالة وتكلفة الخدمة للجميع.',
+      heroTitle: 'تعرّف على تمام',
+      heroSub: 'منصة إماراتية تربطك بمزودي خدمات موثوقين في المنزل والصحة والسيارات ونمط الحياة.',
+      heroUnmute: 'اضغط لتفعيل الصوت',
+      heroAudioHint: 'يتم تشغيل الفيديو دون صوت. اضغط لتفعيل الصوت.',
+      heroAudioPlaying: 'تم تشغيل الصوت. استمتع بالتجربة.',
+      heroAudioUnavailable: 'تعذر تشغيل الصوت تلقائياً.',
+      getTamam: 'حمّل تمام وتابعنا',
+      ctaDownload: 'حمّل تطبيق تمام',
+      ctaFollow: 'تابع تمام عبر القنوات الرقمية',
+      website: 'الموقع الإلكتروني',
+      instagram: 'إنستغرام',
+      linktree: 'لينكتري',
+      passwordPrompt: 'أدخل رمز الوصول',
+      submitPassword: 'متابعة',
+      invalidPassword: 'رمز غير صحيح.',
+      submit: 'إرسال الاستبيان',
+      savedDraft: 'تم حفظ المسودة.',
+      restoredDraft: 'تم استعادة المسودة.',
+      alreadySubmitted: 'تم إرسال هذا الاستبيان مسبقاً من هذا الجهاز.',
+      submitted: 'تم الإرسال',
+      submittedSynced: 'تم الإرسال والمزامنة.',
+      submittedOffline: 'تم الإرسال دون اتصال. سنزامنه تلقائياً.',
+      timerLabel: 'الوقت المستغرق',
+      progressLabel: 'التقدم',
+      required: 'إلزامي',
+      optional: 'اختياري',
+      otherPlaceholder: 'يرجى التحديد',
+      loading: 'جارٍ التحميل…',
+      thanksTitle: 'شكراً لمشاركتك',
+      thanksBody: 'نقدّر وقتك—إجاباتك ستوجه تطور تمام لمجتمعنا.',
+      backHome: 'العودة إلى النظرة العامة',
+      adminNotes: 'ملاحظات المشرف',
+      submissionIdLabel: 'معرّف الإرسال',
+      noteLabel: 'ملاحظة',
+      surveyVendorTitle: 'استبيان الشركاء',
+      surveyCustomerTitle: 'استبيان العملاء',
+      surveyPublicTitle: 'استبيان الجمهور',
+      vendorBanner: 'هيكل العمولة لفئتك: {range} عمولة على كل طلب + اشتراك شهري 75 درهماً.',
+      vendorHelper: 'يرجى مراعاة العمولة أعلاه + 75 درهماً شهرياً عند الإجابة على أسئلة الرسوم.',
+      companyName: 'اسم الشركة',
+      businessEmail: 'البريد الإلكتروني للعمل',
+      phoneNumber: 'رقم الهاتف',
+      primaryCategory: 'الفئة الرئيسية للخدمة',
+      home: 'خدمات المنزل',
+      maintenance: 'الصيانة',
+      health: 'الصحة',
+      car: 'السيارات',
+      lifestyle: 'نمط الحياة / العافية',
+      averageOrderValue: 'متوسط قيمة الطلب (درهم)',
+      averageProfitMargin: 'متوسط هامش الربح (%)',
+      typicalMonthlyOrders: 'عدد الطلبات الشهري المعتاد (جميع القنوات)',
+      sensitiveHelper: 'ندرك أن هذه المعلومات قد تكون حساسة، لكن مشاركتها تساعدنا على تخصيص العرض المثالي وتقديم أفضل دعم ممكن لعملك.',
+      range0_10: '0–10',
+      range10_20: '10–20',
+      range20_40: '20–40',
+      range40_80: '40–80',
+      range80p: 'أكثر من 80',
+      other: 'أخرى',
+      vendorProfitableVolume: 'عند أي حجم طلب شهري من تمام يصبح النموذج مربحاً لكم؟',
+      orders5_10: '5–10 طلبات',
+      orders10_20: '10–20 طلباً',
+      orders20_40: '20–40 طلباً',
+      orders40p: 'أكثر من 40 طلباً',
+      vendorMinStay: 'أدنى عدد طلبات من تمام شهرياً للاستمرار بالاشتراك',
+      orders1_5: '1–5 طلبات',
+      vendorScenario1: 'إذا ولّد تمام 5,000–10,000 درهم شهرياً لأعمالكم، هل النموذج مقبول؟',
+      vendorScenario2: 'إذا ولّد تمام 10,000–20,000 درهماً شهرياً لأعمالكم، هل النموذج مقبول؟',
+      vendorScenario3: 'إذا ولّد تمام أكثر من 20,000 درهم شهرياً لأعمالكم، هل النموذج مقبول؟',
+      acceptable: 'مقبول',
+      neutral: 'محايد',
+      notAcceptable: 'غير مقبول',
+      vendorExpect: 'ما الذي تتوقعه من تمام لتبرير هذه الرسوم؟',
+      expectVolume: 'حجم عملاء مضمون',
+      expectMarketing: 'تسويق ورؤية أفضل',
+      expectPremium: 'وصول لعملاء مميزين',
+      expectTools: 'أدوات أعمال (تحليلات، جدولة، مدفوعات)',
+      expectPayout: 'تحويلات أسرع',
+      leaveReason: 'ما السبب الأكبر لمغادرة المنصة حتى مع وجود طلبات؟',
+      leaveCommission: 'عمولة مرتفعة',
+      leaveVolume: 'قلة العملاء',
+      leaveSupport: 'دعم ضعيف للشركاء',
+      leaveCompetitor: 'عروض أفضل من المنافسين',
+      recommend: 'هل توصي بتمام لشركات أخرى؟',
+      yes: 'نعم',
+      no: 'لا',
+      anythingElse: 'هل هناك أي أمور أخرى يجب أخذها بالاعتبار؟',
+      customerName: 'اسمك',
+      usageFrequency: 'كم مرة تستخدم تمام؟',
+      weekly: 'أسبوعياً',
+      monthly: 'شهرياً',
+      rarely: 'نادراً',
+      usedCategories: 'ما الفئات التي استخدمتها أكثر؟',
+      lifestyle: 'نمط الحياة',
+      easeBooking: 'ما مدى سهولة آخر حجز قمت به؟',
+      veryDifficult: '1 (صعب جداً)',
+      score2: '2',
+      score3: '3',
+      score4: '4',
+      veryEasy: '5 (سهل جداً)',
+      recommendScore: 'ما مدى احتمالية أن توصي بتمام لصديق أو زميل؟',
+      timeSave: 'مقارنة بالاتصال بالموردين، تمام يوفر عليك الوقت:',
+      muchMore: 'أكثر بكثير',
+      slightlyMore: 'أكثر بقليل',
+      same: 'بنفس القدر',
+      less: 'أقل',
+      moneySave: 'مقارنة بالبدائل، تمام يوفر عليك المال:',
+      futureServices: 'ما الخدمات الإضافية التي تود أن يقدمها تمام؟',
+      useMore: 'ما الذي يجعلك تستخدم تمام بشكل أكثر؟',
+      lowerCost: 'تكلفة أقل',
+      moreVariety: 'تنوع أكثر',
+      fasterBooking: 'حجز أسرع',
+      betterSupport: 'دعم عملاء أفضل',
+      loyalty: 'مكافآت/خصومات الولاء',
+      publicBookedBefore: 'هل حجزت خدمات عبر الإنترنت من قبل (منزل، سيارة، صحة، نمط حياة)؟',
+      yesBooked: 'نعم',
+      noBooked: 'لا',
+      usedPlatforms: 'إذا كانت الإجابة نعم، ما المنصات التي استخدمتها؟',
+      platformTamam: 'تمام',
+      platformUrban: 'أوربان كومباني',
+      platformCafu: 'كافو',
+      platformJustlife: 'جست لايف',
+      barrierNo: 'إذا كانت الإجابة لا، لماذا لم تستخدم التطبيقات؟',
+      barrierExpensive: 'مكلفة جداً',
+      barrierTrust: 'لا أثق بالتطبيقات',
+      barrierCall: 'أفضل الاتصال بالموردين مباشرة',
+      barrierUnknown: 'لم أكن أعلم عنها',
+      preferenceFactor: 'ما العوامل الأهم عند حجز الخدمات؟',
+      factorPrice: 'السعر',
+      factorSpeed: 'سرعة الخدمة',
+      factorQuality: 'جودة المزود',
+      factorTrust: 'الثقة والأمان',
+      factorEase: 'سهولة الاستخدام',
+      firstCategory: 'إذا جربت تمام، أي فئة ستجرب أولاً؟',
+      willingnessFee: 'هل تدفع رسماً بسيطاً (5–10 دراهم) لراحة الحجز عبر تمام؟',
+      maybe: 'ربما',
+      whyTamam: 'ما الذي يجعلك تختار تمام عن الخيارات الأخرى؟',
+      passwordVendorTitle: 'دخول الشركاء',
+      passwordCustomerTitle: 'دخول العملاء',
+      passwordResultsTitle: 'دخول اللوحة',
+      timerSeconds: '{seconds} ث',
+      progressValue: 'الإجابات المكتملة {done}/{total}',
+      exportExcel: 'تصدير Excel',
+      exportJSON: 'تصدير JSON',
+      importJSON: 'استيراد JSON',
+      backupReset: 'نسخ احتياطي وإعادة ضبط',
+      confirmReset: 'هل تريد حفظ نسخة احتياطية ثم مسح جميع الردود على مستوى النظام؟',
+      refreshData: 'تحديث البيانات',
+      syncingRemote: 'جاري تحديث البيانات المباشرة…',
+      syncComplete: 'تم تحديث الردود المباشرة.',
+      syncFailed: 'تعذر تحديث البيانات المباشرة.',
+      remoteStatusSyncing: 'جاري تحديث البيانات المباشرة…',
+      remoteStatusIdle: 'المزامنة المباشرة في وضع الاستعداد.',
+      remoteStatusSynced: 'آخر مزامنة: {time}',
+      remoteStatusReady: 'البيانات المباشرة جاهزة.',
+      resultsSummary: 'لمحة عن الأداء',
+      resultsCharts: 'الاتجاهات والتوزيعات',
+      chartsEmpty: 'ستظهر الرسوم البيانية عند وصول الردود.',
+      selectFile: 'اختر ملف JSON…',
+      kpiTotal: 'إجمالي الردود',
+      kpiAvgAOV: 'متوسط قيمة الطلب',
+      kpiAvgProfit: 'متوسط هامش الربح',
+      kpiAvgSeconds: 'متوسط الوقت (ثوانٍ)',
+      kpiAvgNps: 'متوسط درجة NPS',
+      kpiAvgEase: 'متوسط تقييم السهولة',
+      kpiWilling: '٪ مستعدون لدفع الرسوم',
+      kpiNps: 'توزيع NPS',
+      kpiBookedBefore: '٪ استخدموا خدمات عبر الإنترنت',
+      tabVendors: 'الشركاء',
+      tabCustomers: 'العملاء',
+      tabPublic: 'الجمهور',
+      openResponses: 'الإجابات المفتوحة وخيارات "أخرى"',
+      tableTitle: 'جميع الردود',
+      searchPlaceholder: 'ابحث بالاسم أو البريد أو الهاتف أو الفئة…',
+      sortDate: 'ترتيب حسب التاريخ',
+      sortName: 'ترتيب حسب الاسم',
+      copy: 'نسخ',
+      copied: 'تم النسخ',
+      close: 'إغلاق',
+      restoreConfirm: 'تم استعادة المسودة.',
+      timeSpent: 'المدة',
+      resultsEmpty: 'لا توجد ردود بعد.',
+      clearData: 'مسح البيانات المحلية',
+      dumpData: 'عرض قاعدة البيانات',
+      importSuccess: 'تم استيراد البيانات.',
+      resetDone: 'تم مسح بيانات البوابة.',
+      exportReady: 'تم بدء التنزيل.',
+      invalidFile: 'ملف غير صالح.',
+      passwordPromptVendor: 'أدخل كلمة مرور استبيان الشركاء للمتابعة.',
+      passwordPromptCustomer: 'أدخل كلمة مرور استبيان العملاء للمتابعة.',
+      passwordPromptResults: 'أدخل كلمة مرور لوحة النتائج للمتابعة.',
+      durationLabel: 'المدة',
+      timestampLabel: 'وقت الإرسال',
+      instagramAlt: 'أيقونة إنستغرام',
+      legalNotice: 'إشعار الخصوصية: إجاباتك سرية تماماً. لن تشارك تمام هذه البيانات أو تبيعها. يُستخدم هذا الاستبيان فقط لتحسين عروض الشركاء، ونماذج التسعير، وتجربة العملاء.',
+      '0': '٠',
+      '1': '١',
+      '2': '٢',
+      '3': '٣',
+      '4': '٤',
+      '5': '٥',
+      '6': '٦',
+      '7': '٧',
+      '8': '٨',
+      '9': '٩',
+      '10': '١٠'
+    }
+  };
+
+  const COMMISSION_BANDS = {
+    home: '15–20%',
+    maintenance: '15%',
+    car: '15–20%',
+    health: '25–30%',
+    lifestyle: '20–25%'
+  };
+
+  const STORAGE_KEYS = {
+    drafts: {
+      vendor: 'draft_vendor',
+      customer: 'draft_customer',
+      public: 'draft_public'
+    },
+    completed: {
+      vendor: 'completed_vendor',
+      customer: 'completed_customer',
+      public: 'completed_public'
+    },
+    theme: 'tmm_theme',
+    lang: 'tmm_lang',
+  };
+
+  const DEVICE_ID_KEY = 'tmm_device_id';
+
+  const state = {
+    lang: storage.get(STORAGE_KEYS.lang) || 'en',
+    theme: storage.get(STORAGE_KEYS.theme) || 'light',
+    currentRoute: null,
+    routes: {},
+    timers: {},
+    surveys: {
+      vendor: { formEl: null, data: {}, start: null },
+      customer: { formEl: null, data: {}, start: null },
+      public: { formEl: null, data: {}, start: null }
+    },
+    charts: {},
+    chartInstances: {},
+    passwordUnlocked: {},
+    results: { tab: 'vendor' },
+    remote: {
+      records: { vendor: [], customer: [], public: [] },
+      lastSync: null,
+      syncing: false,
+      syncError: null,
+      statusEl: null,
+      syncInterval: null
+    },
+    home: null,
+    deviceId: null,
+    isIOS: IS_IOS
+  };
+
+  document.documentElement.setAttribute('lang', state.lang === 'ar' ? 'ar' : 'en');
+  document.getElementById('app-shell').setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.dataset.theme = state.theme;
+
+  const revealObserver = 'IntersectionObserver' in window ? new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.18, rootMargin: '0px 0px -10% 0px' }) : null;
+
+  function watchReveal(element) {
+    if (!element || element.classList.contains('in-view')) return;
+    if (revealObserver) {
+      revealObserver.observe(element);
+    } else {
+      element.classList.add('in-view');
+    }
+  }
+
+  function applyReveal(root) {
+    if (!root) return;
+    const targets = [];
+    if (root.classList && root.classList.contains('section-fade')) {
+      targets.push(root);
+    }
+    if (root.querySelectorAll) {
+      root.querySelectorAll('.section-fade').forEach(el => targets.push(el));
+    }
+    targets.forEach(watchReveal);
+    if (!revealObserver || state.isIOS) {
+      scheduleFrame(() => {
+        targets.forEach(el => el.classList.add('in-view'));
+      });
+    }
+  }
+
+  const t = (key, vars = {}) => {
+    const str = I18N[state.lang][key] || key;
+    return str.replace(/\{(.*?)\}/g, (_, v) => vars[v] ?? '');
+  };
+
+  function getDeviceId() {
+    if (state.deviceId) return state.deviceId;
+    let stored = storage.get(DEVICE_ID_KEY);
+    if (!stored) {
+      const generated = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `dev-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      stored = generated;
+      storage.set(DEVICE_ID_KEY, stored);
+    }
+    state.deviceId = stored;
+    return stored;
+  }
+
+  function showToast(message) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-6px)';
+      setTimeout(() => toast.remove(), 220);
+    }, 2800);
+  }
+
+  function updateNav() {
+    const nav = document.getElementById('nav');
+    nav.innerHTML = '';
+    NAV_ITEMS.forEach(item => {
+      const link = document.createElement('a');
+      link.href = item.hash;
+      link.textContent = t(item.key);
+      link.className = 'nav-link';
+      if (item.hash === location.hash || (!location.hash && item.hash === '#/surveys')) {
+        link.setAttribute('aria-current', 'true');
+      }
+      nav.appendChild(link);
+    });
+  }
+
+  function updateHeaderTexts() {
+    document.querySelector('[data-i18n="headerTitle"]').textContent = t('headerTitle');
+    document.getElementById('theme-toggle').setAttribute('aria-label', state.lang === 'ar' ? 'تبديل النمط' : 'Toggle theme');
+    document.getElementById('lang-toggle').setAttribute('aria-label', state.lang === 'ar' ? 'تغيير اللغة' : 'Switch language');
+    document.getElementById('lang-toggle').textContent = state.lang === 'en' ? 'AR' : 'EN';
+  }
+
+  const routes = {};
+
+  function registerRoute(hash, config) {
+    routes[hash] = { init: config.initOnce || (()=>{}), mount: config.mount, unmount: config.unmount || (()=>{}), initialized: false, titleKey: config.titleKey, onLang: config.onLang || (()=>{}) };
+  }
+
+  const app = document.getElementById('app');
+
+  function setRoute(hash) {
+    const target = routes[hash] || routes['#/surveys'];
+    if (state.currentRoute && state.currentRoute !== target) {
+      state.currentRoute.unmount();
+    }
+    if (!target.initialized) {
+      target.init();
+      target.initialized = true;
+    }
+    app.innerHTML = '';
+    target.mount(app);
+    state.currentRoute = target;
+    updateNav();
+  }
+
+  window.addEventListener('hashchange', () => {
+    const hash = location.hash || '#/surveys';
+    logDebug('Route change', hash);
+    setRoute(hash);
+  });
+
+  function ensureHash() {
+    if (!location.hash) location.hash = '#/surveys';
+    else setRoute(location.hash);
+  }
+
+  function formatDate(ts) {
+    return new Date(ts).toLocaleString(state.lang === 'ar' ? 'ar-AE' : 'en-AE');
+  }
+
+  function startTimer(kind) {
+    state.surveys[kind].start = Date.now();
+  }
+  function stopTimer(kind) {
+    const entry = state.surveys[kind];
+    if (!entry.start) return 0;
+    const elapsed = Math.round((Date.now() - entry.start) / 1000);
+    entry.start = null;
+    return elapsed;
+  }
+
+  function autosave(kind) {
+    const entry = state.surveys[kind];
+    storage.set(STORAGE_KEYS.drafts[kind], JSON.stringify(entry.data));
+    logDebug('Draft saved', kind, entry.data);
+  }
+
+  function restoreDraft(kind) {
+    const raw = storage.get(STORAGE_KEYS.drafts[kind]);
+    if (!raw) return;
+    try {
+      const data = JSON.parse(raw);
+      state.surveys[kind].data = data;
+      showToast(t('restoredDraft'));
+      logDebug('Draft restored', kind, data);
+    } catch {}
+  }
+
+  function handleCompletion(kind) {
+    storage.set(STORAGE_KEYS.completed[kind], 'true');
+  }
+
+  function alreadyCompleted(kind) {
+    return storage.get(STORAGE_KEYS.completed[kind]) === 'true';
+  }
+
+  function resetDraft(kind) {
+    storage.remove(STORAGE_KEYS.drafts[kind]);
+    state.surveys[kind].data = {};
+  }
+
+  function hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash).toString(36);
+  }
+
+  function normalizeRecordForStorage(kind, record) {
+    const config = SURVEY_CONFIGS[kind];
+    if (!config) return null;
+    const normalized = {};
+    config.recordFields.forEach(key => {
+      let value = record[key];
+      const multiFields = REMOTE_MULTI_FIELDS[kind];
+      if (multiFields && multiFields.includes(key)) {
+        normalized[key] = Array.isArray(value) ? value.map(v => String(v)) : parseRemoteList(value);
+      } else if (key === 'seconds') {
+        normalized[key] = Number(value) || 0;
+      } else if (key === 'ts') {
+        normalized[key] = value || new Date().toISOString();
+      } else {
+        normalized[key] = value ?? '';
+      }
+    });
+    normalized.origin = record.origin || 'local';
+    if (record.remote_id) normalized.remote_id = record.remote_id;
+    return normalized;
+  }
+
+  function buildRemoteRecord(kind, data, meta = {}) {
+    const deviceId = meta.deviceId || getDeviceId();
+    const language = meta.language || state.lang || 'en';
+    const seconds = Number(meta.seconds) || 0;
+    const submissionId = meta.submissionId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+    const baseAdminParts = [`submission_id=${submissionId}`];
+    if (kind === 'vendor') {
+      const category = data.category || '';
+      const commissionRange = COMMISSION_BANDS[category] || COMMISSION_BANDS.home;
+      const monthlyOther = cleanText(data.orders_all_other);
+      const profitableOther = cleanText(data.orders_profitable_other);
+      const stayOther = cleanText(data.min_orders_to_stay_other);
+      const revOther = [];
+      const acc510 = cleanText(data.accept_5_10k_other);
+      const acc1020 = cleanText(data.accept_10_20k_other);
+      const acc20 = cleanText(data.accept_20k_plus_other);
+      if (data.accept_5_10k === 'other' && acc510) revOther.push(`5-10k: ${acc510}`);
+      if (data.accept_10_20k === 'other' && acc1020) revOther.push(`10-20k: ${acc1020}`);
+      if (data.accept_20k_plus === 'other' && acc20) revOther.push(`20k+: ${acc20}`);
+      const notesParts = [];
+      const trimmedNotes = cleanText(data.notes);
+      if (trimmedNotes) notesParts.push(trimmedNotes);
+      if (profitableOther) notesParts.push(`Profitable volume: ${profitableOther}`);
+      if (stayOther) notesParts.push(`Min orders to stay: ${stayOther}`);
+      const expectations = Array.isArray(data.value_expect) ? data.value_expect.filter(Boolean) : [];
+      const adminNotes = baseAdminParts.join(' | ');
+      return {
+        ts: new Date().toISOString(),
+        device_id: deviceId,
+        seconds,
+        name: data.company || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        language,
+        category,
+        average_order_value_aed: data.aov || '',
+        average_profit_percent: data.avg_profit || '',
+        typical_monthly_orders: data.orders_all || '',
+        channels_used: data.orders_all === 'other' ? monthlyOther : '',
+        subscription_aed: '75',
+        commission_model_label: `${commissionRange} commission per order + AED 75/month subscription`,
+        acceptable_at_monthly_orders: data.orders_profitable || '',
+        min_orders_to_stay: data.min_orders_to_stay || '',
+        rev_5k_10k_accept: data.accept_5_10k || '',
+        rev_10k_20k_accept: data.accept_10_20k || '',
+        rev_20k_plus_accept: data.accept_20k_plus || '',
+        rev_other_text: revOther.join(' | '),
+        expectations: expectations.join(', '),
+        expectations_other_text: data.value_expect_other || '',
+        reason_to_leave: data.leave_reason || '',
+        reason_to_leave_other_text: data.leave_reason_other || '',
+        would_recommend: data.recommend || '',
+        would_recommend_other_text: data.recommend_other || '',
+        category_specific_notes: notesParts.join(' | '),
+        consent: 'yes',
+        admin_notes: adminNotes
+      };
+    }
+    if (kind === 'customer') {
+      const frequencyOther = data.freq === 'other' ? cleanText(data.freq_other) : '';
+      const cats = Array.isArray(data.cats) ? data.cats.filter(Boolean) : [];
+      const catsOther = cats.includes('other') ? cleanText(data.cats_other) : '';
+      const timeOther = data.time_save === 'other' ? cleanText(data.time_save_other) : '';
+      const moneyOther = data.money_save === 'other' ? cleanText(data.money_save_other) : '';
+      const increase = Array.isArray(data.more) ? data.more.filter(Boolean) : [];
+      const increaseOther = increase.includes('other') ? cleanText(data.more_other) : '';
+      const adminParts = baseAdminParts.slice();
+      const customerNote = cleanText(data.notes);
+      if (customerNote) adminParts.push(`note=${customerNote}`);
+      const adminNotes = adminParts.join(' | ');
+      return {
+        ts: new Date().toISOString(),
+        device_id: deviceId,
+        seconds,
+        name: data.name || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        language,
+        usage_frequency: data.freq || '',
+        usage_frequency_other_text: frequencyOther,
+        categories_used: cats.join(', '),
+        categories_used_other_text: catsOther,
+        last_booking_ease_1_5: data.ease || '',
+        nps_0_10: data.nps || '',
+        save_time: data.time_save || '',
+        save_time_other_text: timeOther,
+        save_money: data.money_save || '',
+        save_money_other_text: moneyOther,
+        wanted_additional_services_text: data.wants_services || '',
+        increase_usage_factors: increase.join(', '),
+        increase_usage_other_text: increaseOther,
+        consent: 'yes',
+        admin_notes: adminNotes
+      };
+    }
+    if (kind === 'public') {
+      const platforms = Array.isArray(data.platforms) ? data.platforms.filter(Boolean) : [];
+      const platformsOther = platforms.includes('other') ? cleanText(data.platforms_other) : '';
+      const barrierOther = data.barrier === 'other' ? cleanText(data.barrier_other) : '';
+      const factorOther = data.top_factor === 'other' ? cleanText(data.top_factor_other) : '';
+      const categoryOther = data.first_cat === 'other' ? cleanText(data.first_cat_other) : '';
+      const premiumOther = data.premium === 'other' ? cleanText(data.premium_other) : '';
+      const adminNotes = baseAdminParts.join(' | ');
+      return {
+        ts: new Date().toISOString(),
+        device_id: deviceId,
+        seconds,
+        name: data.name || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        language,
+        ever_booked_services_online: data.booked_before || '',
+        platforms_used: platforms.join(', '),
+        platforms_other_text: platformsOther,
+        why_not_use_apps: data.barrier || '',
+        why_not_other_text: barrierOther,
+        factor_rank_1: data.top_factor || '',
+        factor_rank_2: '',
+        factor_rank_3: '',
+        factors_other_text: factorOther,
+        category_try_first: data.first_cat || '',
+        category_try_other_text: categoryOther,
+        willingness_pay_5_10_aed: data.premium || '',
+        willingness_other_text: premiumOther,
+        choose_tamam_reason_text: data.why_tamam || '',
+        consent: 'yes',
+        admin_notes: adminNotes
+      };
+    }
+    return {
+      ts: new Date().toISOString(),
+      device_id: deviceId,
+      seconds,
+      language,
+      admin_notes: `submission_id=${submissionId}`,
+      consent: 'yes'
+    };
+  }
+
+  function recordSignature(kind, record) {
+    const payload = SURVEY_CONFIGS[kind].recordFields.map(key => {
+      const value = record[key];
+      return Array.isArray(value) ? value.join('|') : (value ?? '');
+    }).join('|');
+    return `${kind}|${record.ts || ''}|${hashString(payload)}`;
+  }
+
+  function mergeAndPersist(kind, records) {
+    if (!Array.isArray(records) || !records.length) return;
+    const existing = Array.isArray(state.remote.records[kind]) ? state.remote.records[kind] : [];
+    const map = new Map();
+    existing.forEach(rec => {
+      const normalized = normalizeRecordForStorage(kind, rec);
+      if (!normalized) return;
+      map.set(recordSignature(kind, normalized), normalized);
+    });
+    records.forEach(rec => {
+      const normalized = normalizeRecordForStorage(kind, rec);
+      if (!normalized) return;
+      map.set(recordSignature(kind, normalized), normalized);
+    });
+    const merged = Array.from(map.values()).sort((a, b) => {
+      const at = new Date(a.ts || 0).getTime();
+      const bt = new Date(b.ts || 0).getTime();
+      return bt - at;
+    });
+    state.remote.records[kind] = merged;
+    document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind } }));
+  }
+
+  async function recordSubmission(kind, data) {
+    const normalized = normalizeRecordForStorage(kind, data);
+    if (!normalized) return;
+    normalized.origin = 'remote';
+    try {
+      await postToRemote(kind, normalized);
+      mergeAndPersist(kind, [normalized]);
+      state.remote.lastSync = new Date().toISOString();
+      state.remote.syncError = null;
+      updateRemoteStatus();
+      showToast(t('submittedSynced'));
+      fetchRemoteSnapshot(false).catch(error => {
+        state.remote.syncError = error;
+        updateRemoteStatus();
+        logDebug('Post-submit refresh failed', error);
+      });
+    } catch (error) {
+      state.remote.syncError = error;
+      updateRemoteStatus();
+      logDebug('Remote submit failed', kind, error);
+      throw error;
+    }
+  }
+
+  async function postToRemote(kind, record) {
+    const payload = { kind, data: {} };
+    SURVEY_CONFIGS[kind].recordFields.forEach(key => {
+      let value = record[key];
+      if (Array.isArray(value)) {
+        value = value.map(v => String(v).trim()).filter(Boolean).join(', ');
+      } else if (key === 'seconds') {
+        value = Number(value) || 0;
+      } else if (value === undefined || value === null) {
+        value = '';
+      }
+      payload.data[key] = value;
+    });
+    if (!payload.data.ts) {
+      payload.data.ts = new Date().toISOString();
+    }
+    if (typeof payload.data.seconds !== 'number') {
+      payload.data.seconds = Number(payload.data.seconds) || 0;
+    }
+    const response = await fetch(REMOTE_ENDPOINTS.submit, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      cache: 'no-store'
+    });
+    if (!response.ok) {
+      throw new Error(`Remote post failed: ${response.status}`);
+    }
+    const json = await response.json().catch(() => ({ ok: false, error: 'Invalid response' }));
+    if (!json || json.ok !== true) {
+      throw new Error((json && json.error) || 'Remote submission rejected');
+    }
+    return json;
+  }
+
+  async function fetchRemoteData(timeout = 12000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+      const response = await fetch(REMOTE_ENDPOINTS.list, {
+        method: 'GET',
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      if (!response.ok) throw new Error(`Remote fetch failed: ${response.status}`);
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(text ? text.slice(0, 120) : 'Invalid content-type');
+      }
+      const json = await response.json();
+      if (!json || typeof json !== 'object') {
+        throw new Error('Remote snapshot unavailable');
+      }
+      return json;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function fetchRemoteSnapshot(manual = false) {
+    state.remote.syncing = true;
+    updateRemoteStatus();
+    if (manual) showToast(t('syncingRemote'));
+    try {
+      const snapshot = await fetchRemoteData();
+      const hasVendor = Array.isArray(resolveSnapshotList(snapshot, 'vendor'));
+      const hasCustomer = Array.isArray(resolveSnapshotList(snapshot, 'customer'));
+      const hasPublic = Array.isArray(resolveSnapshotList(snapshot, 'public'));
+      if (!snapshot || !hasVendor || !hasCustomer || !hasPublic) {
+        throw new Error('Remote snapshot unavailable');
+      }
+      applyRemoteSnapshot(snapshot);
+      state.remote.lastSync = new Date().toISOString();
+      state.remote.syncError = null;
+      if (manual) showToast(t('syncComplete'));
+    } catch (error) {
+      state.remote.syncError = error;
+      logDebug('Remote fetch failed', error);
+      if (manual) showToast(t('syncFailed'));
+    } finally {
+      state.remote.syncing = false;
+      updateRemoteStatus();
+    }
+  }
+
+  function resolveSnapshotList(snapshot, key) {
+    if (!snapshot) return [];
+    if (Array.isArray(snapshot[key])) return snapshot[key];
+    const match = Object.keys(snapshot).find(k => k.toLowerCase() === key);
+    return match && Array.isArray(snapshot[match]) ? snapshot[match] : [];
+  }
+
+  function applyRemoteSnapshot(snapshot) {
+    if (!snapshot) return;
+    const vendorRecords = resolveSnapshotList(snapshot, 'vendor').map(entry => normalizeRemoteEntry('vendor', entry)).filter(Boolean);
+    const customerRecords = resolveSnapshotList(snapshot, 'customer').map(entry => normalizeRemoteEntry('customer', entry)).filter(Boolean);
+    const publicRecords = resolveSnapshotList(snapshot, 'public').map(entry => normalizeRemoteEntry('public', entry)).filter(Boolean);
+    const dedupe = (kind, list) => {
+      const map = new Map();
+      list.forEach(rec => {
+        const normalized = normalizeRecordForStorage(kind, rec);
+        if (normalized) {
+          map.set(recordSignature(kind, normalized), normalized);
+        }
+      });
+      return Array.from(map.values()).sort((a, b) => {
+        const at = new Date(a.ts || 0).getTime();
+        const bt = new Date(b.ts || 0).getTime();
+        return bt - at;
+      });
+    };
+    state.remote.records = {
+      vendor: dedupe('vendor', vendorRecords),
+      customer: dedupe('customer', customerRecords),
+      public: dedupe('public', publicRecords)
+    };
+    document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'all' } }));
+  }
+
+  function createInput(name, type = 'text', attrs = {}) {
+    const input = document.createElement('input');
+    input.type = type;
+    input.name = name;
+    input.className = 'field-input';
+    Object.entries(attrs).forEach(([key, value]) => input.setAttribute(key, value));
+    if (type === 'number') input.inputMode = 'decimal';
+    if (type === 'tel' || type === 'email' || type === 'number') input.dir = 'ltr';
+    return input;
+  }
+
+  function createOtherInput(fieldKey, placeholderKey) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'field-input option-other';
+    input.placeholder = t(placeholderKey || 'otherPlaceholder');
+    input.dataset.fieldKey = fieldKey;
+    input.required = false;
+    input.dataset.requiredInput = 'true';
+    return input;
+  }
+
+  function bindFieldValue(input, kind, field) {
+    const survey = state.surveys[kind];
+    const patchValue = () => {
+      const existing = survey.data[field];
+      if (existing !== undefined) {
+        if (input.type === 'checkbox' && Array.isArray(existing)) {
+          input.checked = existing.includes(input.value);
+        } else if (input.type === 'radio') {
+          input.checked = existing === input.value;
+        } else {
+          input.value = existing;
+        }
+      }
+    };
+    patchValue();
+    const handler = () => {
+      if (input.type === 'checkbox') {
+        const arr = Array.isArray(survey.data[field]) ? survey.data[field] : [];
+        if (input.checked) {
+          if (!arr.includes(input.value)) arr.push(input.value);
+        } else {
+          const idx = arr.indexOf(input.value);
+          if (idx > -1) arr.splice(idx, 1);
+        }
+        survey.data[field] = arr;
+      } else if (input.type === 'radio') {
+        survey.data[field] = input.value;
+      } else {
+        survey.data[field] = input.value;
+      }
+      autosave(kind);
+      updateProgress(kind);
+    };
+    input.addEventListener('input', handler);
+    input.addEventListener('change', handler);
+  }
+
+  function updateProgress(kind) {
+    const survey = state.surveys[kind];
+    if (!survey.progressEl) return;
+    const { total, answered } = computeProgress(survey.formEl);
+    survey.progressEl.querySelector('.progress-inner').style.width = `${total ? (answered / total) * 100 : 0}%`;
+    survey.progressLabel.textContent = `${t('progressLabel')} · ${t('progressValue', { done: numberLabel(answered), total: numberLabel(total) })}`;
+  }
+
+  function computeProgress(form) {
+    const requiredElements = Array.from(form.querySelectorAll('[data-required="true"]'));
+    let total = 0; let answered = 0;
+    requiredElements.forEach(wrapper => {
+      if (wrapper.offsetParent === null) return;
+      total++;
+      const inputs = wrapper.querySelectorAll('input, textarea, select');
+      let filled = false;
+      inputs.forEach(input => {
+        if (input.type === 'radio') {
+          const group = form.querySelectorAll(`input[name="${input.name}"]`);
+          if (Array.from(group).some(r => r.checked)) filled = true;
+        } else if (input.type === 'checkbox') {
+          const group = form.querySelectorAll(`input[name="${input.name}"]`);
+          if (Array.from(group).some(c => c.checked)) filled = true;
+        } else if (input.value && input.value.trim && input.value.trim()) {
+          filled = true;
+        }
+      });
+      if (filled) answered++;
+    });
+    return { total, answered };
+  }
+
+  function validateForm(form) {
+    const requiredWrappers = Array.from(form.querySelectorAll('[data-required="true"]'));
+    for (const wrapper of requiredWrappers) {
+      if (wrapper.offsetParent === null) continue;
+      const inputs = wrapper.querySelectorAll('input, textarea, select');
+      let valid = false;
+      inputs.forEach(input => {
+        if (input.type === 'radio') {
+          const group = form.querySelectorAll(`input[name="${input.name}"]`);
+          if (Array.from(group).some(r => r.checked)) valid = true;
+        } else if (input.type === 'checkbox') {
+          const group = form.querySelectorAll(`input[name="${input.name}"]`);
+          if (Array.from(group).some(c => c.checked)) valid = true;
+        } else if (input.value && input.value.trim && input.value.trim()) {
+          valid = true;
+        }
+      });
+      if (!valid) {
+        const firstInput = wrapper.querySelector('input, textarea, select');
+        if (firstInput) firstInput.focus();
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function createPasswordGate(titleKey, promptKey, correct) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'card password-gate section-fade';
+
+    const heading = document.createElement('h2');
+    heading.className = 'section-title';
+    heading.dataset.i18n = titleKey;
+    heading.textContent = t(titleKey);
+
+    const paragraph = document.createElement('p');
+    paragraph.className = 'field-description';
+    paragraph.dataset.i18n = promptKey;
+    paragraph.textContent = t(promptKey);
+
+    const form = document.createElement('form');
+    form.noValidate = true;
+
+    const field = document.createElement('div');
+    field.className = 'field';
+    field.dataset.required = 'true';
+
+    const label = document.createElement('label');
+    label.dataset.i18n = 'passwordPrompt';
+    label.textContent = t('passwordPrompt');
+
+    const input = document.createElement('input');
+    input.type = 'password';
+    input.required = true;
+    input.className = 'field-input';
+    input.autocomplete = 'current-password';
+
+    label.appendChild(input);
+    field.appendChild(label);
+
+    const actions = document.createElement('div');
+    actions.className = 'form-actions';
+
+    const submit = document.createElement('button');
+    submit.type = 'submit';
+    submit.className = 'btn btn-primary';
+    submit.dataset.i18n = 'submitPassword';
+    submit.textContent = t('submitPassword');
+    actions.appendChild(submit);
+
+    form.appendChild(field);
+    form.appendChild(actions);
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const value = input.value.trim();
+      if (value === correct) {
+        wrapper.dispatchEvent(new CustomEvent('password-ok', { bubbles: true }));
+      } else {
+        showToast(t('invalidPassword'));
+        input.value = '';
+        input.focus();
+      }
+    });
+
+    setTimeout(() => input.focus(), 50);
+
+    wrapper.appendChild(heading);
+    wrapper.appendChild(paragraph);
+    wrapper.appendChild(form);
+    applyReveal(wrapper);
+    return wrapper;
+  }
+
+  function renderHome(container) {
+    const view = document.createElement('section');
+    view.className = 'view active overview';
+
+    const intro = document.createElement('div');
+    intro.className = 'card intro section-fade';
+    const introTitle = document.createElement('h2');
+    introTitle.className = 'section-title';
+    introTitle.dataset.i18n = 'introTitle';
+    introTitle.textContent = t('introTitle');
+    const introBody = document.createElement('p');
+    introBody.className = 'section-subtitle';
+    introBody.dataset.i18n = 'introBody';
+    introBody.textContent = t('introBody');
+    intro.appendChild(introTitle);
+    intro.appendChild(introBody);
+
+    const hero = document.createElement('section');
+    hero.className = 'hero-immersive section-fade';
+
+    const heroTitle = document.createElement('h2');
+    heroTitle.className = 'hero-title';
+    heroTitle.dataset.i18n = 'heroTitle';
+    heroTitle.textContent = t('heroTitle');
+    const heroSub = document.createElement('p');
+    heroSub.className = 'hero-sub';
+    heroSub.dataset.i18n = 'heroSub';
+    heroSub.textContent = t('heroSub');
+    const heroHint = document.createElement('span');
+    heroHint.className = 'field-description hero-hint';
+    heroHint.dataset.i18n = 'heroAudioHint';
+    heroHint.textContent = t('heroAudioHint');
+
+    const videoShell = document.createElement('div');
+    videoShell.className = 'video-shell';
+    const halo = document.createElement('div');
+    halo.className = 'video-halo';
+    const videoFrame = document.createElement('div');
+    videoFrame.className = 'video-frame';
+    const heroVideo = document.createElement('video');
+    heroVideo.setAttribute('playsinline', '');
+    heroVideo.setAttribute('autoplay', '');
+    heroVideo.setAttribute('loop', '');
+    heroVideo.setAttribute('preload', 'auto');
+    heroVideo.setAttribute('muted', '');
+    heroVideo.src = encodeURI('High Quilty Animation.mp4');
+    heroVideo.className = 'hero-video';
+    heroVideo.id = 'heroVideo';
+
+    const soundBtn = document.createElement('button');
+    soundBtn.type = 'button';
+    soundBtn.className = 'unmute';
+    soundBtn.id = 'soundBtn';
+    soundBtn.textContent = '🔇';
+    soundBtn.setAttribute('aria-pressed', 'false');
+    soundBtn.setAttribute('aria-label', t('heroUnmute'));
+    soundBtn.setAttribute('title', t('heroUnmute'));
+
+    videoFrame.appendChild(heroVideo);
+    videoFrame.appendChild(soundBtn);
+    videoShell.appendChild(halo);
+    videoShell.appendChild(videoFrame);
+
+    hero.appendChild(heroTitle);
+    hero.appendChild(heroSub);
+    hero.appendChild(heroHint);
+    hero.appendChild(videoShell);
+
+
+    const iconPaths = {
+      website: 'M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm0 17.25a7.48 7.48 0 0 1-3-.633 21.18 21.18 0 0 0 3.75-4.391 21.18 21.18 0 0 0 3.75 4.39A7.48 7.48 0 0 1 12 19.5zm4.615-1.262a22.648 22.648 0 0 1-3.865-4.58 22.648 22.648 0 0 1-3.865 4.58 7.5 7.5 0 1 1 7.73-12.119 22.64 22.64 0 0 1-7.64-.365 22.64 22.64 0 0 1 7.64.365A7.5 7.5 0 0 1 16.615 18.238z',
+      instagram: 'M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.9.2 2.4.4.6.2 1 .5 1.5 1s.8.9 1 1.5c.2.5.3 1.2.4 2.4.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.9-.4 2.4-.2.6-.5 1-1 1.5s-.9.8-1.5 1c-.5.2-1.2.3-2.4.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.9-.2-2.4-.4-.6-.2-1-.5-1.5-1s-.8-.9-1-1.5c-.2-.5-.3-1.2-.4-2.4C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.9.4-2.4.2-.6.5-1 1-1.5s.9-.8 1.5-1c.5-.2 1.2-.3 2.4-.4C8.4 2.2 8.8 2.2 12 2.2zm0 3.3A6.5 6.5 0 1 0 18.5 12 6.5 6.5 0 0 0 12 5.5zm0 10.7A4.2 4.2 0 1 1 16.2 12 4.2 4.2 0 0 1 12 16.2zm6.8-10.8a1.5 1.5 0 1 1-1.5-1.5 1.5 1.5 0 0 1 1.5 1.5z',
+      linktree: 'M9.813 15.904a4.501 4.501 0 0 1 0-6.364l1.06-1.06a.75.75 0 0 1 1.06 1.06l-1.06 1.06a3.001 3.001 0 0 0 4.243 4.243l2.122-2.122a3.001 3.001 0 0 0-4.243-4.243l-.53.53a.75.75 0 1 1-1.06-1.06l.53-.53a4.501 4.501 0 0 1 6.364 6.364l-2.122 2.122a4.501 4.501 0 0 1-6.364 0z'
+    };
+    const createIcon = (key) => {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('aria-hidden', 'true');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('fill', 'currentColor');
+      path.setAttribute('d', iconPaths[key]);
+      svg.appendChild(path);
+      return svg;
+    };
+
+    const linkData = [
+      { href: 'https://gettamam.com', key: 'website', icon: 'website' },
+      { href: 'https://www.instagram.com/tamam.uae', key: 'instagram', icon: 'instagram' },
+      { href: 'https://linktr.ee/TamamApp', key: 'linktree', icon: 'linktree' }
+    ];
+
+    const ctaCard = document.createElement('div');
+    ctaCard.className = 'cta-grid card section-fade';
+    const ctaTitle = document.createElement('h3');
+    ctaTitle.className = 'section-title';
+    ctaTitle.dataset.i18n = 'getTamam';
+    ctaTitle.textContent = t('getTamam');
+    const ctaContent = document.createElement('div');
+    ctaContent.className = 'cta-content';
+
+    const downloadStack = document.createElement('div');
+    downloadStack.className = 'cta-stack';
+    const downloadLabel = document.createElement('p');
+    downloadLabel.className = 'field-description';
+    downloadLabel.dataset.i18n = 'ctaDownload';
+    downloadLabel.textContent = t('ctaDownload');
+    const btnRow = document.createElement('div');
+    btnRow.className = 'cta-buttons';
+    const appStore = document.createElement('a');
+    appStore.href = 'https://apps.apple.com/ae/app/tamam-services-on-demand/id6740270481';
+    appStore.target = '_blank';
+    appStore.rel = 'noopener';
+    const appImg = document.createElement('img');
+    appImg.className = 'store-badge';
+    appImg.src = 'https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg';
+    appImg.alt = 'Download on the App Store';
+    const play = document.createElement('a');
+    play.href = 'https://play.google.com/store/apps/details?id=com.tamam.customer&pcampaignid=web_share';
+    play.target = '_blank';
+    play.rel = 'noopener';
+    const playImg = document.createElement('img');
+    playImg.className = 'store-badge';
+    playImg.src = 'https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg';
+    playImg.alt = 'Get it on Google Play';
+    appStore.appendChild(appImg);
+    play.appendChild(playImg);
+    btnRow.appendChild(appStore);
+    btnRow.appendChild(play);
+    downloadStack.appendChild(downloadLabel);
+    downloadStack.appendChild(btnRow);
+
+    const followStack = document.createElement('div');
+    followStack.className = 'cta-stack';
+    const followLabel = document.createElement('p');
+    followLabel.className = 'field-description';
+    followLabel.dataset.i18n = 'ctaFollow';
+    followLabel.textContent = t('ctaFollow');
+    const linkRow = document.createElement('div');
+    linkRow.className = 'cta-links';
+    linkData.forEach(l => {
+      const a = document.createElement('a');
+      a.href = l.href;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.className = 'cta-link';
+      a.appendChild(createIcon(l.icon));
+      const span = document.createElement('span');
+      span.dataset.i18n = l.key;
+      span.textContent = t(l.key);
+      a.appendChild(span);
+      linkRow.appendChild(a);
+    });
+    followStack.appendChild(followLabel);
+    followStack.appendChild(linkRow);
+
+    ctaContent.appendChild(downloadStack);
+    ctaContent.appendChild(followStack);
+    ctaCard.appendChild(ctaTitle);
+    ctaCard.appendChild(ctaContent);
+
+    const legal = document.createElement('footer');
+    legal.className = 'legal-footer section-fade';
+    legal.dataset.i18n = 'legalNotice';
+    legal.textContent = t('legalNotice');
+
+    view.appendChild(intro);
+    view.appendChild(hero);
+    view.appendChild(ctaCard);
+    view.appendChild(legal);
+
+    const SOUND_STORAGE_KEY = 'tmm_sound';
+    const updateSoundUI = () => {
+      const unmuted = !heroVideo.muted;
+      soundBtn.textContent = unmuted ? '🔊' : '🔇';
+      soundBtn.setAttribute('aria-pressed', String(unmuted));
+      const labelKey = unmuted ? 'heroAudioPlaying' : 'heroUnmute';
+      soundBtn.setAttribute('aria-label', t(labelKey));
+      soundBtn.setAttribute('title', t(labelKey));
+      const hintKey = unmuted ? 'heroAudioPlaying' : 'heroAudioHint';
+      heroHint.dataset.i18n = hintKey;
+      heroHint.textContent = t(hintKey);
+      heroHint.style.opacity = unmuted ? '0.7' : '1';
+    };
+
+    const applyMutedState = (muted) => {
+      heroVideo.muted = muted;
+      if (muted) {
+        heroVideo.setAttribute('muted', '');
+      } else {
+        heroVideo.removeAttribute('muted');
+      }
+      updateSoundUI();
+    };
+
+    const savedPref = storage.get(SOUND_STORAGE_KEY);
+    const initialMuted = savedPref === null ? false : savedPref !== '1';
+    applyMutedState(initialMuted);
+    scheduleFrame(() => {
+      heroVideo.play().catch(err => {
+        logDebug('Hero autoplay blocked', err);
+        if (!heroVideo.muted) {
+          applyMutedState(true);
+          storage.set(SOUND_STORAGE_KEY, '0');
+        }
+      });
+    });
+
+    const toggleSound = async () => {
+      const nextMuted = !heroVideo.muted;
+      applyMutedState(nextMuted);
+      if (!nextMuted) {
+        try {
+          await heroVideo.play();
+          showToast(t('heroAudioPlaying'));
+        } catch (err) {
+          logDebug('Hero unmute blocked', err);
+          applyMutedState(true);
+          showToast(t('heroAudioUnavailable'));
+        }
+      } else {
+        showToast(t('heroAudioHint'));
+      }
+      storage.set(SOUND_STORAGE_KEY, heroVideo.muted ? '0' : '1');
+    };
+
+    soundBtn.addEventListener('click', toggleSound);
+    heroVideo.addEventListener('click', toggleSound);
+
+    heroVideo.addEventListener('volumechange', () => {
+      storage.set(SOUND_STORAGE_KEY, heroVideo.muted ? '0' : '1');
+      updateSoundUI();
+    });
+
+    const visibilityHandler = () => {
+      if (document.visibilityState === 'visible' && !heroVideo.muted) {
+        heroVideo.play().catch(() => {});
+      }
+    };
+
+    document.addEventListener('visibilitychange', visibilityHandler);
+
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handleMotion = () => {
+      if (motionQuery.matches) {
+        halo.style.animation = 'none';
+      } else {
+        halo.style.removeProperty('animation');
+      }
+    };
+    handleMotion();
+    motionQuery.addEventListener('change', handleMotion);
+
+    applyI18n(view);
+    container.appendChild(view);
+    applyReveal(view);
+
+    state.home = {
+      cleanup() {
+        motionQuery.removeEventListener('change', handleMotion);
+        document.removeEventListener('visibilitychange', visibilityHandler);
+        heroVideo.pause();
+      },
+      updateLang() {
+        updateSoundUI();
+      }
+    };
+  }
+  const FIELD_ALIASES = {
+    vendor: {
+      name: 'company',
+      average_order_value_aed: 'aov',
+      average_profit_percent: 'avg_profit',
+      typical_monthly_orders: 'orders_all',
+      acceptable_at_monthly_orders: 'orders_profitable',
+      min_orders_to_stay: 'min_orders_to_stay',
+      rev_5k_10k_accept: 'accept_5_10k',
+      rev_10k_20k_accept: 'accept_10_20k',
+      rev_20k_plus_accept: 'accept_20k_plus',
+      expectations: 'value_expect',
+      expectations_other_text: 'value_expect_other',
+      reason_to_leave: 'leave_reason',
+      reason_to_leave_other_text: 'leave_reason_other',
+      would_recommend: 'recommend',
+      would_recommend_other_text: 'recommend_other',
+      category_specific_notes: 'notes',
+      channels_used: 'orders_all_other'
+    },
+    customer: {
+      usage_frequency: 'freq',
+      usage_frequency_other_text: 'freq_other',
+      categories_used: 'cats',
+      categories_used_other_text: 'cats_other',
+      last_booking_ease_1_5: 'ease',
+      nps_0_10: 'nps',
+      save_time: 'time_save',
+      save_time_other_text: 'time_save_other',
+      save_money: 'money_save',
+      save_money_other_text: 'money_save_other',
+      increase_usage_factors: 'more',
+      increase_usage_other_text: 'more_other',
+      wanted_additional_services_text: 'wants_services'
+    },
+    public: {
+      ever_booked_services_online: 'booked_before',
+      platforms_used: 'platforms',
+      platforms_other_text: 'platforms_other',
+      why_not_use_apps: 'barrier',
+      why_not_other_text: 'barrier_other',
+      factor_rank_1: 'top_factor',
+      factors_other_text: 'top_factor_other',
+      category_try_first: 'first_cat',
+      category_try_other_text: 'first_cat_other',
+      willingness_pay_5_10_aed: 'premium',
+      willingness_other_text: 'premium_other',
+      choose_tamam_reason_text: 'why_tamam'
+    }
+  };
+
+  function resolveFieldKey(kind, field) {
+    const aliasMap = FIELD_ALIASES[kind];
+    return aliasMap && Object.prototype.hasOwnProperty.call(aliasMap, field) ? aliasMap[field] : field;
+  }
+
+  const SURVEY_CONFIGS = {
+    vendor: {
+      titleKey: 'surveyVendorTitle',
+      kind: 'vendor',
+      fields: [
+        { key: 'company', type: 'text', labelKey: 'companyName', required: true },
+        { key: 'email', type: 'email', labelKey: 'businessEmail', required: false },
+        { key: 'phone', type: 'tel', labelKey: 'phoneNumber', required: false },
+        {
+          key: 'category',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'primaryCategory',
+          required: true,
+          options: [
+            { value: 'home', labelKey: 'home' },
+            { value: 'maintenance', labelKey: 'maintenance' },
+            { value: 'health', labelKey: 'health' },
+            { value: 'car', labelKey: 'car' },
+            { value: 'lifestyle', labelKey: 'lifestyle' }
+          ],
+          afterRender: (wrapper) => {
+            wrapper.dataset.stickySource = 'commission';
+          }
+        },
+        { key: 'aov', type: 'number', labelKey: 'averageOrderValue', required: false, helperKey: 'sensitiveHelper' },
+        { key: 'avg_profit', type: 'number', labelKey: 'averageProfitMargin', required: false, helperKey: 'sensitiveHelper' },
+        {
+          key: 'orders_all',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'typicalMonthlyOrders',
+          required: false,
+          helperKey: 'sensitiveHelper',
+          options: [
+            { value: '0-10', labelKey: 'range0_10' },
+            { value: '10-20', labelKey: 'range10_20' },
+            { value: '20-40', labelKey: 'range20_40' },
+            { value: '40-80', labelKey: 'range40_80' },
+            { value: '80+', labelKey: 'range80p' },
+            { value: 'other', labelKey: 'other', otherKey: 'orders_all_other' }
+          ]
+        },
+        {
+          type: 'note',
+          noteKey: 'vendorHelper'
+        },
+        {
+          key: 'orders_profitable',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'vendorProfitableVolume',
+          required: true,
+          options: [
+            { value: '5-10', labelKey: 'orders5_10' },
+            { value: '10-20', labelKey: 'orders10_20' },
+            { value: '20-40', labelKey: 'orders20_40' },
+            { value: '40+', labelKey: 'orders40p' },
+            { value: 'other', labelKey: 'other', otherKey: 'orders_profitable_other' }
+          ]
+        },
+        {
+          key: 'min_orders_to_stay',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'vendorMinStay',
+          required: true,
+          options: [
+            { value: '1-5', labelKey: 'orders1_5' },
+            { value: '5-10', labelKey: 'orders5_10' },
+            { value: '10-20', labelKey: 'orders10_20' },
+            { value: '20+', labelKey: 'orders40p' },
+            { value: 'other', labelKey: 'other', otherKey: 'min_orders_to_stay_other' }
+          ]
+        },
+        {
+          key: 'accept_5_10k',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'vendorScenario1',
+          required: true,
+          options: [
+            { value: 'acceptable', labelKey: 'acceptable' },
+            { value: 'neutral', labelKey: 'neutral' },
+            { value: 'not', labelKey: 'notAcceptable' },
+            { value: 'other', labelKey: 'other', otherKey: 'accept_5_10k_other' }
+          ]
+        },
+        {
+          key: 'accept_10_20k',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'vendorScenario2',
+          required: true,
+          options: [
+            { value: 'acceptable', labelKey: 'acceptable' },
+            { value: 'neutral', labelKey: 'neutral' },
+            { value: 'not', labelKey: 'notAcceptable' },
+            { value: 'other', labelKey: 'other', otherKey: 'accept_10_20k_other' }
+          ]
+        },
+        {
+          key: 'accept_20k_plus',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'vendorScenario3',
+          required: true,
+          options: [
+            { value: 'acceptable', labelKey: 'acceptable' },
+            { value: 'neutral', labelKey: 'neutral' },
+            { value: 'not', labelKey: 'notAcceptable' },
+            { value: 'other', labelKey: 'other', otherKey: 'accept_20k_plus_other' }
+          ]
+        },
+        {
+          key: 'value_expect',
+          type: 'choice',
+          mode: 'multi',
+          labelKey: 'vendorExpect',
+          required: true,
+          options: [
+            { value: 'volume', labelKey: 'expectVolume' },
+            { value: 'marketing', labelKey: 'expectMarketing' },
+            { value: 'premium', labelKey: 'expectPremium' },
+            { value: 'tools', labelKey: 'expectTools' },
+            { value: 'payout', labelKey: 'expectPayout' },
+            { value: 'other', labelKey: 'other', otherKey: 'value_expect_other' }
+          ]
+        },
+        {
+          key: 'leave_reason',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'leaveReason',
+          required: true,
+          options: [
+            { value: 'commission', labelKey: 'leaveCommission' },
+            { value: 'volume', labelKey: 'leaveVolume' },
+            { value: 'support', labelKey: 'leaveSupport' },
+            { value: 'competitor', labelKey: 'leaveCompetitor' },
+            { value: 'other', labelKey: 'other', otherKey: 'leave_reason_other' }
+          ]
+        },
+        {
+          key: 'recommend',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'recommend',
+          required: true,
+          options: [
+            { value: 'yes', labelKey: 'yes' },
+            { value: 'no', labelKey: 'no' },
+            { value: 'other', labelKey: 'other', otherKey: 'recommend_other' }
+          ]
+        },
+        { key: 'notes', type: 'textarea', labelKey: 'anythingElse', required: false }
+      ],
+      recordFields: ['ts','device_id','seconds','name','email','phone','language','category','average_order_value_aed','average_profit_percent','typical_monthly_orders','channels_used','subscription_aed','commission_model_label','acceptable_at_monthly_orders','min_orders_to_stay','rev_5k_10k_accept','rev_10k_20k_accept','rev_20k_plus_accept','rev_other_text','expectations','expectations_other_text','reason_to_leave','reason_to_leave_other_text','would_recommend','would_recommend_other_text','category_specific_notes','consent','admin_notes']
+    },
+    customer: {
+      titleKey: 'surveyCustomerTitle',
+      kind: 'customer',
+      fields: [
+        { key: 'name', type: 'text', labelKey: 'customerName', required: true },
+        { key: 'email', type: 'email', labelKey: 'businessEmail', required: false },
+        { key: 'phone', type: 'tel', labelKey: 'phoneNumber', required: false },
+        {
+          key: 'freq',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'usageFrequency',
+          required: true,
+          options: [
+            { value: 'weekly', labelKey: 'weekly' },
+            { value: 'monthly', labelKey: 'monthly' },
+            { value: 'rarely', labelKey: 'rarely' },
+            { value: 'other', labelKey: 'other', otherKey: 'freq_other' }
+          ]
+        },
+        {
+          key: 'cats',
+          type: 'choice',
+          mode: 'multi',
+          labelKey: 'usedCategories',
+          required: true,
+          options: [
+            { value: 'home', labelKey: 'home' },
+            { value: 'health', labelKey: 'health' },
+            { value: 'car', labelKey: 'car' },
+            { value: 'lifestyle', labelKey: 'lifestyle' },
+            { value: 'other', labelKey: 'other', otherKey: 'cats_other' }
+          ]
+        },
+        {
+          key: 'ease',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'easeBooking',
+          required: true,
+          options: [
+            { value: '1', labelKey: 'veryDifficult' },
+            { value: '2', labelKey: 'score2' },
+            { value: '3', labelKey: 'score3' },
+            { value: '4', labelKey: 'score4' },
+            { value: '5', labelKey: 'veryEasy' }
+          ]
+        },
+        {
+          key: 'nps',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'recommendScore',
+          required: true,
+          options: Array.from({ length: 11 }, (_, i) => ({ value: String(i), labelKey: i.toString() }))
+        },
+        {
+          key: 'time_save',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'timeSave',
+          required: true,
+          options: [
+            { value: 'much_more', labelKey: 'muchMore' },
+            { value: 'slightly_more', labelKey: 'slightlyMore' },
+            { value: 'same', labelKey: 'same' },
+            { value: 'less', labelKey: 'less' },
+            { value: 'other', labelKey: 'other', otherKey: 'time_save_other' }
+          ]
+        },
+        {
+          key: 'money_save',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'moneySave',
+          required: true,
+          options: [
+            { value: 'much_more', labelKey: 'muchMore' },
+            { value: 'slightly_more', labelKey: 'slightlyMore' },
+            { value: 'same', labelKey: 'same' },
+            { value: 'less', labelKey: 'less' },
+            { value: 'other', labelKey: 'other', otherKey: 'money_save_other' }
+          ]
+        },
+        { key: 'wants_services', type: 'textarea', labelKey: 'futureServices', required: false },
+        {
+          key: 'more',
+          type: 'choice',
+          mode: 'multi',
+          labelKey: 'useMore',
+          required: true,
+          options: [
+            { value: 'lower_cost', labelKey: 'lowerCost' },
+            { value: 'variety', labelKey: 'moreVariety' },
+            { value: 'faster', labelKey: 'fasterBooking' },
+            { value: 'support', labelKey: 'betterSupport' },
+            { value: 'loyalty', labelKey: 'loyalty' },
+            { value: 'other', labelKey: 'other', otherKey: 'more_other' }
+          ]
+        },
+        { key: 'notes', type: 'textarea', labelKey: 'anythingElse', required: false }
+      ],
+      recordFields: ['ts','device_id','seconds','name','email','phone','language','usage_frequency','usage_frequency_other_text','categories_used','categories_used_other_text','last_booking_ease_1_5','nps_0_10','save_time','save_time_other_text','save_money','save_money_other_text','wanted_additional_services_text','increase_usage_factors','increase_usage_other_text','consent','admin_notes']
+    },
+    public: {
+      titleKey: 'surveyPublicTitle',
+      kind: 'public',
+      fields: [
+        { key: 'name', type: 'text', labelKey: 'customerName', required: true },
+        { key: 'email', type: 'email', labelKey: 'businessEmail', required: false },
+        { key: 'phone', type: 'tel', labelKey: 'phoneNumber', required: false },
+        {
+          key: 'booked_before',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'publicBookedBefore',
+          required: true,
+          options: [
+            { value: 'yes', labelKey: 'yesBooked' },
+            { value: 'no', labelKey: 'noBooked' }
+          ]
+        },
+        {
+          key: 'platforms',
+          type: 'choice',
+          mode: 'multi',
+          labelKey: 'usedPlatforms',
+          required: true,
+          dependsOn: { field: 'booked_before', value: 'yes' },
+          options: [
+            { value: 'tamam', labelKey: 'platformTamam' },
+            { value: 'urban', labelKey: 'platformUrban' },
+            { value: 'cafu', labelKey: 'platformCafu' },
+            { value: 'justlife', labelKey: 'platformJustlife' },
+            { value: 'other', labelKey: 'other', otherKey: 'platforms_other' }
+          ]
+        },
+        {
+          key: 'barrier',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'barrierNo',
+          required: true,
+          dependsOn: { field: 'booked_before', value: 'no' },
+          options: [
+            { value: 'expensive', labelKey: 'barrierExpensive' },
+            { value: 'trust', labelKey: 'barrierTrust' },
+            { value: 'call', labelKey: 'barrierCall' },
+            { value: 'unknown', labelKey: 'barrierUnknown' },
+            { value: 'other', labelKey: 'other', otherKey: 'barrier_other' }
+          ]
+        },
+        {
+          key: 'top_factor',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'preferenceFactor',
+          required: true,
+          options: [
+            { value: 'price', labelKey: 'factorPrice' },
+            { value: 'speed', labelKey: 'factorSpeed' },
+            { value: 'quality', labelKey: 'factorQuality' },
+            { value: 'trust', labelKey: 'factorTrust' },
+            { value: 'ease', labelKey: 'factorEase' },
+            { value: 'other', labelKey: 'other', otherKey: 'top_factor_other' }
+          ]
+        },
+        {
+          key: 'first_cat',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'firstCategory',
+          required: true,
+          options: [
+            { value: 'home', labelKey: 'home' },
+            { value: 'health', labelKey: 'health' },
+            { value: 'car', labelKey: 'car' },
+            { value: 'lifestyle', labelKey: 'lifestyle' },
+            { value: 'other', labelKey: 'other', otherKey: 'first_cat_other' }
+          ]
+        },
+        {
+          key: 'premium',
+          type: 'choice',
+          mode: 'single',
+          labelKey: 'willingnessFee',
+          required: true,
+          options: [
+            { value: 'yes', labelKey: 'yes' },
+            { value: 'no', labelKey: 'no' },
+            { value: 'maybe', labelKey: 'maybe' },
+            { value: 'other', labelKey: 'other', otherKey: 'premium_other' }
+          ]
+        },
+        { key: 'why_tamam', type: 'textarea', labelKey: 'whyTamam', required: true }
+      ],
+      recordFields: ['ts','device_id','seconds','name','email','phone','language','ever_booked_services_online','platforms_used','platforms_other_text','why_not_use_apps','why_not_other_text','factor_rank_1','factor_rank_2','factor_rank_3','factors_other_text','category_try_first','category_try_other_text','willingness_pay_5_10_aed','willingness_other_text','choose_tamam_reason_text','consent','admin_notes']
+    }
+  };
+
+  function parseRemoteList(value) {
+    if (Array.isArray(value)) {
+      return value.map(v => String(v).trim()).filter(Boolean);
+    }
+    if (value === undefined || value === null) return [];
+    const str = String(value).trim();
+    if (!str) return [];
+    if ((str.startsWith('[') && str.endsWith(']')) || (str.startsWith('{') && str.endsWith('}'))) {
+      try {
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed)) {
+          return parsed.map(v => String(v).trim()).filter(Boolean);
+        }
+      } catch (e) {
+        logDebug('Remote list JSON parse failed', e, value);
+      }
+    }
+    return str.split(/[,;\n]+/).map(v => v.trim()).filter(Boolean);
+  }
+
+  function normalizeRemoteEntry(kind, entry) {
+    if (!entry) return null;
+    const base = entry.data ? { ...entry.data } : { ...entry };
+    if (entry.id && !base.remote_id) base.remote_id = entry.id;
+    if (entry.remote_id && !base.remote_id) base.remote_id = entry.remote_id;
+    base.ts = base.ts || entry.ts || entry.timestamp || '';
+    base.seconds = base.seconds ?? entry.seconds ?? 0;
+    const multi = REMOTE_MULTI_FIELDS[kind] || [];
+    multi.forEach(field => {
+      base[field] = parseRemoteList(base[field]);
+    });
+    base.origin = 'remote';
+    return normalizeRecordForStorage(kind, base);
+  }
+
+  function getCombinedRecords(kind) {
+    const records = Array.isArray(state.remote.records[kind]) ? state.remote.records[kind] : [];
+    return records.map(rec => {
+      const copy = {};
+      SURVEY_CONFIGS[kind].recordFields.forEach(key => {
+        const value = rec[key];
+        copy[key] = Array.isArray(value) ? [...value] : (key === 'seconds' ? Number(value) || 0 : value ?? '');
+      });
+      if (rec.origin) copy.origin = rec.origin;
+      if (rec.remote_id) copy.remote_id = rec.remote_id;
+      return copy;
+    });
+  }
+
+  function getCombinedDBRaw() {
+    const output = { vendor: [], customer: [], public: [] };
+    ['vendor','customer','public'].forEach(kind => {
+      output[kind] = getCombinedRecords(kind).map(rec => {
+        const copy = {};
+        SURVEY_CONFIGS[kind].recordFields.forEach(key => {
+          const value = rec[key];
+          copy[key] = Array.isArray(value) ? [...value] : value ?? '';
+        });
+        return copy;
+      });
+    });
+    return output;
+  }
+
+  function updateRemoteStatus() {
+    const statusEl = state.remote.statusEl;
+    if (!statusEl) return;
+    let stateKey = 'idle';
+    let message = t('remoteStatusIdle');
+    if (state.remote.syncing) {
+      stateKey = 'syncing';
+      message = t('remoteStatusSyncing');
+    } else if (state.remote.syncError) {
+      stateKey = 'error';
+      message = t('syncFailed');
+    } else if (state.remote.lastSync) {
+      stateKey = 'synced';
+      message = t('remoteStatusSynced', { time: formatDate(state.remote.lastSync) });
+    } else if (state.remote.records.vendor.length || state.remote.records.customer.length || state.remote.records.public.length) {
+      stateKey = 'ready';
+      message = t('remoteStatusReady');
+    }
+    statusEl.dataset.state = stateKey;
+    statusEl.innerHTML = '';
+    const dot = document.createElement('span');
+    dot.className = 'status-dot';
+    const textEl = document.createElement('span');
+    textEl.textContent = message;
+    statusEl.appendChild(dot);
+    statusEl.appendChild(textEl);
+  }
+
+  function createField(config, surveyKind) {
+    const wrapper = document.createElement('div');
+    if (config.type !== 'note') {
+      wrapper.className = 'field-group';
+      if (config.required) wrapper.dataset.required = 'true';
+      if (config.key) wrapper.dataset.fieldKey = config.key;
+    }
+    if (config.dependsOn) {
+      wrapper.dataset.dependsField = config.dependsOn.field;
+      wrapper.dataset.dependsValue = config.dependsOn.value;
+    }
+
+    if (config.type === 'note') {
+      const note = document.createElement('div');
+      note.className = 'field-description';
+      note.dataset.i18n = config.noteKey;
+      note.textContent = t(config.noteKey);
+      wrapper.appendChild(note);
+      return wrapper;
+    }
+
+    const label = document.createElement('label');
+    label.className = 'field-label';
+    label.dataset.i18n = config.labelKey;
+    label.textContent = t(config.labelKey);
+    if (!config.required) {
+      const opt = document.createElement('span');
+      opt.className = 'pill';
+      opt.dataset.i18n = 'optional';
+      opt.textContent = t('optional');
+      label.appendChild(document.createTextNode(' '));
+      label.appendChild(opt);
+    }
+    wrapper.appendChild(label);
+
+    if (config.helperKey) {
+      const hint = document.createElement('p');
+      hint.className = 'field-hint';
+      hint.dataset.i18n = config.helperKey;
+      hint.textContent = t(config.helperKey);
+      wrapper.appendChild(hint);
+    }
+
+    if (config.type === 'text' || config.type === 'email' || config.type === 'tel' || config.type === 'number') {
+      const input = createInput(config.key, config.type);
+      bindFieldValue(input, surveyKind, config.key);
+      wrapper.appendChild(input);
+      return wrapper;
+    }
+
+    if (config.type === 'textarea') {
+      const area = document.createElement('textarea');
+      area.name = config.key;
+      area.className = 'field-input';
+      area.addEventListener('input', () => {
+        state.surveys[surveyKind].data[config.key] = area.value;
+        autosave(surveyKind);
+        if (config.required) updateProgress(surveyKind);
+      });
+      const existing = state.surveys[surveyKind].data[config.key];
+      if (existing) area.value = existing;
+      wrapper.appendChild(area);
+      return wrapper;
+    }
+
+    if (config.type === 'choice') {
+      const list = document.createElement('div');
+      list.className = 'options';
+      wrapper.appendChild(list);
+
+      const makeOther = (otherKey) => {
+        const otherWrap = document.createElement('div');
+        otherWrap.className = 'field-group option-other-wrapper';
+        otherWrap.style.display = 'none';
+        otherWrap.dataset.otherFor = config.key;
+        otherWrap.dataset.otherKey = otherKey;
+        const otherInput = createOtherInput(otherKey);
+        otherInput.disabled = true;
+        otherInput.addEventListener('input', () => {
+          state.surveys[surveyKind].data[otherKey] = otherInput.value;
+          autosave(surveyKind);
+          updateProgress(surveyKind);
+        });
+        const existingOther = state.surveys[surveyKind].data[otherKey];
+        if (existingOther) otherInput.value = existingOther;
+        otherWrap.appendChild(otherInput);
+        return otherWrap;
+      };
+
+      config.options.forEach(option => {
+        const optionItem = document.createElement('label');
+        optionItem.className = 'option-item';
+        const input = document.createElement('input');
+        input.name = config.key;
+        const value = option.value;
+        input.value = value;
+        if (config.mode === 'multi') {
+          input.type = 'checkbox';
+        } else {
+          input.type = 'radio';
+        }
+        optionItem.appendChild(input);
+        const span = document.createElement('span');
+        if (option.labelKey) {
+          span.dataset.i18n = option.labelKey;
+          span.textContent = t(option.labelKey);
+        } else if (option.dynamicNumber !== undefined) {
+          span.dataset.number = option.dynamicNumber;
+          span.textContent = numberLabel(option.dynamicNumber);
+        } else if (option.label) {
+          span.textContent = option.label;
+        }
+        optionItem.appendChild(span);
+        list.appendChild(optionItem);
+
+        bindFieldValue(input, surveyKind, config.key);
+
+        if (option.otherKey) {
+          const otherWrap = makeOther(option.otherKey);
+          wrapper.appendChild(otherWrap);
+          input.dataset.otherToggle = 'true';
+          input.dataset.otherTarget = option.otherKey;
+        }
+        const handleOptionChange = () => {
+          toggleOtherField(config, surveyKind);
+          toggleConditionalFields(surveyKind);
+        };
+        input.addEventListener('change', handleOptionChange);
+      });
+
+      setTimeout(() => toggleOtherField(config, surveyKind));
+      return wrapper;
+    }
+
+    return wrapper;
+  }
+
+  function numberLabel(num) {
+    return state.lang === 'ar' ? num.toLocaleString('ar') : String(num);
+  }
+
+  function localizeValue(value) {
+    if (typeof value === 'number') return numberLabel(value);
+    if (typeof value === 'string' && state.lang === 'ar') {
+      return value.replace(/\d/g, d => numberLabel(Number(d)));
+    }
+    return value;
+  }
+
+  function cleanText(value) {
+    if (value === undefined || value === null) return '';
+    if (typeof value === 'string') return value.trim();
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    if (typeof value === 'object') {
+      if (typeof value.trim === 'function') return value.trim();
+      if (typeof value.toString === 'function') return value.toString().trim();
+    }
+    return '';
+  }
+
+  function toggleOtherField(config, surveyKind) {
+    const survey = state.surveys[surveyKind];
+    if (!survey.formEl) return;
+    const wrappers = survey.formEl.querySelectorAll(`[data-other-for="${config.key}"]`);
+    wrappers.forEach(wrapper => {
+      const otherKey = wrapper.dataset.otherKey;
+      let shouldShow = false;
+      const inputs = survey.formEl.querySelectorAll(`input[name="${config.key}"]`);
+      inputs.forEach(input => {
+        if (input.dataset.otherToggle === 'true' && input.dataset.otherTarget === otherKey) {
+          if ((input.type === 'checkbox' && input.checked) || (input.type === 'radio' && input.checked)) {
+            shouldShow = true;
+          }
+        }
+      });
+      wrapper.style.display = shouldShow ? 'block' : 'none';
+      if (shouldShow) {
+        wrapper.dataset.required = 'true';
+      } else {
+        delete wrapper.dataset.required;
+      }
+      const input = wrapper.querySelector('input');
+      if (input) {
+        if (shouldShow) {
+          input.disabled = false;
+          input.required = true;
+          input.setAttribute('required', '');
+          input.removeAttribute('aria-hidden');
+        } else {
+          input.disabled = true;
+          input.required = false;
+          input.removeAttribute('required');
+          input.setAttribute('aria-hidden', 'true');
+          input.value = '';
+          if (typeof input.blur === 'function') input.blur();
+        }
+      }
+      if (!shouldShow) {
+        survey.data[otherKey] = '';
+      }
+    });
+    autosave(surveyKind);
+    updateProgress(surveyKind);
+  }
+
+  function toggleConditionalFields(kind) {
+    const survey = state.surveys[kind];
+    if (!survey.formEl) return;
+    const groups = survey.formEl.querySelectorAll('[data-depends-field]');
+    groups.forEach(group => {
+      const field = group.dataset.dependsField;
+      const value = group.dataset.dependsValue;
+      const current = survey.data[field];
+      const shouldShow = Array.isArray(current) ? current.includes(value) : current === value;
+      group.style.display = shouldShow ? '' : 'none';
+      if (!shouldShow) {
+        const inputs = group.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+          if (input.type === 'radio' || input.type === 'checkbox') input.checked = false;
+          else input.value = '';
+        });
+        const fieldKey = group.dataset.fieldKey;
+        if (fieldKey) {
+          if (Array.isArray(state.surveys[kind].data[fieldKey])) state.surveys[kind].data[fieldKey] = [];
+          else state.surveys[kind].data[fieldKey] = '';
+        }
+      }
+    });
+    updateProgress(kind);
+    autosave(kind);
+  }
+
+  function ensureRecordFields(record, fields) {
+    fields.forEach(key => {
+      if (!(key in record)) {
+        record[key] = Array.isArray(record[key]) ? [] : '';
+      }
+    });
+    return record;
+  }
+  function mountSurvey(container, config) {
+    const kind = config.kind;
+    const surveyState = state.surveys[kind];
+    if (!surveyState.data) surveyState.data = {};
+
+    const view = document.createElement('section');
+    view.className = 'view active';
+    const card = document.createElement('div');
+    card.className = 'card survey-card section-fade';
+    const heading = document.createElement('h2');
+    heading.className = 'section-title';
+    heading.dataset.i18n = config.titleKey;
+    heading.textContent = t(config.titleKey);
+    card.appendChild(heading);
+
+    const statusRow = document.createElement('div');
+    statusRow.className = 'status-row';
+
+    const progressLabel = document.createElement('div');
+    progressLabel.className = 'field-description';
+    progressLabel.dataset.i18n = 'progressLabel';
+    progressLabel.textContent = `${t('progressLabel')} · ${t('progressValue', { done: numberLabel(0), total: numberLabel(0) })}`;
+    statusRow.appendChild(progressLabel);
+
+    const timerLabel = document.createElement('div');
+    timerLabel.className = 'field-description';
+    timerLabel.dataset.i18nTimer = 'timerLabel';
+    timerLabel.textContent = `${t('timerLabel')}: ${t('timerSeconds', { seconds: numberLabel(0) })}`;
+    statusRow.appendChild(timerLabel);
+
+    card.appendChild(statusRow);
+
+    const progressBar = document.createElement('div');
+    progressBar.className = 'progress-bar';
+    const inner = document.createElement('div');
+    inner.className = 'progress-inner';
+    progressBar.appendChild(inner);
+    card.appendChild(progressBar);
+
+    const form = document.createElement('form');
+    form.noValidate = true;
+
+    config.fields.forEach(fieldConfig => {
+      const field = createField(fieldConfig, kind);
+      form.appendChild(field);
+      if (fieldConfig.afterRender) fieldConfig.afterRender(field);
+    });
+
+    const actions = document.createElement('div');
+    actions.className = 'form-actions';
+    const submit = document.createElement('button');
+    submit.type = 'submit';
+    submit.className = 'btn btn-primary';
+    submit.dataset.i18n = 'submit';
+    submit.textContent = t('submit');
+    actions.appendChild(submit);
+    form.appendChild(actions);
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (submit.disabled) return;
+      const guardUntil = surveyState.lockUntil || 0;
+      if (Date.now() < guardUntil) return;
+      if (alreadyCompleted(kind)) {
+        showToast(t('alreadySubmitted'));
+        return;
+      }
+      submit.disabled = true;
+      submit.classList.add('is-loading');
+      if (!validateForm(form)) {
+        submit.disabled = false;
+        submit.classList.remove('is-loading');
+        return;
+      }
+      const seconds = Math.round((Date.now() - (state.surveys[kind].start || Date.now())) / 1000);
+      const record = { ...state.surveys[kind].data };
+      Object.keys(record).forEach(key => {
+        if (Array.isArray(record[key])) record[key] = [...record[key]];
+      });
+      const submissionId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const remoteRecord = buildRemoteRecord(kind, record, { seconds, language: state.lang, deviceId: getDeviceId(), submissionId });
+      ensureRecordFields(remoteRecord, config.recordFields);
+      try {
+        await recordSubmission(kind, remoteRecord);
+        stopTimer(kind);
+        if (state.timers[kind]) {
+          clearInterval(state.timers[kind]);
+          state.timers[kind] = null;
+        }
+        resetDraft(kind);
+        handleCompletion(kind);
+        state.surveys[kind].data = {};
+        surveyState.lockUntil = Date.now() + 2500;
+        surveyState.lastSubmissionId = submissionId;
+        location.hash = '#/surveys/thanks';
+      } catch (error) {
+        logDebug('Submit failed', kind, error);
+        showToast(t('syncFailed'));
+        submit.disabled = false;
+        submit.classList.remove('is-loading');
+      }
+    });
+
+    card.appendChild(form);
+    view.appendChild(card);
+    container.appendChild(view);
+    applyReveal(view);
+
+    surveyState.formEl = form;
+    surveyState.progressEl = progressBar;
+    surveyState.progressLabel = progressLabel;
+    surveyState.timerEl = timerLabel;
+
+    setTimeout(() => {
+      toggleConditionalFields(kind);
+      config.fields.filter(f => f.type === 'choice').forEach(f => toggleOtherField(f, kind));
+      updateProgress(kind);
+    });
+
+    startTimer(kind);
+    if (state.timers[kind]) clearInterval(state.timers[kind]);
+    state.timers[kind] = setInterval(() => {
+      if (surveyState.start) {
+        const seconds = Math.round((Date.now() - surveyState.start) / 1000);
+        surveyState.timerEl.textContent = `${t('timerLabel')}: ${t('timerSeconds', { seconds: numberLabel(seconds) })}`;
+      }
+    }, 1000);
+
+    if (config.kind === 'vendor') {
+      setupCommissionBanner(form);
+    }
+
+    surveyState.langUpdater = () => {
+      applyI18n(view);
+      updateProgress(kind);
+      const seconds = surveyState.start ? Math.round((Date.now() - surveyState.start) / 1000) : 0;
+      surveyState.timerEl.textContent = `${t('timerLabel')}: ${t('timerSeconds', { seconds: numberLabel(seconds) })}`;
+      if (config.kind === 'vendor') {
+      const banner = form.querySelector('.sticky-banner');
+      const selected = form.querySelector('input[name="category"]:checked');
+      const selectedValue = selected && selected.value ? selected.value : 'home';
+      const range = COMMISSION_BANDS[selectedValue] || COMMISSION_BANDS.home;
+      if (banner) banner.textContent = t('vendorBanner', { range });
+      }
+    };
+    surveyState.langUpdater();
+  }
+
+  function setupCommissionBanner(form) {
+    const categoryInputs = form.querySelectorAll('input[name="category"]');
+    if (!categoryInputs.length) return;
+    const banner = document.createElement('div');
+    banner.className = 'sticky-banner';
+    const updateBanner = () => {
+      let selected = 'home';
+      categoryInputs.forEach(input => { if (input.checked) selected = input.value; });
+      const range = COMMISSION_BANDS[selected] || COMMISSION_BANDS.home;
+      banner.textContent = t('vendorBanner', { range });
+    };
+    updateBanner();
+    const categoryField = form.querySelector('[data-sticky-source="commission"]');
+    if (categoryField) {
+      categoryField.after(banner);
+    } else {
+      form.prepend(banner);
+    }
+    categoryInputs.forEach(input => input.addEventListener('change', () => {
+      updateBanner();
+    }));
+  }
+  function updateI18nElement(el) {
+    const key = el.dataset.i18n;
+    if (!key) return;
+    const text = t(key);
+    if (el.tagName === 'LABEL') {
+      let textNode = Array.from(el.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+      if (!textNode) {
+        textNode = document.createTextNode('');
+        el.insertBefore(textNode, el.firstChild);
+      }
+      textNode.textContent = text + (el.querySelector('.pill') ? ' ' : '');
+    } else {
+      el.textContent = text;
+    }
+  }
+
+  function applyI18n(root) {
+    root.querySelectorAll('[data-i18n]').forEach(updateI18nElement);
+    root.querySelectorAll('[data-number]').forEach(el => {
+      const num = Number(el.dataset.number);
+      if (!Number.isNaN(num)) el.textContent = numberLabel(num);
+    });
+    root.querySelectorAll('.option-other').forEach(input => {
+      input.placeholder = t('otherPlaceholder');
+    });
+    root.querySelectorAll('[data-i18n-placeholder]').forEach(input => {
+      input.placeholder = t(input.dataset.i18nPlaceholder);
+    });
+  }
+  function renderThanks(container) {
+    const view = document.createElement('section');
+    view.className = 'view active';
+    const card = document.createElement('div');
+    card.className = 'card thanks section-fade';
+    const title = document.createElement('h2');
+    title.className = 'section-title';
+    title.dataset.i18n = 'thanksTitle';
+    title.textContent = t('thanksTitle');
+    const body = document.createElement('p');
+    body.className = 'section-subtitle';
+    body.dataset.i18n = 'thanksBody';
+    body.textContent = t('thanksBody');
+    const back = document.createElement('a');
+    back.href = '#/surveys';
+    back.className = 'cta-link';
+    back.dataset.i18n = 'backHome';
+    back.textContent = t('backHome');
+    card.appendChild(title);
+    card.appendChild(body);
+    card.appendChild(back);
+    view.appendChild(card);
+    applyI18n(view);
+    container.appendChild(view);
+    applyReveal(view);
+  }
+  function createSurveyRoute(hash, config, password) {
+    const renderUnlockedSurvey = (target, options = {}) => {
+      target.innerHTML = '';
+      if (!options.skipRestore) {
+        restoreDraft(config.kind);
+      }
+      mountSurvey(target, config);
+      if (alreadyCompleted(config.kind)) {
+        const info = document.createElement('div');
+        info.className = 'field-description';
+        info.dataset.i18n = 'alreadySubmitted';
+        info.textContent = t('alreadySubmitted');
+        const form = target.querySelector('form');
+        if (form) {
+          form.insertBefore(info, form.firstChild);
+          const submit = form.querySelector('button[type="submit"]');
+          if (submit) {
+            submit.disabled = true;
+            submit.style.opacity = '0.6';
+            submit.style.cursor = 'not-allowed';
+          }
+        }
+      }
+    };
+
+    registerRoute(hash, {
+      mount(container) {
+        container.innerHTML = '';
+        if (password && !state.passwordUnlocked[config.kind]) {
+          const gate = createPasswordGate(password.titleKey, password.promptKey, password.code);
+          gate.addEventListener('password-ok', () => {
+            state.passwordUnlocked[config.kind] = true;
+            renderUnlockedSurvey(container);
+            scheduleFrame(() => renderUnlockedSurvey(container, { skipRestore: true }));
+            setTimeout(() => renderUnlockedSurvey(container, { skipRestore: true }), 40);
+            setTimeout(() => renderUnlockedSurvey(container, { skipRestore: true }), 160);
+          });
+          applyI18n(gate);
+          container.appendChild(gate);
+          applyReveal(gate);
+          return;
+        }
+        renderUnlockedSurvey(container);
+      },
+      unmount() {
+        clearInterval(state.timers[config.kind]);
+        stopTimer(config.kind);
+        state.surveys[config.kind].formEl = null;
+      },
+      onLang() {
+        if (password && !state.passwordUnlocked[config.kind]) {
+          const gate = document.querySelector('.password-gate');
+          if (gate) applyI18n(gate);
+        } else {
+          if (state.surveys[config.kind].langUpdater) {
+            state.surveys[config.kind].langUpdater();
+          }
+        }
+      }
+    });
+  }
+
+  function initRoutes() {
+    registerRoute('#/surveys', {
+      mount(container) {
+        container.innerHTML = '';
+        if (state.home && state.home.cleanup) {
+          state.home.cleanup();
+          state.home = null;
+        }
+        renderHome(container);
+      },
+      unmount() {
+        if (state.home && state.home.cleanup) {
+          state.home.cleanup();
+          state.home = null;
+        }
+      },
+      onLang() {
+        const view = app.querySelector('.view');
+        if (view) applyI18n(view);
+        if (state.home && state.home.updateLang) state.home.updateLang();
+      }
+    });
+
+    registerRoute('#/surveys/thanks', {
+      mount(container) {
+        container.innerHTML = '';
+        renderThanks(container);
+      },
+      unmount() {},
+      onLang() {
+        const view = app.querySelector('.view');
+        if (view) applyI18n(view);
+      }
+    });
+
+    createSurveyRoute('#/surveys/vendors', SURVEY_CONFIGS.vendor, {
+      code: '00994',
+      titleKey: 'passwordVendorTitle',
+      promptKey: 'passwordPromptVendor'
+    });
+    createSurveyRoute('#/surveys/customers', SURVEY_CONFIGS.customer, {
+      code: '11636',
+      titleKey: 'passwordCustomerTitle',
+      promptKey: 'passwordPromptCustomer'
+    });
+    createSurveyRoute('#/surveys/public', SURVEY_CONFIGS.public, null);
+
+    registerRoute('#/surveys/results', {
+      mount(container) {
+        container.innerHTML = '';
+        if (!state.passwordUnlocked.results) {
+          const gate = createPasswordGate('passwordResultsTitle', 'passwordPromptResults', '@Tamam@3469-@');
+          gate.addEventListener('password-ok', () => {
+            state.passwordUnlocked.results = true;
+            setRoute('#/surveys/results');
+            scheduleFrame(() => setRoute('#/surveys/results'));
+            setTimeout(() => setRoute('#/surveys/results'), 40);
+            setTimeout(() => setRoute('#/surveys/results'), 160);
+          });
+          applyI18n(gate);
+          container.appendChild(gate);
+          applyReveal(gate);
+          return;
+        }
+        renderResults(container);
+      },
+      unmount() {
+        Object.values(state.chartInstances).forEach(group => {
+        Object.values(group || {}).forEach(chart => {
+          if (chart && typeof chart.destroy === 'function') {
+            chart.destroy();
+          }
+        });
+        });
+        if (state.remote.syncInterval) {
+          clearInterval(state.remote.syncInterval);
+          state.remote.syncInterval = null;
+        }
+        state.remote.statusEl = null;
+      },
+      onLang() {
+        if (!state.passwordUnlocked.results) {
+          const gate = document.querySelector('.password-gate');
+          if (gate) applyI18n(gate);
+        } else {
+          const view = app.querySelector('.view');
+          if (view) {
+            applyI18n(view);
+            const content = view.querySelector('.dashboard-grid');
+            if (content) renderResultsTab(content, state.results.tab);
+            updateRemoteStatus();
+          }
+        }
+      }
+    });
+  }
+  function updateThemeToggle() {
+    const btn = document.getElementById('theme-toggle');
+    btn.textContent = state.theme === 'light' ? '🌞' : '🌙';
+  }
+
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    state.theme = state.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = state.theme;
+    storage.set(STORAGE_KEYS.theme, state.theme);
+    updateThemeToggle();
+    if (state.currentRoute === routes['#/surveys/results'] && state.passwordUnlocked.results) {
+      const view = app.querySelector('.dashboard-grid');
+      if (view) renderResultsTab(view, state.results.tab);
+    }
+  });
+
+  document.getElementById('lang-toggle').addEventListener('click', () => {
+    state.lang = state.lang === 'en' ? 'ar' : 'en';
+    storage.set(STORAGE_KEYS.lang, state.lang);
+    document.documentElement.setAttribute('lang', state.lang === 'ar' ? 'ar' : 'en');
+    document.getElementById('app-shell').setAttribute('dir', state.lang === 'ar' ? 'rtl' : 'ltr');
+    updateHeaderTexts();
+    updateNav();
+    initDebug();
+    if (state.currentRoute && state.currentRoute.onLang) state.currentRoute.onLang();
+  });
+  function clearAllStorage() {
+    Object.values(STORAGE_KEYS.drafts).forEach(storage.remove);
+    Object.values(STORAGE_KEYS.completed).forEach(storage.remove);
+    state.passwordUnlocked = {};
+    state.remote.records = { vendor: [], customer: [], public: [] };
+    state.remote.lastSync = null;
+    state.remote.syncError = null;
+    showToast(t('resetDone'));
+    document.dispatchEvent(new CustomEvent('tamam:dataUpdated', { detail: { kind: 'all' } }));
+    updateRemoteStatus();
+  }
+
+  function dumpDB() {
+    logDebug('DB snapshot', state.remote.records);
+    showToast(t('dumpData'));
+  }
+
+  function initDebug() {
+    const panel = document.getElementById('debug-panel');
+    if (!DEBUG) {
+      panel.classList.remove('active');
+      panel.innerHTML = '';
+      return;
+    }
+    panel.classList.add('active');
+    panel.innerHTML = '';
+    const clearBtn = document.createElement('button');
+    clearBtn.dataset.i18n = 'clearData';
+    clearBtn.textContent = t('clearData');
+    clearBtn.addEventListener('click', clearAllStorage);
+    const dumpBtn = document.createElement('button');
+    dumpBtn.dataset.i18n = 'dumpData';
+    dumpBtn.textContent = t('dumpData');
+    dumpBtn.addEventListener('click', dumpDB);
+    panel.appendChild(clearBtn);
+    panel.appendChild(dumpBtn);
+  }
+  initRoutes();
+  initDebug();
+  updateHeaderTexts();
+  updateThemeToggle();
+  updateNav();
+  ensureHash();
+  const queueInitialSync = () => fetchRemoteSnapshot(false);
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(queueInitialSync, { timeout: 1500 });
+  } else {
+    setTimeout(queueInitialSync, 80);
+  }
+  const modalBackdrop = document.getElementById('modal-backdrop');
+  const modalContent = document.getElementById('modal-content');
+  const modalClose = document.getElementById('modal-close');
+
+  function openModal(node) {
+    modalContent.innerHTML = '';
+    modalContent.appendChild(node);
+    modalBackdrop.classList.add('active');
+    modalBackdrop.removeAttribute('hidden');
+    modalClose.focus();
+    document.addEventListener('keydown', trapEscape);
+  }
+
+  function closeModal() {
+    modalBackdrop.classList.remove('active');
+    modalBackdrop.setAttribute('hidden', 'hidden');
+    modalContent.innerHTML = '';
+    document.removeEventListener('keydown', trapEscape);
+  }
+
+  function trapEscape(event) {
+    if (event.key === 'Escape') {
+      closeModal();
+    }
+  }
+
+  modalClose.addEventListener('click', closeModal);
+  modalBackdrop.addEventListener('click', (e) => {
+    if (e.target === modalBackdrop) closeModal();
+  });
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(t('copied'));
+    } catch (e) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      showToast(t('copied'));
+    }
+  }
+  const RESULTS_MAP = {
+    vendor: {
+      labelKey: 'tabVendors',
+      searchFields: ['name', 'email', 'phone', 'category'],
+      kpi: records => {
+        const total = records.length;
+        const avg = key => {
+          const nums = records.map(r => Number(r[key])).filter(n => !Number.isNaN(n));
+          return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
+        };
+        return [
+          { labelKey: 'kpiTotal', value: total },
+          { labelKey: 'kpiAvgAOV', value: avg('average_order_value_aed').toFixed(1) },
+          { labelKey: 'kpiAvgProfit', value: avg('average_profit_percent').toFixed(1) + '%' },
+          { labelKey: 'kpiAvgSeconds', value: avg('seconds').toFixed(0) }
+        ];
+      },
+      charts: [
+        { id: 'typical_monthly_orders', type: 'bar', field: 'typical_monthly_orders', labelKey: 'typicalMonthlyOrders' },
+        { id: 'acceptable_at_monthly_orders', type: 'bar', field: 'acceptable_at_monthly_orders', labelKey: 'vendorProfitableVolume' },
+        { id: 'min_orders_to_stay', type: 'bar', field: 'min_orders_to_stay', labelKey: 'vendorMinStay' },
+        { id: 'revenue_accept', type: 'stacked', labelKey: 'vendorExpect', fields: [
+          { field: 'rev_5k_10k_accept', labelKey: 'vendorScenario1' },
+          { field: 'rev_10k_20k_accept', labelKey: 'vendorScenario2' },
+          { field: 'rev_20k_plus_accept', labelKey: 'vendorScenario3' }
+        ], choices: ['acceptable', 'neutral', 'not', 'other'] },
+        { id: 'expectations', type: 'bar', field: 'expectations', mode: 'multi', labelKey: 'vendorExpect' },
+        { id: 'reason_to_leave', type: 'bar', field: 'reason_to_leave', labelKey: 'leaveReason' },
+        { id: 'would_recommend', type: 'bar', field: 'would_recommend', labelKey: 'recommend' }
+      ],
+      openFields: [
+        { key: 'channels_used', label: () => `${t('other')} (${t('typicalMonthlyOrders')})` },
+        { key: 'rev_other_text', label: () => `${t('vendorExpect')} · ${t('other')}` },
+        { key: 'expectations_other_text', label: () => `${t('other')} (${t('vendorExpect')})` },
+        { key: 'reason_to_leave_other_text', label: () => `${t('other')} (${t('leaveReason')})` },
+        { key: 'would_recommend_other_text', label: () => `${t('other')} (${t('recommend')})` },
+        { key: 'category_specific_notes', labelKey: 'anythingElse' },
+        { key: 'admin_notes', labelKey: 'adminNotes' }
+      ],
+      columns: [
+        { key: 'name', labelKey: 'companyName' },
+        { key: 'email', labelKey: 'businessEmail' },
+        { key: 'phone', labelKey: 'phoneNumber' },
+        { key: 'category', labelKey: 'primaryCategory' },
+        { key: 'average_order_value_aed', labelKey: 'averageOrderValue' },
+        { key: 'average_profit_percent', labelKey: 'averageProfitMargin' },
+        { key: 'typical_monthly_orders', labelKey: 'typicalMonthlyOrders' },
+        { key: 'channels_used', label: () => `${t('other')} (${t('typicalMonthlyOrders')})` },
+        { key: 'acceptable_at_monthly_orders', labelKey: 'vendorProfitableVolume' },
+        { key: 'min_orders_to_stay', labelKey: 'vendorMinStay' },
+        { key: 'rev_5k_10k_accept', labelKey: 'vendorScenario1' },
+        { key: 'rev_10k_20k_accept', labelKey: 'vendorScenario2' },
+        { key: 'rev_20k_plus_accept', labelKey: 'vendorScenario3' },
+        { key: 'rev_other_text', label: () => `${t('vendorExpect')} · ${t('other')}` },
+        { key: 'expectations', labelKey: 'vendorExpect' },
+        { key: 'expectations_other_text', label: () => `${t('other')} (${t('vendorExpect')})` },
+        { key: 'reason_to_leave', labelKey: 'leaveReason' },
+        { key: 'reason_to_leave_other_text', label: () => `${t('other')} (${t('leaveReason')})` },
+        { key: 'would_recommend', labelKey: 'recommend' },
+        { key: 'would_recommend_other_text', label: () => `${t('other')} (${t('recommend')})` },
+        { key: 'category_specific_notes', labelKey: 'anythingElse' },
+        { key: 'admin_notes', labelKey: 'adminNotes' },
+        { key: 'seconds', labelKey: 'durationLabel' },
+        { key: 'ts', labelKey: 'timestampLabel' }
+      ]
+    },
+    customer: {
+      labelKey: 'tabCustomers',
+      searchFields: ['name', 'email', 'phone'],
+      kpi: records => {
+        const total = records.length;
+        const avg = key => {
+          const nums = records.map(r => Number(r[key])).filter(n => !Number.isNaN(n));
+          return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
+        };
+        return [
+          { labelKey: 'kpiTotal', value: total },
+          { labelKey: 'kpiAvgNps', value: avg('nps_0_10').toFixed(1) },
+          { labelKey: 'kpiAvgEase', value: avg('last_booking_ease_1_5').toFixed(1) },
+          { labelKey: 'kpiAvgSeconds', value: avg('seconds').toFixed(0) }
+        ];
+      },
+      charts: [
+        { id: 'usage_frequency', type: 'bar', field: 'usage_frequency', labelKey: 'usageFrequency' },
+        { id: 'categories_used', type: 'bar', field: 'categories_used', mode: 'multi', labelKey: 'usedCategories' },
+        { id: 'last_booking_ease_1_5', type: 'bar', field: 'last_booking_ease_1_5', labelKey: 'easeBooking' },
+        { id: 'nps_0_10', type: 'bar', field: 'nps_0_10', labelKey: 'recommendScore' },
+        { id: 'save_time', type: 'bar', field: 'save_time', labelKey: 'timeSave' },
+        { id: 'save_money', type: 'bar', field: 'save_money', labelKey: 'moneySave' },
+        { id: 'increase_usage_factors', type: 'bar', field: 'increase_usage_factors', mode: 'multi', labelKey: 'useMore' }
+      ],
+      openFields: [
+        { key: 'usage_frequency_other_text', label: () => `${t('other')} (${t('usageFrequency')})` },
+        { key: 'categories_used_other_text', label: () => `${t('other')} (${t('usedCategories')})` },
+        { key: 'save_time_other_text', label: () => `${t('other')} (${t('timeSave')})` },
+        { key: 'save_money_other_text', label: () => `${t('other')} (${t('moneySave')})` },
+        { key: 'increase_usage_other_text', label: () => `${t('other')} (${t('useMore')})` },
+        { key: 'wanted_additional_services_text', labelKey: 'futureServices' },
+        { key: 'admin_notes', labelKey: 'adminNotes' }
+      ],
+      columns: [
+        { key: 'name', labelKey: 'customerName' },
+        { key: 'email', labelKey: 'businessEmail' },
+        { key: 'phone', labelKey: 'phoneNumber' },
+        { key: 'usage_frequency', labelKey: 'usageFrequency' },
+        { key: 'usage_frequency_other_text', label: () => `${t('other')} (${t('usageFrequency')})` },
+        { key: 'categories_used', labelKey: 'usedCategories' },
+        { key: 'categories_used_other_text', label: () => `${t('other')} (${t('usedCategories')})` },
+        { key: 'last_booking_ease_1_5', labelKey: 'easeBooking' },
+        { key: 'nps_0_10', labelKey: 'recommendScore' },
+        { key: 'save_time', labelKey: 'timeSave' },
+        { key: 'save_time_other_text', label: () => `${t('other')} (${t('timeSave')})` },
+        { key: 'save_money', labelKey: 'moneySave' },
+        { key: 'save_money_other_text', label: () => `${t('other')} (${t('moneySave')})` },
+        { key: 'wanted_additional_services_text', labelKey: 'futureServices' },
+        { key: 'increase_usage_factors', labelKey: 'useMore' },
+        { key: 'increase_usage_other_text', label: () => `${t('other')} (${t('useMore')})` },
+        { key: 'admin_notes', labelKey: 'adminNotes' },
+        { key: 'seconds', labelKey: 'durationLabel' },
+        { key: 'ts', labelKey: 'timestampLabel' }
+      ]
+    },
+    public: {
+      labelKey: 'tabPublic',
+      searchFields: ['name', 'email', 'phone'],
+      kpi: records => {
+        const total = records.length;
+        const booked = records.filter(r => r.ever_booked_services_online === 'yes').length;
+        const willing = records.filter(r => r.willingness_pay_5_10_aed === 'yes').length;
+        const avgSeconds = records.map(r => Number(r.seconds)).filter(n => !Number.isNaN(n));
+        const avg = avgSeconds.length ? avgSeconds.reduce((a, b) => a + b, 0) / avgSeconds.length : 0;
+        return [
+          { labelKey: 'kpiTotal', value: total },
+          { labelKey: 'kpiBookedBefore', value: total ? Math.round((booked / total) * 100) + '%' : '0%' },
+          { labelKey: 'kpiWilling', value: total ? Math.round((willing / total) * 100) + '%' : '0%' },
+          { labelKey: 'kpiAvgSeconds', value: avg.toFixed(0) }
+        ];
+      },
+      charts: [
+        { id: 'ever_booked_services_online', type: 'bar', field: 'ever_booked_services_online', labelKey: 'publicBookedBefore' },
+        { id: 'platforms_used', type: 'bar', field: 'platforms_used', mode: 'multi', labelKey: 'usedPlatforms' },
+        { id: 'why_not_use_apps', type: 'bar', field: 'why_not_use_apps', labelKey: 'barrierNo' },
+        { id: 'factor_rank_1', type: 'bar', field: 'factor_rank_1', labelKey: 'preferenceFactor' },
+        { id: 'category_try_first', type: 'bar', field: 'category_try_first', labelKey: 'firstCategory' },
+        { id: 'willingness_pay_5_10_aed', type: 'bar', field: 'willingness_pay_5_10_aed', labelKey: 'willingnessFee' }
+      ],
+      openFields: [
+        { key: 'platforms_other_text', label: () => `${t('other')} (${t('usedPlatforms')})` },
+        { key: 'why_not_other_text', label: () => `${t('other')} (${t('barrierNo')})` },
+        { key: 'factors_other_text', label: () => `${t('other')} (${t('preferenceFactor')})` },
+        { key: 'category_try_other_text', label: () => `${t('other')} (${t('firstCategory')})` },
+        { key: 'willingness_other_text', label: () => `${t('other')} (${t('willingnessFee')})` },
+        { key: 'choose_tamam_reason_text', labelKey: 'whyTamam' },
+        { key: 'admin_notes', labelKey: 'adminNotes' }
+      ],
+      columns: [
+        { key: 'name', labelKey: 'customerName' },
+        { key: 'email', labelKey: 'businessEmail' },
+        { key: 'phone', labelKey: 'phoneNumber' },
+        { key: 'ever_booked_services_online', labelKey: 'publicBookedBefore' },
+        { key: 'platforms_used', labelKey: 'usedPlatforms' },
+        { key: 'platforms_other_text', label: () => `${t('other')} (${t('usedPlatforms')})` },
+        { key: 'why_not_use_apps', labelKey: 'barrierNo' },
+        { key: 'why_not_other_text', label: () => `${t('other')} (${t('barrierNo')})` },
+        { key: 'factor_rank_1', labelKey: 'preferenceFactor' },
+        { key: 'factors_other_text', label: () => `${t('other')} (${t('preferenceFactor')})` },
+        { key: 'category_try_first', labelKey: 'firstCategory' },
+        { key: 'category_try_other_text', label: () => `${t('other')} (${t('firstCategory')})` },
+        { key: 'willingness_pay_5_10_aed', labelKey: 'willingnessFee' },
+        { key: 'willingness_other_text', label: () => `${t('other')} (${t('willingnessFee')})` },
+        { key: 'choose_tamam_reason_text', labelKey: 'whyTamam' },
+        { key: 'admin_notes', labelKey: 'adminNotes' },
+        { key: 'seconds', labelKey: 'durationLabel' },
+        { key: 'ts', labelKey: 'timestampLabel' }
+      ]
+    }
+  };
+  function getFieldDefinition(kind, field) {
+    const actualKey = resolveFieldKey(kind, field);
+    const config = SURVEY_CONFIGS[kind];
+    if (!config || !Array.isArray(config.fields)) return null;
+    return config.fields.find(f => f.key === actualKey) || null;
+  }
+
+  function getOptionLabel(kind, field, value) {
+    const def = getFieldDefinition(kind, field);
+    if (def && def.type === 'choice') {
+      const opt = def.options.find(o => o.value === value);
+      if (opt) {
+        if (opt.labelKey) return t(opt.labelKey);
+        if (opt.label) return opt.label;
+      }
+    }
+    if (value === 'other') return t('other');
+    if (value === 'not') return t('notAcceptable');
+    return value;
+  }
+
+  function getOptionOrder(kind, field) {
+    const def = getFieldDefinition(kind, field);
+    if (def && def.type === 'choice') {
+      return def.options.map(o => o.value);
+    }
+    return [];
+  }
+
+  function aggregateCounts(kind, field, mode, records) {
+    const counts = new Map();
+    const add = (val) => {
+      if (!val) return;
+      const key = String(val);
+      counts.set(key, (counts.get(key) || 0) + 1);
+    };
+    records.forEach(rec => {
+      const value = rec[field];
+      if (mode === 'multi' && Array.isArray(value)) {
+        value.forEach(add);
+      } else {
+        add(value);
+      }
+    });
+    const order = getOptionOrder(kind, field);
+    const labels = [];
+    const values = [];
+    const used = new Set();
+    order.forEach(val => {
+      if (counts.has(val)) {
+        labels.push(getOptionLabel(kind, field, val));
+        values.push(counts.get(val));
+        used.add(val);
+      }
+    });
+    counts.forEach((count, key) => {
+      if (used.has(key)) return;
+      labels.push(getOptionLabel(kind, field, key));
+      values.push(count);
+    });
+    return { labels, values };
+  }
+
+  function aggregateStacked(kind, chartConfig, records) {
+    const segments = chartConfig.choices;
+    const datasets = [];
+    const labels = chartConfig.fields.map(f => t(f.labelKey));
+    segments.forEach(segment => {
+      const data = chartConfig.fields.map(f => {
+        const value = records.filter(rec => rec[f.field] === segment).length;
+        return value;
+      });
+      let labelKey = segment === 'not' ? 'notAcceptable' : segment;
+      datasets.push({
+        label: t(labelKey),
+        data,
+        backgroundColor: segment === 'acceptable' ? 'rgba(108,122,255,0.7)' : segment === 'neutral' ? 'rgba(171,123,255,0.7)' : segment === 'not' ? 'rgba(255,107,129,0.7)' : 'rgba(255,199,135,0.7)'
+      });
+    });
+    return { labels, datasets };
+  }
+
+  function renderKPIs(kind, records) {
+    const kpis = RESULTS_MAP[kind].kpi(records);
+    const section = document.createElement('div');
+    section.className = 'card results-section kpi-section section-fade';
+    const title = document.createElement('h3');
+    title.className = 'section-title';
+    title.dataset.i18n = 'resultsSummary';
+    title.textContent = t('resultsSummary');
+    section.appendChild(title);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'kpi-grid';
+    kpis.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'kpi-card';
+      const label = document.createElement('div');
+      label.className = 'field-description';
+      label.dataset.i18n = item.labelKey;
+      label.textContent = t(item.labelKey);
+      const value = document.createElement('div');
+      value.style.fontSize = '1.6rem';
+      value.style.fontWeight = '600';
+      value.textContent = localizeValue(item.value);
+      card.appendChild(label);
+      card.appendChild(value);
+      wrapper.appendChild(card);
+    });
+    section.appendChild(wrapper);
+    return section;
+  }
+
+  function renderCharts(kind, records) {
+    const section = document.createElement('div');
+    section.className = 'card results-section charts-section section-fade';
+    const title = document.createElement('h3');
+    title.className = 'section-title';
+    title.dataset.i18n = 'resultsCharts';
+    title.textContent = t('resultsCharts');
+    section.appendChild(title);
+
+    if (state.chartInstances[kind]) {
+      Object.values(state.chartInstances[kind]).forEach(chart => {
+        if (chart && typeof chart.destroy === 'function') {
+          chart.destroy();
+        }
+      });
+    }
+    state.chartInstances[kind] = {};
+
+    const charts = RESULTS_MAP[kind].charts;
+    if (!records.length) {
+      const empty = document.createElement('div');
+      empty.className = 'field-description';
+      empty.dataset.i18n = 'chartsEmpty';
+      empty.textContent = t('chartsEmpty');
+      section.appendChild(empty);
+      return section;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'charts-grid';
+    section.appendChild(grid);
+
+    const textColor = getComputedStyle(document.body).color;
+
+    charts.forEach(chartConfig => {
+      const card = document.createElement('div');
+      card.className = 'chart-card';
+      const heading = document.createElement('h4');
+      heading.className = 'field-label';
+      heading.dataset.i18n = chartConfig.labelKey;
+      heading.textContent = t(chartConfig.labelKey);
+      card.appendChild(heading);
+      const canvas = document.createElement('canvas');
+      card.appendChild(canvas);
+      grid.appendChild(card);
+      const ctx = canvas.getContext('2d');
+
+      const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { color: textColor }, grid: { color: 'rgba(120,130,200,0.18)' } },
+          y: { ticks: { color: textColor }, grid: { color: 'rgba(120,130,200,0.12)' }, beginAtZero: true }
+        },
+        plugins: {
+          legend: { display: chartConfig.type === 'stacked', rtl: state.lang === 'ar', labels: { color: textColor } },
+          tooltip: { rtl: state.lang === 'ar' }
+        }
+      };
+      if (state.lang === 'ar') {
+        options.locale = 'ar-AE';
+      }
+      let data;
+      if (chartConfig.type === 'stacked') {
+        const agg = aggregateStacked(kind, chartConfig, records);
+        data = { labels: agg.labels, datasets: agg.datasets };
+        options.scales.y.stacked = true;
+        options.scales.x.stacked = true;
+      } else {
+        const mode = chartConfig.mode === 'multi' ? 'multi' : 'single';
+        const agg = aggregateCounts(kind, chartConfig.field, mode, records);
+        data = {
+          labels: agg.labels,
+          datasets: [{
+            label: t(chartConfig.labelKey),
+            data: agg.values,
+            backgroundColor: 'rgba(108,122,255,0.7)',
+            borderRadius: 8
+          }]
+        };
+      }
+
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data,
+        options
+      });
+      state.chartInstances[kind][chartConfig.id] = chart;
+    });
+    return section;
+  }
+
+  function renderOpenResponses(kind, records) {
+    const section = document.createElement('div');
+    section.className = 'card results-section open-section section-fade';
+    const title = document.createElement('h3');
+    title.className = 'section-title';
+    title.dataset.i18n = 'openResponses';
+    title.textContent = t('openResponses');
+    section.appendChild(title);
+    const fields = RESULTS_MAP[kind].openFields;
+    if (!records.length) {
+      const empty = document.createElement('div');
+      empty.className = 'field-description';
+      empty.dataset.i18n = 'resultsEmpty';
+      empty.textContent = t('resultsEmpty');
+      section.appendChild(empty);
+      return section;
+    }
+    const grid = document.createElement('div');
+    grid.className = 'open-grid';
+    section.appendChild(grid);
+    fields.forEach(field => {
+      const list = records.map(r => ({ value: r[field.key], record: r })).filter(item => {
+        if (Array.isArray(item.value)) return item.value.length > 0;
+        return item.value && String(item.value).trim();
+      });
+      if (!list.length) return;
+      const block = document.createElement('div');
+      block.className = 'open-item';
+      const heading = document.createElement('h4');
+      if (field.labelKey) {
+        heading.dataset.i18n = field.labelKey;
+        heading.textContent = t(field.labelKey);
+      } else {
+        heading.textContent = field.label();
+      }
+      block.appendChild(heading);
+      list.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'open-item-row';
+        const text = document.createElement('span');
+        const displayValue = formatValueForTable(kind, field.key, item.value) || '';
+        text.textContent = displayValue;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'copy-btn';
+        btn.dataset.i18n = 'copy';
+        btn.textContent = t('copy');
+        btn.addEventListener('click', () => copyText(displayValue));
+        row.appendChild(text);
+        row.appendChild(btn);
+        block.appendChild(row);
+      });
+      grid.appendChild(block);
+    });
+    if (!grid.children.length) {
+      section.removeChild(grid);
+      const empty = document.createElement('div');
+      empty.className = 'field-description';
+      empty.dataset.i18n = 'resultsEmpty';
+      empty.textContent = t('resultsEmpty');
+      section.appendChild(empty);
+    }
+    return section;
+  }
+
+  function formatValueForTable(kind, key, value) {
+    let output = value;
+    if (Array.isArray(value)) {
+      output = value.map(v => getOptionLabel(kind, key, v)).join(', ');
+    } else if (key === 'ts' && value) {
+      output = formatDate(value);
+    } else if (key === 'seconds' && value !== undefined) {
+      output = numberLabel(Number(value));
+    } else if (key === 'admin_notes' && typeof value === 'string') {
+      const parts = value.split('|').map(part => part.trim()).filter(Boolean);
+      output = parts.map(part => {
+        if (part.startsWith('submission_id=')) {
+          return `${t('submissionIdLabel')}: ${part.replace('submission_id=', '')}`;
+        }
+        if (part.startsWith('note=')) {
+          const note = part.replace('note=', '');
+          return `${t('noteLabel')}: ${note}`;
+        }
+        return part;
+      }).join(' · ');
+    } else if (typeof value === 'string' && value.trim() === '') {
+      return '';
+    }
+    if (output === undefined || output === null) return '';
+    return localizeValue(output);
+  }
+
+  function renderTable(kind, records) {
+    const section = document.createElement('div');
+    section.className = 'card results-section table-section section-fade';
+    const header = document.createElement('div');
+    header.className = 'section-title';
+    header.dataset.i18n = 'tableTitle';
+    header.textContent = t('tableTitle');
+    section.appendChild(header);
+
+    const controls = document.createElement('div');
+    controls.className = 'search-row';
+    const search = createInput('search');
+    search.placeholder = t('searchPlaceholder');
+    search.dataset.i18nPlaceholder = 'searchPlaceholder';
+    const sortDate = document.createElement('button');
+    sortDate.className = 'cta-link';
+    sortDate.dataset.i18n = 'sortDate';
+    sortDate.textContent = t('sortDate');
+    const sortName = document.createElement('button');
+    sortName.className = 'cta-link';
+    sortName.dataset.i18n = 'sortName';
+    sortName.textContent = t('sortName');
+    controls.appendChild(search);
+    controls.appendChild(sortDate);
+    controls.appendChild(sortName);
+    section.appendChild(controls);
+
+    const tableWrapper = document.createElement('div');
+    tableWrapper.className = 'table-wrapper';
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    RESULTS_MAP[kind].columns.forEach(col => {
+      const th = document.createElement('th');
+      if (col.labelKey) {
+        th.dataset.i18n = col.labelKey;
+        th.textContent = t(col.labelKey);
+      } else {
+        th.textContent = col.label();
+      }
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+    tableWrapper.appendChild(table);
+    section.appendChild(tableWrapper);
+
+    const stateTable = { search: '', sort: 'date' };
+
+    function applyFilter() {
+      let rows = [...records];
+      if (stateTable.search) {
+        const term = stateTable.search.toLowerCase();
+        rows = rows.filter(rec => RESULTS_MAP[kind].searchFields.some(field => (rec[field] || '').toString().toLowerCase().includes(term)));
+      }
+      if (stateTable.sort === 'date') {
+        rows.sort((a, b) => new Date(b.ts || 0) - new Date(a.ts || 0));
+      } else {
+        rows.sort((a, b) => (a.name || a.company || '').localeCompare(b.name || b.company || '', state.lang === 'ar' ? 'ar' : 'en'));
+      }
+      return rows;
+    }
+
+    function renderRows() {
+      tbody.innerHTML = '';
+      const rows = applyFilter();
+      if (!rows.length) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.className = 'empty-row';
+        const cell = document.createElement('td');
+        cell.colSpan = RESULTS_MAP[kind].columns.length;
+        cell.className = 'field-description';
+        cell.style.textAlign = 'center';
+        cell.dataset.i18n = 'resultsEmpty';
+        cell.textContent = t('resultsEmpty');
+        emptyRow.appendChild(cell);
+        tbody.appendChild(emptyRow);
+        return;
+      }
+      rows.forEach(rec => {
+        const tr = document.createElement('tr');
+        RESULTS_MAP[kind].columns.forEach(col => {
+          const td = document.createElement('td');
+          const raw = rec[col.key];
+          td.textContent = formatValueForTable(kind, col.key, raw);
+          tr.appendChild(td);
+        });
+        tr.addEventListener('click', () => {
+          const detail = document.createElement('div');
+          detail.style.display = 'grid';
+          detail.style.gap = '12px';
+          RESULTS_MAP[kind].columns.forEach(col => {
+            const label = col.labelKey ? t(col.labelKey) : col.label();
+            const row = document.createElement('div');
+            row.innerHTML = `<strong>${label}</strong><div>${formatValueForTable(kind, col.key, rec[col.key]) || '-'}</div>`;
+            detail.appendChild(row);
+          });
+          const meta = document.createElement('div');
+          meta.innerHTML = `<strong>${t('timeSpent')}</strong><div>${t('timerSeconds', { seconds: numberLabel(rec.seconds || 0) })}</div>`;
+          detail.appendChild(meta);
+          openModal(detail);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    search.addEventListener('input', () => {
+      stateTable.search = search.value.trim();
+      renderRows();
+    });
+    sortDate.addEventListener('click', () => {
+      stateTable.sort = 'date';
+      renderRows();
+    });
+    sortName.addEventListener('click', () => {
+      stateTable.sort = 'name';
+      renderRows();
+    });
+
+    renderRows();
+    return section;
+  }
+  function prepareRecordsForExport(kind) {
+    return getCombinedRecords(kind).map(rec => {
+      const copy = {};
+      SURVEY_CONFIGS[kind].recordFields.forEach(key => {
+        let value = rec[key];
+        if (Array.isArray(value)) value = value.join(', ');
+        copy[key] = value ?? '';
+      });
+      return copy;
+    });
+  }
+
+  function triggerDownload(filename, blob) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  async function exportExcel() {
+    try {
+      const snapshot = await fetchRemoteData();
+      if (snapshot) {
+        applyRemoteSnapshot(snapshot);
+        state.remote.lastSync = new Date().toISOString();
+        state.remote.syncError = null;
+        updateRemoteStatus();
+      }
+    } catch (error) {
+      logDebug('Export prefetch failed', error);
+      showToast(t('syncFailed'));
+    }
+    const wb = XLSX.utils.book_new();
+    ['vendor','customer','public'].forEach(kind => {
+      const data = prepareRecordsForExport(kind);
+      const sheet = XLSX.utils.json_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, sheet, kind.charAt(0).toUpperCase() + kind.slice(1));
+    });
+    const now = new Date();
+    const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    XLSX.writeFile(wb, `Tamam_Research_Results_${stamp}.xlsx`);
+    showToast(t('exportReady'));
+  }
+
+  function exportJSON(download = true) {
+    const db = getCombinedDBRaw();
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+    if (download) {
+      triggerDownload('tamam-research.json', blob);
+      showToast(t('exportReady'));
+    }
+    return blob;
+  }
+
+  function mergeDB(newData) {
+    ['vendor','customer','public'].forEach(kind => {
+      if (Array.isArray(newData[kind])) {
+        const records = newData[kind].map(item => ({ ...item, origin: item.origin || 'import' }));
+        mergeAndPersist(kind, records);
+      }
+    });
+  }
+
+  function importJSONFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        mergeDB(data);
+        showToast(t('importSuccess'));
+        if (state.currentRoute === routes['#/surveys/results']) {
+          state.currentRoute.mount(app);
+        }
+      } catch (e) {
+        showToast(t('invalidFile'));
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  async function backupAndReset() {
+    if (!confirm(t('confirmReset'))) return;
+    exportJSON(true);
+    try {
+      const response = await fetch(REMOTE_ENDPOINTS.reset, {
+        method: 'GET',
+        cache: 'no-store',
+        credentials: 'omit'
+      });
+      if (!response.ok) throw new Error(`Remote reset failed: ${response.status}`);
+      const json = await response.json();
+      if (!json || json.ok !== true) throw new Error(json && json.error ? json.error : 'Remote reset rejected');
+    } catch (error) {
+      logDebug('Remote reset failed', error);
+      showToast(t('syncFailed'));
+      return;
+    }
+    clearAllStorage();
+    await fetchRemoteSnapshot(true);
+    if (state.currentRoute === routes['#/surveys/results']) {
+      state.currentRoute.mount(app);
+    }
+  }
+  function renderResults(container) {
+    const view = document.createElement('section');
+    view.className = 'view active';
+    const card = document.createElement('div');
+    card.className = 'card dashboard-shell section-fade';
+
+    const controls = document.createElement('div');
+    controls.className = 'export-bar';
+    const exportExcelBtn = document.createElement('button');
+    exportExcelBtn.className = 'cta-link';
+    exportExcelBtn.dataset.i18n = 'exportExcel';
+    exportExcelBtn.textContent = t('exportExcel');
+    exportExcelBtn.addEventListener('click', exportExcel);
+    const exportJsonBtn = document.createElement('button');
+    exportJsonBtn.className = 'cta-link';
+    exportJsonBtn.dataset.i18n = 'exportJSON';
+    exportJsonBtn.textContent = t('exportJSON');
+    exportJsonBtn.addEventListener('click', () => exportJSON(true));
+    const importLabel = document.createElement('label');
+    importLabel.className = 'cta-link';
+    importLabel.style.cursor = 'pointer';
+    importLabel.dataset.i18n = 'importJSON';
+    importLabel.textContent = t('importJSON');
+    const importInput = document.createElement('input');
+    importInput.type = 'file';
+    importInput.accept = 'application/json';
+    importInput.style.display = 'none';
+    importInput.addEventListener('change', () => {
+      if (importInput.files && importInput.files.length) {
+        importJSONFile(importInput.files[0]);
+        importInput.value = '';
+      }
+    });
+    importLabel.appendChild(importInput);
+    const backupBtn = document.createElement('button');
+    backupBtn.className = 'cta-link';
+    backupBtn.dataset.i18n = 'backupReset';
+    backupBtn.textContent = t('backupReset');
+    backupBtn.addEventListener('click', backupAndReset);
+    const refreshBtn = document.createElement('button');
+    refreshBtn.className = 'cta-link';
+    refreshBtn.dataset.i18n = 'refreshData';
+    refreshBtn.textContent = t('refreshData');
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.disabled = true;
+      try {
+        await fetchRemoteSnapshot(true);
+        cardContent.innerHTML = '';
+        renderResultsTab(cardContent, state.results.tab);
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    });
+    controls.appendChild(exportExcelBtn);
+    controls.appendChild(exportJsonBtn);
+    controls.appendChild(importLabel);
+    controls.appendChild(backupBtn);
+    controls.appendChild(refreshBtn);
+
+    const remoteWrap = document.createElement('div');
+    remoteWrap.className = 'remote-tools';
+    remoteWrap.appendChild(controls);
+    const statusBar = document.createElement('div');
+    statusBar.className = 'remote-status';
+    statusBar.dataset.state = 'idle';
+    remoteWrap.appendChild(statusBar);
+    card.appendChild(remoteWrap);
+    state.remote.statusEl = statusBar;
+    updateRemoteStatus();
+
+    const tabBar = document.createElement('div');
+    tabBar.className = 'tab-bar';
+    const cardContent = document.createElement('div');
+    cardContent.className = 'dashboard-grid';
+
+    Object.keys(RESULTS_MAP).forEach(kind => {
+      const tabBtn = document.createElement('button');
+      tabBtn.className = 'tab-btn';
+      tabBtn.dataset.kind = kind;
+      tabBtn.dataset.i18n = RESULTS_MAP[kind].labelKey;
+      tabBtn.textContent = t(RESULTS_MAP[kind].labelKey);
+      if (state.results.tab === kind) tabBtn.classList.add('active');
+      tabBtn.addEventListener('click', () => {
+        state.results.tab = kind;
+        tabBar.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        tabBtn.classList.add('active');
+        cardContent.innerHTML = '';
+        renderResultsTab(cardContent, kind);
+      });
+      tabBar.appendChild(tabBtn);
+    });
+    card.appendChild(tabBar);
+    card.appendChild(cardContent);
+    view.appendChild(card);
+    container.appendChild(view);
+    applyReveal(view);
+
+    renderResultsTab(cardContent, state.results.tab);
+    applyI18n(view);
+
+    fetchRemoteSnapshot(false).then(() => {
+      cardContent.innerHTML = '';
+      renderResultsTab(cardContent, state.results.tab);
+    });
+    if (state.remote.syncInterval) clearInterval(state.remote.syncInterval);
+    state.remote.syncInterval = setInterval(() => {
+      fetchRemoteSnapshot(false).then(() => {
+        if (state.currentRoute === routes['#/surveys/results']) {
+          const grid = app.querySelector('.dashboard-grid');
+          if (grid) {
+            grid.innerHTML = '';
+            renderResultsTab(grid, state.results.tab);
+          }
+        }
+      });
+    }, 30000);
+  }
+
+  function renderResultsTab(container, kind) {
+    const records = getCombinedRecords(kind);
+    container.innerHTML = '';
+    container.appendChild(renderKPIs(kind, records));
+    container.appendChild(renderCharts(kind, records));
+    container.appendChild(renderOpenResponses(kind, records));
+    container.appendChild(renderTable(kind, records));
+    applyI18n(container);
+    applyReveal(container);
+  }
+  document.addEventListener('tamam:dataUpdated', () => {
+    if (state.currentRoute === routes['#/surveys/results'] && state.passwordUnlocked.results) {
+      const view = app.querySelector('.dashboard-grid');
+      if (view) renderResultsTab(view, state.results.tab);
+      updateRemoteStatus();
+    }
+  });
+  </script>
+</body>
+</html>
