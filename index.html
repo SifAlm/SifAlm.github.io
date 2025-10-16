@@ -1193,6 +1193,8 @@
   <script>
   const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzszOvemrGVGrgbV9LZ0Xd6_uujyh4nGgremPoTf81HCFKT4Aybncd60Ni3nuSNz3Ec/exec';
   const DEBUG = false;
+  const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const scheduleFrame = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (fn) => setTimeout(fn, 16);
   const logDebug = (...args) => { if (DEBUG) console.log('[Tamam]', ...args); };
 
   const storage = {
@@ -1719,7 +1721,8 @@
       syncInterval: null
     },
     home: null,
-    deviceId: null
+    deviceId: null,
+    isIOS: IS_IOS
   };
 
   document.documentElement.setAttribute('lang', state.lang === 'ar' ? 'ar' : 'en');
@@ -1746,10 +1749,19 @@
 
   function applyReveal(root) {
     if (!root) return;
-    if (root.classList?.contains('section-fade')) {
-      watchReveal(root);
+    const targets = [];
+    if (root.classList && root.classList.contains('section-fade')) {
+      targets.push(root);
     }
-    root.querySelectorAll?.('.section-fade').forEach(watchReveal);
+    if (root.querySelectorAll) {
+      root.querySelectorAll('.section-fade').forEach(el => targets.push(el));
+    }
+    targets.forEach(watchReveal);
+    if (!revealObserver || state.isIOS) {
+      scheduleFrame(() => {
+        targets.forEach(el => el.classList.add('in-view'));
+      });
+    }
   }
 
   const t = (key, vars = {}) => {
@@ -1898,7 +1910,8 @@
     const normalized = {};
     config.recordFields.forEach(key => {
       let value = record[key];
-      if (REMOTE_MULTI_FIELDS[kind]?.includes(key)) {
+      const multiFields = REMOTE_MULTI_FIELDS[kind];
+      if (multiFields && multiFields.includes(key)) {
         normalized[key] = Array.isArray(value) ? value.map(v => String(v)) : parseRemoteList(value);
       } else if (key === 'seconds') {
         normalized[key] = Number(value) || 0;
@@ -1922,15 +1935,19 @@
     if (kind === 'vendor') {
       const category = data.category || '';
       const commissionRange = COMMISSION_BANDS[category] || COMMISSION_BANDS.home;
-      const monthlyOther = data.orders_all_other?.trim?.() || '';
-      const profitableOther = data.orders_profitable_other?.trim?.() || '';
-      const stayOther = data.min_orders_to_stay_other?.trim?.() || '';
+      const monthlyOther = cleanText(data.orders_all_other);
+      const profitableOther = cleanText(data.orders_profitable_other);
+      const stayOther = cleanText(data.min_orders_to_stay_other);
       const revOther = [];
-      if (data.accept_5_10k === 'other' && data.accept_5_10k_other?.trim()) revOther.push(`5-10k: ${data.accept_5_10k_other.trim()}`);
-      if (data.accept_10_20k === 'other' && data.accept_10_20k_other?.trim()) revOther.push(`10-20k: ${data.accept_10_20k_other.trim()}`);
-      if (data.accept_20k_plus === 'other' && data.accept_20k_plus_other?.trim()) revOther.push(`20k+: ${data.accept_20k_plus_other.trim()}`);
+      const acc510 = cleanText(data.accept_5_10k_other);
+      const acc1020 = cleanText(data.accept_10_20k_other);
+      const acc20 = cleanText(data.accept_20k_plus_other);
+      if (data.accept_5_10k === 'other' && acc510) revOther.push(`5-10k: ${acc510}`);
+      if (data.accept_10_20k === 'other' && acc1020) revOther.push(`10-20k: ${acc1020}`);
+      if (data.accept_20k_plus === 'other' && acc20) revOther.push(`20k+: ${acc20}`);
       const notesParts = [];
-      if (data.notes?.trim()) notesParts.push(data.notes.trim());
+      const trimmedNotes = cleanText(data.notes);
+      if (trimmedNotes) notesParts.push(trimmedNotes);
       if (profitableOther) notesParts.push(`Profitable volume: ${profitableOther}`);
       if (stayOther) notesParts.push(`Min orders to stay: ${stayOther}`);
       const expectations = Array.isArray(data.value_expect) ? data.value_expect.filter(Boolean) : [];
@@ -1968,15 +1985,16 @@
       };
     }
     if (kind === 'customer') {
-      const frequencyOther = data.freq === 'other' ? (data.freq_other || '') : '';
+      const frequencyOther = data.freq === 'other' ? cleanText(data.freq_other) : '';
       const cats = Array.isArray(data.cats) ? data.cats.filter(Boolean) : [];
-      const catsOther = cats.includes('other') ? (data.cats_other || '') : '';
-      const timeOther = data.time_save === 'other' ? (data.time_save_other || '') : '';
-      const moneyOther = data.money_save === 'other' ? (data.money_save_other || '') : '';
+      const catsOther = cats.includes('other') ? cleanText(data.cats_other) : '';
+      const timeOther = data.time_save === 'other' ? cleanText(data.time_save_other) : '';
+      const moneyOther = data.money_save === 'other' ? cleanText(data.money_save_other) : '';
       const increase = Array.isArray(data.more) ? data.more.filter(Boolean) : [];
-      const increaseOther = increase.includes('other') ? (data.more_other || '') : '';
+      const increaseOther = increase.includes('other') ? cleanText(data.more_other) : '';
       const adminParts = baseAdminParts.slice();
-      if (data.notes?.trim()) adminParts.push(`note=${data.notes.trim()}`);
+      const customerNote = cleanText(data.notes);
+      if (customerNote) adminParts.push(`note=${customerNote}`);
       const adminNotes = adminParts.join(' | ');
       return {
         ts: new Date().toISOString(),
@@ -2005,11 +2023,11 @@
     }
     if (kind === 'public') {
       const platforms = Array.isArray(data.platforms) ? data.platforms.filter(Boolean) : [];
-      const platformsOther = platforms.includes('other') ? (data.platforms_other || '') : '';
-      const barrierOther = data.barrier === 'other' ? (data.barrier_other || '') : '';
-      const factorOther = data.top_factor === 'other' ? (data.top_factor_other || '') : '';
-      const categoryOther = data.first_cat === 'other' ? (data.first_cat_other || '') : '';
-      const premiumOther = data.premium === 'other' ? (data.premium_other || '') : '';
+      const platformsOther = platforms.includes('other') ? cleanText(data.platforms_other) : '';
+      const barrierOther = data.barrier === 'other' ? cleanText(data.barrier_other) : '';
+      const factorOther = data.top_factor === 'other' ? cleanText(data.top_factor_other) : '';
+      const categoryOther = data.first_cat === 'other' ? cleanText(data.first_cat_other) : '';
+      const premiumOther = data.premium === 'other' ? cleanText(data.premium_other) : '';
       const adminNotes = baseAdminParts.join(' | ');
       return {
         ts: new Date().toISOString(),
@@ -2304,7 +2322,7 @@
         } else if (input.type === 'checkbox') {
           const group = form.querySelectorAll(`input[name="${input.name}"]`);
           if (Array.from(group).some(c => c.checked)) filled = true;
-        } else if (input.value?.trim()) {
+        } else if (input.value && input.value.trim && input.value.trim()) {
           filled = true;
         }
       });
@@ -2326,7 +2344,7 @@
         } else if (input.type === 'checkbox') {
           const group = form.querySelectorAll(`input[name="${input.name}"]`);
           if (Array.from(group).some(c => c.checked)) valid = true;
-        } else if (input.value?.trim()) {
+        } else if (input.value && input.value.trim && input.value.trim()) {
           valid = true;
         }
       });
@@ -2604,7 +2622,7 @@
     const savedPref = storage.get(SOUND_STORAGE_KEY);
     const initialMuted = savedPref === null ? false : savedPref !== '1';
     applyMutedState(initialMuted);
-    requestAnimationFrame(() => {
+    scheduleFrame(() => {
       heroVideo.play().catch(err => {
         logDebug('Hero autoplay blocked', err);
         if (!heroVideo.muted) {
@@ -2726,7 +2744,8 @@
   };
 
   function resolveFieldKey(kind, field) {
-    return FIELD_ALIASES[kind]?.[field] || field;
+    const aliasMap = FIELD_ALIASES[kind];
+    return aliasMap && Object.prototype.hasOwnProperty.call(aliasMap, field) ? aliasMap[field] : field;
   }
 
   const SURVEY_CONFIGS = {
@@ -3294,13 +3313,12 @@
           wrapper.appendChild(otherWrap);
           input.dataset.otherToggle = 'true';
           input.dataset.otherTarget = option.otherKey;
-          input.addEventListener('change', () => {
-            toggleOtherField(config, surveyKind);
-          });
         }
-        input.addEventListener('change', () => {
+        const handleOptionChange = () => {
+          toggleOtherField(config, surveyKind);
           toggleConditionalFields(surveyKind);
-        });
+        };
+        input.addEventListener('change', handleOptionChange);
       });
 
       setTimeout(() => toggleOtherField(config, surveyKind));
@@ -3322,6 +3340,18 @@
     return value;
   }
 
+  function cleanText(value) {
+    if (value === undefined || value === null) return '';
+    if (typeof value === 'string') return value.trim();
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    if (typeof value === 'object') {
+      if (typeof value.trim === 'function') return value.trim();
+      if (typeof value.toString === 'function') return value.toString().trim();
+    }
+    return '';
+  }
+
   function toggleOtherField(config, surveyKind) {
     const survey = state.surveys[surveyKind];
     if (!survey.formEl) return;
@@ -3341,9 +3371,16 @@
       wrapper.dataset.required = shouldShow ? 'true' : 'false';
       const input = wrapper.querySelector('input');
       if (input) {
-        input.required = shouldShow;
-        input.disabled = !shouldShow;
-        if (!shouldShow) {
+        if (shouldShow) {
+          input.disabled = false;
+          input.required = true;
+          input.setAttribute('required', '');
+          input.removeAttribute('aria-hidden');
+        } else {
+          input.disabled = true;
+          input.required = false;
+          input.removeAttribute('required');
+          input.setAttribute('aria-hidden', 'true');
           input.value = '';
           if (typeof input.blur === 'function') input.blur();
         }
@@ -3529,10 +3566,11 @@
       const seconds = surveyState.start ? Math.round((Date.now() - surveyState.start) / 1000) : 0;
       surveyState.timerEl.textContent = `${t('timerLabel')}: ${t('timerSeconds', { seconds: numberLabel(seconds) })}`;
       if (config.kind === 'vendor') {
-        const banner = form.querySelector('.sticky-banner');
-        const selected = form.querySelector('input[name="category"]:checked');
-        const range = COMMISSION_BANDS[selected?.value || 'home'];
-        if (banner) banner.textContent = t('vendorBanner', { range });
+      const banner = form.querySelector('.sticky-banner');
+      const selected = form.querySelector('input[name="category"]:checked');
+      const selectedValue = selected && selected.value ? selected.value : 'home';
+      const range = COMMISSION_BANDS[selectedValue] || COMMISSION_BANDS.home;
+      if (banner) banner.textContent = t('vendorBanner', { range });
       }
     };
     surveyState.langUpdater();
@@ -3624,9 +3662,9 @@
           gate.addEventListener('password-ok', () => {
             state.passwordUnlocked[config.kind] = true;
             setRoute(hash);
-            if (typeof requestAnimationFrame === 'function') {
-              requestAnimationFrame(() => setRoute(hash));
-            }
+            scheduleFrame(() => setRoute(hash));
+            setTimeout(() => setRoute(hash), 40);
+            setTimeout(() => setRoute(hash), 160);
           });
           applyI18n(gate);
           container.appendChild(gate);
@@ -3662,7 +3700,9 @@
           const gate = document.querySelector('.password-gate');
           if (gate) applyI18n(gate);
         } else {
-          state.surveys[config.kind].langUpdater?.();
+          if (state.surveys[config.kind].langUpdater) {
+            state.surveys[config.kind].langUpdater();
+          }
         }
       }
     });
@@ -3672,14 +3712,14 @@
     registerRoute('#/surveys', {
       mount(container) {
         container.innerHTML = '';
-        if (state.home?.cleanup) {
+        if (state.home && state.home.cleanup) {
           state.home.cleanup();
           state.home = null;
         }
         renderHome(container);
       },
       unmount() {
-        if (state.home?.cleanup) {
+        if (state.home && state.home.cleanup) {
           state.home.cleanup();
           state.home = null;
         }
@@ -3687,7 +3727,7 @@
       onLang() {
         const view = app.querySelector('.view');
         if (view) applyI18n(view);
-        if (state.home?.updateLang) state.home.updateLang();
+        if (state.home && state.home.updateLang) state.home.updateLang();
       }
     });
 
@@ -3723,6 +3763,9 @@
           gate.addEventListener('password-ok', () => {
             state.passwordUnlocked.results = true;
             setRoute('#/surveys/results');
+            scheduleFrame(() => setRoute('#/surveys/results'));
+            setTimeout(() => setRoute('#/surveys/results'), 40);
+            setTimeout(() => setRoute('#/surveys/results'), 160);
           });
           applyI18n(gate);
           container.appendChild(gate);
@@ -3733,7 +3776,11 @@
       },
       unmount() {
         Object.values(state.chartInstances).forEach(group => {
-          Object.values(group || {}).forEach(chart => chart?.destroy());
+        Object.values(group || {}).forEach(chart => {
+          if (chart && typeof chart.destroy === 'function') {
+            chart.destroy();
+          }
+        });
         });
         if (state.remote.syncInterval) {
           clearInterval(state.remote.syncInterval);
@@ -3826,7 +3873,12 @@
   updateThemeToggle();
   updateNav();
   ensureHash();
-  fetchRemoteSnapshot(false);
+  const queueInitialSync = () => fetchRemoteSnapshot(false);
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(queueInitialSync, { timeout: 1500 });
+  } else {
+    setTimeout(queueInitialSync, 80);
+  }
   const modalBackdrop = document.getElementById('modal-backdrop');
   const modalContent = document.getElementById('modal-content');
   const modalClose = document.getElementById('modal-close');
@@ -4050,7 +4102,9 @@
   };
   function getFieldDefinition(kind, field) {
     const actualKey = resolveFieldKey(kind, field);
-    return SURVEY_CONFIGS[kind]?.fields?.find(f => f.key === actualKey);
+    const config = SURVEY_CONFIGS[kind];
+    if (!config || !Array.isArray(config.fields)) return null;
+    return config.fields.find(f => f.key === actualKey) || null;
   }
 
   function getOptionLabel(kind, field, value) {
@@ -4168,7 +4222,11 @@
     section.appendChild(title);
 
     if (state.chartInstances[kind]) {
-      Object.values(state.chartInstances[kind]).forEach(chart => chart?.destroy());
+      Object.values(state.chartInstances[kind]).forEach(chart => {
+        if (chart && typeof chart.destroy === 'function') {
+          chart.destroy();
+        }
+      });
     }
     state.chartInstances[kind] = {};
 
@@ -4597,7 +4655,7 @@
     importInput.accept = 'application/json';
     importInput.style.display = 'none';
     importInput.addEventListener('change', () => {
-      if (importInput.files?.length) {
+      if (importInput.files && importInput.files.length) {
         importJSONFile(importInput.files[0]);
         importInput.value = '';
       }
